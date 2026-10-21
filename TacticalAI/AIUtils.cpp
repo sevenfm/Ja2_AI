@@ -4827,15 +4827,20 @@ INT8 CalcMorale(SOLDIERTYPE *pSoldier)
 		bMoraleCategory += 2;
 	}	
 
+	// find effective morale
 	INT8 bMorale = pSoldier->aiData.bMorale;
-
-	if (pSoldier->aiData.bOrders == SEEKENEMY)
-		bMorale += 20;
-
-	INT8 bEffectiveMorale = (bMorale * 100 / (100 + pSoldier->ShockLevelPercent() + pSoldier->aiData.bWoundShock));
+	//if (pSoldier->aiData.bOrders == SEEKENEMY)
+		//bMorale += 20;
+	UINT8 ubSquadLeaders = min(2, GetSquadleadersCountInVicinity(pSoldier, FALSE, FALSE));
+	UINT8 ubSoldierDifficulty = SoldierDifficultyLevel(pSoldier);
+	INT8 bEffectiveMorale = bMorale * 100 / (100 + pSoldier->ShockLevelPercent() + pSoldier->aiData.bWoundShock);
+	//UINT8 ubEffectiveShock = max(pSoldier->ShockLevelPercent(), pSoldier->aiData.bWoundShock);
 
 	// limit AI morale depending on morale and shock level
-	if (!pSoldier->RushAttackAdvance() && !pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] && (pSoldier->ShockLevelPercent() > 0 || pSoldier->aiData.bWoundShock > 0))
+	if (!pSoldier->RushAttackAdvance() && 
+		!pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] && 
+		//(pSoldier->ShockLevelPercent() > 0 || pSoldier->aiData.bWoundShock > 0) &&
+		(pSoldier->ShockLevelPercent() / 15 >= ubSoldierDifficulty + ubSquadLeaders || pSoldier->aiData.bWoundShock > ubSoldierDifficulty * 5))
 		bMoraleCategory = min(bMoraleCategory, max(MORALE_WORRIED, bEffectiveMorale / 20));
 
 	// limit AI morale when soldier is under heavy fire

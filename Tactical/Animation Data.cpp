@@ -946,7 +946,7 @@ BOOLEAN LoadAnimationSurface( UINT16 usSoldierID, UINT16 usSurfaceIndex, UINT16 
 
 	// Create video object
 		FilenameForBPP(gAnimSurfaceDatabase[ usSurfaceIndex ].Filename, sFilename);
-		hImage = CreateImage(/*gAnimSurfaceDatabase[ usSurfaceIndex ].Filename*/sFilename, IMAGE_ALLDATA );
+		hImage = CreateImage(sFilename, IMAGE_ALLDATA);
 
 	if (hImage == NULL)
 	{
@@ -961,8 +961,8 @@ BOOLEAN LoadAnimationSurface( UINT16 usSoldierID, UINT16 usSurfaceIndex, UINT16 
 		if ( hVObject == NULL )
 		{
 			// Report error
-			SET_ERROR( "Could not load animation file: %s", gAnimSurfaceDatabase[ usSurfaceIndex ].Filename );
-			// Video Object will set error conition.]
+			SET_ERROR("Could not create VideoObject for animation file: %s", gAnimSurfaceDatabase[usSurfaceIndex].Filename);
+			// Video Object will set error condition.]
 			DestroyImage( hImage );
 			return( FALSE );
 		}

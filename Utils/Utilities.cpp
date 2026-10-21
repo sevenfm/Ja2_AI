@@ -21,7 +21,7 @@ extern BOOLEAN GetCDromDriveLetter( STR8	pString );
 
 #define		DATA_8_BIT_DIR	"8-Bit\\"
 
-BOOLEAN PerformTimeLimitedCheck();
+//BOOLEAN PerformTimeLimitedCheck();
 
 // WANNE: Given a string, replaces all instances of "oldpiece" with "newpiece"
 /*
@@ -299,7 +299,7 @@ BOOLEAN IfWin95(void)
 }
 
 
-void HandleLimitedNumExecutions( )
+/*void HandleLimitedNumExecutions( )
 {
 	// Get system directory
 	HWFILE	 hFileHandle;
@@ -354,7 +354,7 @@ void HandleLimitedNumExecutions( )
 	// Close file
 	FileClose( hFileHandle );
 
-}
+}*/
 
 
 SGPFILENAME	gCheckFilenames[] =
@@ -366,7 +366,7 @@ SGPFILENAME	gCheckFilenames[] =
 	"DATA\\SPEECH.SLF",
 };
 
-
+/*
 UINT32 gCheckFileMinSizes[] =
 {
 	68000000,
@@ -531,6 +531,7 @@ BOOLEAN PerformTimeLimitedCheck()
 	return( TRUE );
 #endif
 }
+*/
 
 BOOLEAN DoJA2FilesExistsOnDrive( CHAR8 *zCdLocation )
 {

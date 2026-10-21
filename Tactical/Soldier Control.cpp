@@ -19162,7 +19162,7 @@ BOOLEAN	SOLDIERTYPE::CanUseSkill(INT8 iSkill, BOOLEAN fAPCheck, INT32 sGridNo, I
 			break;
 
 		case SKILLS_RADIO_JAM:
-			if ((!fAPCheck || EnoughPoints(this, GetAPsToUseRadioSet(SKILLS_RADIO_JAM), APBPConstants[BP_RADIO], FALSE)) && CanUseRadio())
+			if ((!fAPCheck || EnoughPoints(this, GetAPsToUseRadioSet(SKILLS_RADIO_JAM), APBPConstants[BP_RADIO], FALSE)) && CanUseRadio() && !ArtilleryStrikeActive(this->bTeam))
 				canuse = TRUE;
 			break;
 		case SKILLS_RADIO_SCAN_FOR_JAM:

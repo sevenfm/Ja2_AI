@@ -4025,13 +4025,17 @@ void UpdateTreeVisibility()
 					fHideTree = FALSE;
 
 					// check trees near cursor position
-					if (!TileIsOutOfBounds(usMouseSpot) &&
-						(//PythSpacesAway(sSpot, usMouseSpot) <= 5 || 
-						PythSpacesAway(sSpot, usMouseSpot) <= 2 && AIDirection(sSpot, usMouseSpot) == 0 ||
-						PythSpacesAway(sSpot, usMouseSpot) <= 6 && AIDirection(sSpot, usMouseSpot) == 7 ||
-						PythSpacesAway(sSpot, usMouseSpot) <= 2 && AIDirection(sSpot, usMouseSpot) == 6))
+					if (!TileIsOutOfBounds(usMouseSpot))
 					{
-						fHideTree = TRUE;
+						const auto mouseSpacesAwaySquared = PythSpacesAwaySquared(sSpot, usMouseSpot);
+						UINT8 ubMouseDirection = AIDirection(sSpot, usMouseSpot);
+
+						if (ubMouseDirection == 0 && mouseSpacesAwaySquared <= 2 * 2 ||
+							ubMouseDirection == 7 && mouseSpacesAwaySquared <= 6 * 6 ||
+							ubMouseDirection == 6 && mouseSpacesAwaySquared <= 2 * 2)
+						{
+							fHideTree = TRUE;
+						}
 					}
 
 					// find visible soldier near spot
@@ -4043,14 +4047,18 @@ void UpdateTreeVisibility()
 
 							if (pOpponent &&
 								pOpponent->bVisible != -1 &&
-								!TileIsOutOfBounds(pOpponent->sGridNo) &&
-								(//PythSpacesAway(sSpot, pOpponent->sGridNo) <= 5 ||
-								PythSpacesAway(sSpot, pOpponent->sGridNo) <= 2 && AIDirection(sSpot, pOpponent->sGridNo) == 0 ||
-								PythSpacesAway(sSpot, pOpponent->sGridNo) <= 6 && AIDirection(sSpot, pOpponent->sGridNo) == 7 ||
-								PythSpacesAway(sSpot, pOpponent->sGridNo) <= 2 && AIDirection(sSpot, pOpponent->sGridNo) == 6))
+								!TileIsOutOfBounds(pOpponent->sGridNo))								
 							{
-								fHideTree = TRUE;
-								break;
+								const auto spacesAwaySquared = PythSpacesAwaySquared(sSpot, pOpponent->sGridNo);
+								UINT8 ubOpponentDirection = AIDirection(sSpot, pOpponent->sGridNo);
+
+								if (ubOpponentDirection == 0 && spacesAwaySquared <= 2 * 2 ||
+									ubOpponentDirection == 7 && spacesAwaySquared <= 6 * 6 ||
+									ubOpponentDirection == 6 && spacesAwaySquared <= 2 * 2)
+								{
+									fHideTree = TRUE;
+									break;
+								}
 							}
 						}
 					}

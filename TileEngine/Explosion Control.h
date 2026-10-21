@@ -113,6 +113,7 @@ BOOLEAN FindRemoteBombsInSector(void);
 BOOLEAN SetOffBombsInGridNo( UINT8 ubID, INT32 sGridNo, BOOLEAN fAllBombs, INT8 bLevel );
 void ActivateSwitchInGridNo( UINT8 ubID, INT32 sGridNo );
 void SetOffPanicBombs( UINT8 ubID, INT8 bPanicTrigger );
+BOOLEAN ArtilleryStrikeActive(INT8 bTeam);
 
 void UpdateExplosionFrame( INT32 iIndex, INT16 sCurrentFrame );
 void RemoveExplosionData( INT32 iIndex );

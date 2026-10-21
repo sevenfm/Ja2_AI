@@ -6468,10 +6468,11 @@ STR16 pMessageStrings[] =
 	// Lock / release mouse in windowed mode (window boundary)
 	L"鼠标已锁定，鼠标移动范围强制限制在游戏窗口内部区域。",			// 104
 	L"鼠标已释放，鼠标移动范围不再受限于游戏窗口内部区域。",			// 105
-	L"保持佣兵间距开启",
-	L"保持佣兵间距关闭",
-	L"虚拟佣兵光照开启",
-	L"虚拟佣兵光照关闭",
+	L"保持佣兵间距开启",   					// 106
+	L"保持佣兵间距关闭",					// 107
+	L"虚拟佣兵光照开启",					// 108
+	L"虚拟佣兵光照关闭",					// 109
+	L"No Zippo in inventory!",			// 110	//TODO.Translate
 };
 
 

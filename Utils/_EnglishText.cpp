@@ -6472,11 +6472,11 @@ STR16 pMessageStrings[] =
 	// Lock / release mouse in windowed mode (window boundary)
 	L"Lock mouse cursor within game window boundary.",			// 104
 	L"Release mouse cursor from game window boundary.",			// 105
-	L"Move in Formation ON",
-	L"Move in Formation OFF",
-	L"Artificial Merc Light ON",
-	L"Artificial Merc Light OFF",
-	L"No Zippo in inventory!",
+	L"Move in Formation ON",									// 106
+	L"Move in Formation OFF",									// 107
+	L"Artificial Merc Light ON",								// 108
+	L"Artificial Merc Light OFF",								// 109
+	L"No Zippo in inventory!",									// 110
 };
 
 

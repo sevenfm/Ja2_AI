@@ -1195,10 +1195,10 @@ int PASCAL HandledWinMain(HINSTANCE hInstance,	HINSTANCE hPrevInstance, LPSTR pC
 
 #ifdef JA2
 	// Handle Check for CD
-	if ( !HandleJA2CDCheck( ) )
+/*	if ( !HandleJA2CDCheck( ) )
 	{
 		return( 0 );
-	}
+	}*/
 #else
 
 	if(!RunSetup())

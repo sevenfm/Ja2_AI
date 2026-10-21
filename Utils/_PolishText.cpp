@@ -6489,6 +6489,7 @@ STR16 pMessageStrings[] =
 	L"Move in Formation OFF",
 	L"Artificial Merc Light ON",	// TODO.Translate
 	L"Artificial Merc Light OFF",
+	L"No Zippo in inventory!",			// 110	//TODO.Translate
 };
 
 

@@ -4276,6 +4276,49 @@ void HandleExplosionQueue( void )
 
 }
 
+BOOLEAN ArtilleryStrikeActive(INT8 bTeam)
+{
+	UINT32	uiIndex;
+	UINT32	uiWorldBombIndex;
+	INT32	sGridNo;
+	OBJECTTYPE * pObj;
+	UINT8	ubLevel;
+
+	if (gWorldBombs && !gWorldItems.empty())
+	{
+		for (uiIndex = 0; uiIndex < gubElementsOnExplosionQueue; uiIndex++)
+		{
+			if (gExplosionQueue[uiIndex].fExists)
+			{
+				uiWorldBombIndex = gExplosionQueue[uiIndex].uiWorldBombIndex;
+				pObj = &(gWorldItems[gWorldBombs[uiWorldBombIndex].iItemIndex].object);
+				sGridNo = gWorldItems[gWorldBombs[uiWorldBombIndex].iItemIndex].sGridNo;
+				ubLevel = gWorldItems[gWorldBombs[uiWorldBombIndex].iItemIndex].ubLevel;
+
+				if ((*pObj)[0]->data.ubWireNetworkFlag & ANY_ARTILLERY_FLAG)
+				{
+					UINT8 cnt = 0;
+					if ((*pObj)[0]->data.ubWireNetworkFlag & ARTILLERY_STRIKE_COUNT_1)	cnt += 1;
+					if ((*pObj)[0]->data.ubWireNetworkFlag & ARTILLERY_STRIKE_COUNT_2)	cnt += 2;
+					if ((*pObj)[0]->data.ubWireNetworkFlag & ARTILLERY_STRIKE_COUNT_4)	cnt += 4;
+
+					// sevenfm: r7818 fix
+					UINT8 ubOwner = NOBODY;
+					if ((*pObj)[0]->data.misc.ubBombOwner > 1)
+						ubOwner = (*pObj)[0]->data.misc.ubBombOwner - 2;
+
+					if (ubOwner != NOBODY && MercPtrs[ubOwner] && MercPtrs[ubOwner]->bTeam == bTeam)
+					{
+						return TRUE;
+					}
+				}
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 void DecayBombTimers( void )
 {
 	UINT32	uiWorldBombIndex;

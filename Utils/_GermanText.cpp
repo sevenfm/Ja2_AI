@@ -6316,6 +6316,7 @@ STR16 pMessageStrings[] =
 	L"In Formation bewegen - AUSGESCHALTET",
 	L"Artificial Merc Light ON",	// TODO.Translate
 	L"Artificial Merc Light OFF",
+	L"No Zippo in inventory!",			// 110	//TODO.Translate
 };
 
 CHAR16 ItemPickupHelpPopup[][40] =
