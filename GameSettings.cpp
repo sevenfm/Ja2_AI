@@ -2671,6 +2671,7 @@ void LoadSkillTraitsExternalSettings()
 	gSkillTraitValues.fSCPreventsBloodcatsAmbushes = iniReader.ReadBoolean("Scouting","PREVENTS_BLOODCATS_AMBUSHES", TRUE);
 	gSkillTraitValues.fSCThrowMessageIfAmbushPrevented = iniReader.ReadBoolean("Scouting","SHOW_MESSAGE_IF_AMBUSH_PREVENTED", TRUE);
 	gSkillTraitValues.ubSCSightRangeBonusInDaylight = iniReader.ReadInteger("Scouting", "SIGHT_RANGE_BONUS_IN_DAYLIGHT", 1, 0, 100);
+	gSkillTraitValues.fSCSpottingRadiusIncreased = iniReader.ReadBoolean("Scouting", "SPOTTING_RADIUS_INCREASED", TRUE, false);
 
 	// Flugente: COVERT OPS
 	gSkillTraitValues.sCOMeleeCTHBonus						= iniReader.ReadInteger("Covert Ops","COVERT_MELEE_CTH_BONUS", 40, 0, 200);

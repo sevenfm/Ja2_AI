@@ -375,6 +375,8 @@ STR16 gzIMPMinorTraitsHelpTextsScouting[]=
 	L"显示邻近区域敌人的存在\n",// L"If in sector, adjacent sectors will show presence of enemies if any\n",
 	L"防止敌人偷袭你的队伍\n",// L"Prevents the enemy to ambush your squad\n",
 	L"防止血猫偷袭你的队伍\n",// L"Prevents the bloodcats to ambush your squad\n",
+	L"+%d tiles to effective sight range in daylight\n",	//TODO.Translate
+	L"Increases spotting radius\n",
 	L"Increases effectiveness of spotter\n",	//TODO.Translate
 };
 STR16 gzIMPMinorTraitsHelpTextsSnitch[]=

@@ -6433,7 +6433,7 @@ void HandleExplosionWarningAnimations()
 			}
 			else if (pSoldier->IsSpotting())
 			{
-				UINT8 ubRadius = 1;
+				UINT8 ubRadius = pSoldier->GetSpottingRadius();
 
 				// checking whether this skill is active is relatively cheap. If it fails, deactivate skill properly
 				// we cannot use CanUseSkill(...) again though, as this would fail upon opening the menu
