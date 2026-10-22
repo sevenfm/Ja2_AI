@@ -2152,6 +2152,8 @@ public:
 	BOOLEAN CanSpot(INT32 sTargetGridNo = -1, INT8 bTargetLevel = 0);
 	BOOLEAN BecomeSpotter(INT32 sTargetGridNo, INT8 bTargetLevel);
 	void StopSpotting(void);
+	// travnik: calculate radius spotting 
+	UINT8 GetSpottingRadius(void);
 	// sevenfm:
 	UINT16	SpottingBonus();
 	INT16	MaxVisionBonus();
