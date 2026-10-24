@@ -2013,6 +2013,8 @@ INT32 FindNearestUngassedLand(SOLDIERTYPE *pSoldier)
 	UINT16 usMovementMode = DetermineMovementMode(pSoldier, AI_ACTION_LEAVE_WATER_GAS);
 	BOOLEAN fFoundReachable = FALSE;
 	BOOLEAN fAvoidEnemy = FALSE;
+	UINT8 ubSpotDangerLevel = 0;
+	UINT8 ubCurrentSpotDangerLevel = SpotDangerLevel(pSoldier, pSoldier->sGridNo);
 
 	sOriginalDistance = DistanceToClosestActiveOpponent(pSoldier, pSoldier->sGridNo);
 
@@ -2122,7 +2124,8 @@ INT32 FindNearestUngassedLand(SOLDIERTYPE *pSoldier)
 					continue;		// skip on to the next potential grid
 				}
 
-				if (SpotDangerLevel(pSoldier, sGridNo) > 0 && SpotDangerLevel(pSoldier, sGridNo) >= SpotDangerLevel(pSoldier, pSoldier->sGridNo))
+				ubSpotDangerLevel = SpotDangerLevel(pSoldier, sGridNo);
+				if (ubSpotDangerLevel > 0 && ubSpotDangerLevel >= ubCurrentSpotDangerLevel)
 				{
 					continue;
 				}

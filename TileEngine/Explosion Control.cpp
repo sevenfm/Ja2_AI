@@ -211,7 +211,10 @@ EXPLOSION_DATA gExpAniData[ NUM_EXP_TYPES ] =
 
 #define BOMB_QUEUE_DELAY (1000 + Random( 500 ) )
 
-#define MAX_BOMB_QUEUE 40
+// sevenfm: increased value
+//#define MAX_BOMB_QUEUE 40
+#define MAX_BOMB_QUEUE 255
+
 ExplosionQueueElement	gExplosionQueue[MAX_BOMB_QUEUE];
 UINT8			gubElementsOnExplosionQueue = 0;
 BOOLEAN		 gfExplosionQueueActive = FALSE;
@@ -4336,8 +4339,11 @@ void DecayBombTimers( void )
 			if ( (*pObj)[0]->data.misc.bDetonatorType == BOMB_TIMED && !((*pObj).fFlags & OBJECT_DISABLED_BOMB) )
 			{
 				// Found a timed bomb, so decay its delay value and see if it goes off
-				(*pObj)[0]->data.misc.bDelay--;
-				if ((*pObj)[0]->data.misc.bDelay == 0)
+				// sevenfm: added safety checks in case bDelay somehow becomes < 0
+				if ((*pObj)[0]->data.misc.bDelay > 0)
+					(*pObj)[0]->data.misc.bDelay--;
+
+				if ((*pObj)[0]->data.misc.bDelay <= 0)
 				{
 					// ATE: CC black magic....
 					if ( (*pObj)[0]->data.misc.ubBombOwner > 1 )
@@ -4390,8 +4396,11 @@ void DecayBombTimers( void )
 						if ( (*pObj)[0]->data.misc.bDetonatorType == BOMB_TIMED )
 						{
 							// Found a timed bomb, so decay its delay value and see if it goes off
-							(*pObj)[0]->data.misc.bDelay--;
-							if ((*pObj)[0]->data.misc.bDelay == 0)
+							// sevenfm: added safety checks in case bDelay somehow becomes < 0
+							if ((*pObj)[0]->data.misc.bDelay > 0)
+								(*pObj)[0]->data.misc.bDelay--;
+
+							if ((*pObj)[0]->data.misc.bDelay <= 0)
 							{
 								// ATE: CC black magic....
 								if ( (*pObj)[0]->data.misc.ubBombOwner > 1 )
