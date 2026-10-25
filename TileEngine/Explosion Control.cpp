@@ -3730,11 +3730,20 @@ void PerformItemAction( INT32 sGridNo, OBJECTTYPE * pObj )
 
 }
 
-void AddBombToQueue( UINT32 uiWorldBombIndex, UINT32 uiTimeStamp, BOOL fFromRemoteClient )
+void AddBombToQueue( UINT32 uiWorldBombIndex, UINT32 uiTimeStamp, BOOLEAN fFromRemoteClient )
 {
 	if (gubElementsOnExplosionQueue == MAX_BOMB_QUEUE)
 	{
 		return;
+	}
+
+	// sevenfm: check if bomb is somehow already in the queue
+	for (UINT8 ubQueueIndex = 0; ubQueueIndex < gubElementsOnExplosionQueue; ubQueueIndex++)
+	{
+		if (gExplosionQueue[ubQueueIndex].fExists && gExplosionQueue[ubQueueIndex].uiWorldBombIndex == uiWorldBombIndex)
+		{
+			return;
+		}
 	}
 
 	// 20091002 - OJW - MP Explosives
