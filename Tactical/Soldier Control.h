@@ -2155,6 +2155,7 @@ public:
 	// sevenfm:
 	UINT16	SpottingBonus();
 	INT16	MaxVisionBonus();
+	UINT8 GetSpottingRadius(void);
 	
 	// Flugente: boxing fix: this shall be the only location where the boxing flag gets removed (easier debugging)
 	void	DeleteBoxingFlag();

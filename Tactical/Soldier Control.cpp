@@ -20972,7 +20972,6 @@ BOOLEAN SOLDIERTYPE::IsSpotting()
 // sevenfm: check if spotting at certain spot
 BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 {
-	UINT8 ubRadius = 1;
 	UINT8 ubActive = (gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT) ? 1 : 2;
 
 	if (this->IsSpotting() && 
@@ -20980,7 +20979,7 @@ BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 		!TileIsOutOfBounds(sSpot) && 
 		!TileIsOutOfBounds(this->sFocusGridNo) && 
 		this->bFocusLevel == bLevel &&
-		PythSpacesAway(sSpot, this->sFocusGridNo) <= ubRadius)
+		PythSpacesAway(sSpot, this->sFocusGridNo) <= this->GetSpottingRadius())
 		return TRUE;
 
 	return FALSE;
@@ -20996,6 +20995,22 @@ void SOLDIERTYPE::StopSpotting(void)
 	//HandleSight(this, SIGHT_LOOK);
 	if(this->bTeam == gbPlayerNum)
 		DirtyMercPanelInterface(this, DIRTYLEVEL1);
+}
+
+UINT8 SOLDIERTYPE::GetSpottingRadius(void)
+{
+	UINT8 ubRadius = 1;
+
+	if (!TileIsOutOfBounds(this->sFocusGridNo) &&
+		PythSpacesAway(this->sGridNo, this->sFocusGridNo) > DAY_VISION_RANGE / 2 &&
+		gGameOptions.fNewTraitSystem && 
+		gSkillTraitValues.fSCSpottingRadiusIncreased &&
+		HAS_SKILL_TRAIT(this, SCOUTING_NT))
+	{
+		ubRadius += 1;
+	}
+
+	return ubRadius;
 }
 
 BOOLEAN SOLDIERTYPE::CanFocus(INT32 sTargetGridNo, INT8 bTargetLevel)
@@ -25133,7 +25148,6 @@ UINT16	GridNoSpotterCTHBonus( SOLDIERTYPE* pSniper, INT32 sGridNo, INT8 bTeam)
 
 	UINT16 bestvalue = 0;
 	UINT16 usCounter;
-	UINT8 ubRadius;	
 
 	SOLDIERTYPE* pSoldier = NULL;
 	INT32 cnt = gTacticalStatus.Team[ bTeam ].bFirstID;
@@ -25141,15 +25155,13 @@ UINT16	GridNoSpotterCTHBonus( SOLDIERTYPE* pSniper, INT32 sGridNo, INT8 bTeam)
 
 	for ( pSoldier = MercPtrs[ cnt ]; cnt <= lastid; ++cnt, ++pSoldier)
 	{
-		ubRadius = 1;
-
 		if ( pSoldier != pSniper && 
 			pSoldier->sSectorX == gWorldSectorX && 
 			pSoldier->sSectorY == gWorldSectorY && 
 			pSoldier->bSectorZ == gbWorldSectorZ &&
 			pSoldier->IsSpotting() &&
 			!TileIsOutOfBounds(pSoldier->sFocusGridNo) &&
-			PythSpacesAway(pSoldier->sFocusGridNo, sGridNo) <= ubRadius &&
+			PythSpacesAway(pSoldier->sFocusGridNo, sGridNo) <= pSoldier->GetSpottingRadius() &&
 			PythSpacesAway(pSoldier->sGridNo, pSniper->sGridNo) <= gGameExternalOptions.usSpotterRange)
 		{
 			BOOLEAN targetseen = FALSE;

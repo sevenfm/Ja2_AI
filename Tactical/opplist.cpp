@@ -1467,7 +1467,7 @@ INT16 DistanceVisible(SOLDIERTYPE *pSoldier, INT8 bFacingDir, INT8 bSubjectDir, 
 		pSoldier->IsSpotting() &&
 		!TileIsOutOfBounds(sSubjectGridNo) &&
 		!TileIsOutOfBounds(pSoldier->sFocusGridNo) &&
-		PythSpacesAway(sSubjectGridNo, pSoldier->sFocusGridNo) > 1)
+		PythSpacesAway(sSubjectGridNo, pSoldier->sFocusGridNo) > pSoldier->GetSpottingRadius())
 	{
 		sDistVisible = min(sDistVisible, (INT16)(TACTICAL_RANGE / 4));
 	}

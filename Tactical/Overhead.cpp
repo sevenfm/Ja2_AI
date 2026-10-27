@@ -2992,7 +2992,9 @@ BOOLEAN HandleAtNewGridNo( SOLDIERTYPE *pSoldier, BOOLEAN *pfKeepMoving )
     if ( gubWaitingForAllMercsToExitCode == WAIT_FOR_MERCS_TO_WALKOFF_SCREEN || gubWaitingForAllMercsToExitCode == WAIT_FOR_MERCS_TO_WALK_TO_GRIDNO )
     {
 		// sevenfm: update tree visibility
-		UpdateTreeVisibility();
+		// sevenfm: don't bother updating tree visibility if soldier is invisible anyway
+		if (pSoldier && pSoldier->bVisible != -1 && !TileIsOutOfBounds(pSoldier->sGridNo))
+			UpdateTreeVisibility();
 		//DebugMiscInfo(String("HandleAtNewGridNo: WAIT_FOR_MERCS_TO_WALKOFF_SCREEN or WAIT_FOR_MERCS_TO_WALK_TO_GRIDNO, return TRUE"));
         return( TRUE );
     }
@@ -3109,7 +3111,10 @@ BOOLEAN HandleAtNewGridNo( SOLDIERTYPE *pSoldier, BOOLEAN *pfKeepMoving )
     if ( pSoldier->CheckForBreathCollapse( ) )
     {
 		// sevenfm: update tree visibility
-		UpdateTreeVisibility();
+		// sevenfm: don't bother updating tree visibility if soldier is invisible anyway
+		if (pSoldier->bVisible != -1)
+			UpdateTreeVisibility();
+
 		//DebugMiscInfo(String("HandleAtNewGridNo: CheckForBreathCollapse, return FALSE"));
         (*pfKeepMoving ) = TRUE;
         return( FALSE );
@@ -3119,7 +3124,9 @@ BOOLEAN HandleAtNewGridNo( SOLDIERTYPE *pSoldier, BOOLEAN *pfKeepMoving )
     if (SetOffBombsInGridNo( pSoldier->ubID, pSoldier->sGridNo, FALSE, pSoldier->pathing.bLevel ) )
     {
 		// sevenfm: update tree visibility
-		UpdateTreeVisibility();
+		// sevenfm: don't bother updating tree visibility if soldier is invisible
+		if (pSoldier->bVisible != -1)
+			UpdateTreeVisibility();
 
         (*pfKeepMoving) = FALSE;
         pSoldier->EVENT_StopMerc( pSoldier->sGridNo, pSoldier->ubDirection );
@@ -3179,6 +3186,8 @@ BOOLEAN HandleAtNewGridNo( SOLDIERTYPE *pSoldier, BOOLEAN *pfKeepMoving )
         }
     }
 
+	INT8 bOldVisible = pSoldier->bVisible;
+
     // ATE: Make sure we don't make another interrupt...
     if ( !gTacticalStatus.fInterruptOccurred )
     {
@@ -3187,7 +3196,9 @@ BOOLEAN HandleAtNewGridNo( SOLDIERTYPE *pSoldier, BOOLEAN *pfKeepMoving )
     }
 
 	// sevenfm: update tree visibility
-	UpdateTreeVisibility();
+	// sevenfm: don't bother updating tree visibility if soldier was and stays invisible
+	if (bOldVisible != -1 || pSoldier->bVisible != -1)
+		UpdateTreeVisibility();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // SANDRO - if pending interrupt flag was set for movement type of interrupt, resolve it here

@@ -8243,8 +8243,18 @@ void AssignPersonnelSkillTraitHelpText( UINT8 ubTraitNumber, BOOLEAN fExpertLeve
 					swprintf( atStr, gzIMPMinorTraitsHelpTextsScouting[6]);
 					wcscat( apStr, atStr );
 				}
+				if (gSkillTraitValues.ubSCSightRangeBonusInDaylight)
+				{
+					swprintf(atStr, gzIMPMinorTraitsHelpTextsScouting[7], gSkillTraitValues.ubSCSightRangeBonusInDaylight);
+					wcscat(apStr, atStr);
+				}
+				if (gSkillTraitValues.fSCSpottingRadiusIncreased)
+				{
+					swprintf(atStr, gzIMPMinorTraitsHelpTextsScouting[8]);
+					wcscat(apStr, atStr);
+				}
 				
-				swprintf(atStr, gzIMPMinorTraitsHelpTextsScouting[7]);
+				swprintf(atStr, gzIMPMinorTraitsHelpTextsScouting[9]);
 				wcscat(apStr, atStr);
 				break;
 			}

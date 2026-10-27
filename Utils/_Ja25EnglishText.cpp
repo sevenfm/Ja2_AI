@@ -381,6 +381,8 @@ STR16 gzIMPMinorTraitsHelpTextsScouting[]=
 	L"If in sector, adjacent sectors will show presence of enemies, if any\n",
 	L"Prevents enemy ambushes on your squad\n",
 	L"Prevents bloodcat ambushes on your squad\n",
+	L"+%d tiles to effective sight range in daylight\n",
+	L"Increases spotting radius\n",
 	L"Increases effectiveness of spotter\n",
 };
 STR16 gzIMPMinorTraitsHelpTextsSnitch[]=
