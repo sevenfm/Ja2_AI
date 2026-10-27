@@ -20972,6 +20972,7 @@ BOOLEAN SOLDIERTYPE::IsSpotting()
 // sevenfm: check if spotting at certain spot
 BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 {
+  UINT8 ubRadius = this->GetSpottingRadius();
 	UINT8 ubActive = (gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT) ? 1 : 2;
 
 	if (this->IsSpotting() && 
@@ -20979,10 +20980,22 @@ BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 		!TileIsOutOfBounds(sSpot) && 
 		!TileIsOutOfBounds(this->sFocusGridNo) && 
 		this->bFocusLevel == bLevel &&
-		PythSpacesAway(sSpot, this->sFocusGridNo) <= this->GetSpottingRadius())
+		PythSpacesAway(sSpot, this->sFocusGridNo) <= ubRadius)
 		return TRUE;
 
 	return FALSE;
+}
+
+UINT8 SOLDIERTYPE::GetSpottingRadius(void)
+{
+	FLOAT fRadius = gGameExternalOptions.ubBinocularBaseRadius + this->stats.bExpLevel * gGameExternalOptions.fBinocularLevelCoeff;
+
+	if (gGameOptions.fNewTraitSystem)
+	{
+		fRadius += NUM_SKILL_TRAITS(this, SCOUTING_NT) * gGameExternalOptions.fSCBinocularRadiusCoeff;
+	}
+
+	return (UINT8)min(255, (INT32)(fRadius));
 }
 
 void SOLDIERTYPE::StopSpotting(void)
