@@ -380,6 +380,8 @@ STR16 gzIMPMinorTraitsHelpTextsScouting[]=
 	L"Auf der Weltkarte wird in angrenzenden Sektoren die Präsenz von vorhandenem Feind enthüllt\n",
 	L"Verhindert, dass der Feind die Gruppe in den Hinterhalt lockt\n",
 	L"Verhindert, das Umzingeln der Gruppe durch Bloodcats\n",
+	L"+%d tiles to effective sight range in daylight\n",	//TODO.Translate
+	L"Increases spotting radius\n",
 	L"Increases effectiveness of spotter\n",	//TODO.Translate
 };
 

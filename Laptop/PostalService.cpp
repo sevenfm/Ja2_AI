@@ -491,7 +491,9 @@ BOOLEAN CPostalService::DeliverShipment(UINT16 usShipmentID)
 					// Pablo steals the item
 					if ( !fPablosStoleLastItem && uiChanceOfTheft > 0 && Random( 100 ) < (uiChanceOfTheft + cnt) )
 					{
-						pStolenObject[ uiStolenCount ] = gTempObject;
+						// sevenfm: should probably use tempObject instead of gTempObject
+						//pStolenObject[ uiStolenCount ] = gTempObject;
+						pStolenObject[uiStolenCount] = tempObject;
 						uiStolenCount++;
 						usTotalWeight -= Item[usItem].ubWeight;
 						fPablosStoleSomething = TRUE;

@@ -378,6 +378,8 @@ STR16 gzIMPMinorTraitsHelpTextsScouting[]=
 	L"Si vous êtes dans le secteur, vous saurez la présence au non d'ennemis dans les secteurs alentours\n",
 	L"Empêche l'ennemi de prendre en embuscade votre escouade\n",
 	L"Empêche les chats sauvages de prendre en embuscade votre escouade\n",
+	L"+%d tiles to effective sight range in daylight\n",	//TODO.Translate
+	L"Increases spotting radius\n",
 	L"Increases effectiveness of spotter\n",	//TODO.Translate
 };
 STR16 gzIMPMinorTraitsHelpTextsSnitch[]=

@@ -1947,6 +1947,7 @@ typedef struct
 	BOOLEAN fSCPreventsBloodcatsAmbushes;
 	BOOLEAN fSCThrowMessageIfAmbushPrevented;
 	UINT8 ubSCSightRangeBonusInDaylight;
+	BOOLEAN fSCSpottingRadiusIncreased;
 
 	// COVERT OPS
 	INT16	sCOMeleeCTHBonus;

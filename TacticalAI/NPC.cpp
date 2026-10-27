@@ -637,7 +637,7 @@ BOOLEAN RefreshNPCScriptRecord( UINT8 ubNPC, UINT8 ubRecord )
 		{
 			if ( gProfilesRPC[ubLoop].ProfilId == ubLoop )	
 			{
-				if ( gMercProfiles[ ubNPC ].ubMiscFlags & PROFILE_MISC_FLAG_RECRUITED && gpBackupNPCQuoteInfoArray[ ubNPC ] != NULL )
+				if (gMercProfiles[ubLoop].ubMiscFlags & PROFILE_MISC_FLAG_RECRUITED && gpBackupNPCQuoteInfoArray[ubLoop] != NULL)
 				{
 					RefreshNPCScriptRecord( ubLoop, ubRecord );
 				}
@@ -2813,7 +2813,7 @@ void NPCReachedDestination( SOLDIERTYPE * pNPC, BOOLEAN fAlreadyThere )
 		// the "under ai control" flag was set temporarily; better turn it off now
 		pNPC->flags.uiStatusFlags &= (~SOLDIER_PCUNDERAICONTROL);
 		// make damn sure the AI_HANDLE_EVERY_FRAME flag is turned off
-		pNPC->aiData.ubAIFlags &= (AI_HANDLE_EVERY_FRAME);
+		pNPC->aiData.ubAIFlags &= (~AI_HANDLE_EVERY_FRAME);
 	}
 
 	ubNPC = pNPC->ubProfile;
