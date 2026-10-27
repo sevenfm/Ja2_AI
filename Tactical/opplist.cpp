@@ -5247,6 +5247,9 @@ void MakeNoise(UINT8 ubNoiseMaker, INT32 sGridNo, INT8 bLevel, UINT8 ubTerrType,
 		// now call directly
 		OurNoise(SNoise.ubNoiseMaker, SNoise.sGridNo, SNoise.bLevel, SNoise.ubTerrType, SNoise.ubVolume, SNoise.ubNoiseType, SNoise.zNoiseMessage);
 	}
+
+	//ScreenMsg(FONT_ORANGE, MSG_INTERFACE, L"make noise, volume %d", ubVolume);
+	//BeginMultiPurposeLocator(sGridNo, bLevel, FALSE);
 }
 
 

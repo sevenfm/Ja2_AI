@@ -8,6 +8,7 @@ src/Services/*/*/obj
 bin
 obj
 build
+lib
 **/.DS_Store
 /tools/WindowsFormsApp1/.vs/WindowsFormsApp1/v16
 /tools/WindowsFormsApp1/packages

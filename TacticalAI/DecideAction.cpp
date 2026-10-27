@@ -5737,12 +5737,11 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 					sNextSpot != sNewSpot &&
 					!Water(sNewSpot, pSoldier->pathing.bLevel) &&
 					!Water(sNextSpot, pSoldier->pathing.bLevel) &&
-					IsCuttableWireFenceAtGridNo(sNewSpot) &&
-					!IsCutWireFenceAtGridNo(sNewSpot) &&
+					(IsCuttableWireFenceAtGridNo(sNewSpot) && !IsCutWireFenceAtGridNo(sNewSpot) || FindConcertina(sNewSpot)) &&
 					IsLocationSittable(sNextSpot, pSoldier->pathing.bLevel) &&
 					NewOKDestination(pSoldier, sNextSpot, TRUE, pSoldier->pathing.bLevel))
 				{
-					DebugAI(AI_MSG_INFO, pSoldier, String("found cuttable fence at %d", sNewSpot));
+					DebugAI(AI_MSG_INFO, pSoldier, String("found cuttable fence or concertina at %d", sNewSpot));
 
 					// check if cutting the fence improves situation
 					sPathCost = EstimatePlotPath(pSoldier, sClosestOpponent, FALSE, FALSE, FALSE, RUNNING, pSoldier->bStealthMode, FALSE, 0);
@@ -5753,7 +5752,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 
 					if (sNewPathCost > 0 && (sPathCost == 0 || sPathCost > sNewPathCost && sPathCost - sNewPathCost > APBPConstants[AP_MAXIMUM]))
 					{
-						DebugAI(AI_MSG_INFO, pSoldier, String("cutting fence improves path cost, use wire cutter"));
+						DebugAI(AI_MSG_INFO, pSoldier, String("cutting fence or concertina improves path cost, use wire cutter"));
 
 						if (pSoldier->ubDirection == ubCheckDir)
 						{
@@ -5763,7 +5762,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 						}
 						else if (pSoldier->InternalIsValidStance(ubCheckDir, gAnimControl[pSoldier->usAnimState].ubEndHeight))
 						{
-							DebugAI(AI_MSG_INFO, pSoldier, String("turn before cutting fence"));
+							DebugAI(AI_MSG_INFO, pSoldier, String("turn before cutting fence or concertina"));
 							RearrangePocket(pSoldier, HANDPOS, bWirecutterSlot, FOREVER);
 							pSoldier->aiData.usActionData = ubCheckDir;
 							pSoldier->aiData.bNextAction = AI_ACTION_HANDLE_ITEM;
@@ -9244,11 +9243,10 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 				sNextSpot != sNewSpot &&
 				!Water(sNewSpot, pSoldier->pathing.bLevel) &&
 				!Water(sNextSpot, pSoldier->pathing.bLevel) &&
-				IsCuttableWireFenceAtGridNo(sNewSpot) &&
-				!IsCutWireFenceAtGridNo(sNewSpot) &&
+				(IsCuttableWireFenceAtGridNo(sNewSpot) && !IsCutWireFenceAtGridNo(sNewSpot) || FindConcertina(sNewSpot)) &&
 				IsLocationSittable(sNextSpot, pSoldier->pathing.bLevel))
 			{
-				DebugAI(AI_MSG_INFO, pSoldier, String("found cuttable fence at %d", sNewSpot));
+				DebugAI(AI_MSG_INFO, pSoldier, String("found cuttable fence or concertina at %d", sNewSpot));
 
 				// check if cutting the fence improves situation
 				sPathCost = EstimatePlotPath(pSoldier, sClosestOpponent, FALSE, FALSE, FALSE, RUNNING, pSoldier->bStealthMode, FALSE, 0);
@@ -9259,7 +9257,7 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 
 				if (sNewPathCost > 0 && (sPathCost == 0 || sPathCost > sNewPathCost && sPathCost - sNewPathCost > APBPConstants[AP_MAXIMUM]))
 				{
-					DebugAI(AI_MSG_INFO, pSoldier, String("cutting fence improves path cost, use wire cutter"));
+					DebugAI(AI_MSG_INFO, pSoldier, String("cutting fence or concertina improves path cost, use wire cutter"));
 					if (pSoldier->ubDirection == ubCheckDir)
 					{
 						RearrangePocket(pSoldier, HANDPOS, bWirecutterSlot, FOREVER);
@@ -9268,7 +9266,7 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 					}
 					else if (pSoldier->InternalIsValidStance(ubCheckDir, gAnimControl[pSoldier->usAnimState].ubEndHeight))
 					{
-						DebugAI(AI_MSG_INFO, pSoldier, String("turn before cutting fence"));
+						DebugAI(AI_MSG_INFO, pSoldier, String("turn before cutting fence or concertina"));
 						RearrangePocket(pSoldier, HANDPOS, bWirecutterSlot, FOREVER);
 						pSoldier->aiData.usActionData = ubCheckDir;
 						pSoldier->aiData.bNextAction = AI_ACTION_HANDLE_ITEM;
