@@ -2133,7 +2133,7 @@ public:
 	BOOLEAN HasMortar(BOOLEAN fCheckAmmo = FALSE);
 	BOOLEAN GetSlotOfSignalShellIfMortar(UINT8* pbLoop); // if we have a mortar and a fitting signal shell, return the inventory slot it is in
 	BOOLEAN CanAnyArtilleryStrikeBeOrdered(UINT32* pSectorID);		// can any artillery strikes be ordered by this guy's team from the neighbouring sectors?
-	BOOLEAN OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridNo, UINT8 bTeam );
+	BOOLEAN OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridNo, UINT8 bTeam, INT8 bAmmoIndex = -1 );	// bAmmoIndex: militia shell type (see ARTILLERY_AMMO_*), -1 = random choice by progress
 	BOOLEAN IsJamming();							// are we currently jamming communication frequencies?
 	BOOLEAN JamCommunications();
 	BOOLEAN IsScanning();
@@ -2305,6 +2305,19 @@ BOOLEAN DecideAltAnimForBigMerc( SOLDIERTYPE * pSoldier );
 // added by Flugente
 BOOLEAN TwoStagedTrait( UINT8 uiSkillTraitNumber );						// determine if this (new) trait has two stages
 BOOLEAN GetRadioOperatorSignal(UINT8 usOwner, INT32* psTargetGridNo);	// retrieve the gridno of a radio operator who (or whose team) ordered an artillery strike
+enum
+{
+	ARTILLERY_AMMO_HE = 0,
+	ARTILLERY_AMMO_SMOKE,
+	ARTILLERY_AMMO_TEARGAS,
+	ARTILLERY_AMMO_MUSTARDGAS,
+	ARTILLERY_AMMO_NAPALM,
+	ARTILLERY_AMMO_MAX
+};
+
+UINT16 GetArtilleryAmmoExplosiveType( UINT8 ubAmmoIndex );		// explosive type (EXPLOSV_*) of militia artillery ammo
+UINT32 GetArtilleryAmmoCost( UINT8 ubAmmoIndex );
+BOOLEAN IsArtilleryAmmoAllowed( UINT8 ubAmmoIndex );			// enabled in config, progress high enough and a shell of this type exists
 BOOLEAN IsValidArtilleryOrderSector( INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ, UINT8 bTeam );		// can an artillery strike be ordered FROM this sector
 BOOLEAN SectorJammed();
 BOOLEAN TeamIsScanning(INT8 bTeam);

@@ -16,6 +16,7 @@
 #include "Interface.h"
 #include "Cheats.h"
 #include "HelpScreen.h"
+#include "LaptopSave.h"
 //#include "renderworld.h"
 
 // sevenfm: need this for correct calculation of traits menu position
@@ -99,6 +100,13 @@ void Wrapper_Function_ArtilleryTeam( UINT32 aVal)		{	gArtilleryTeam.Functions(aV
 void Wrapper_Setup_ArtilleryTeam( UINT32 aVal)			{	gArtilleryTeam.Setup(aVal);	}
 void Wrapper_Cancel_ArtilleryTeam( UINT32 aVal )		{	gArtilleryTeam.Cancel();	}
 /////////////////////////////// Artillery Team Selection ////////////////////////////////////////////
+
+/////////////////////////////// Artillery Ammo Selection ////////////////////////////////////////////
+ArtilleryAmmo	gArtilleryAmmo;
+
+void Wrapper_Function_ArtilleryAmmo( UINT32 aVal)		{	gArtilleryAmmo.Functions(aVal);	}
+void Wrapper_Cancel_ArtilleryAmmo( UINT32 aVal )		{	gArtilleryAmmo.Cancel();	}
+/////////////////////////////// Artillery Ammo Selection ////////////////////////////////////////////
 
 /////////////////////////////// Reinforcement Sector Selection ////////////////////////////////////////////
 ReinforcementSector	gReinforcementSector;
@@ -729,6 +737,13 @@ ArtilleryTeam::Setup( UINT32 aVal )
 void
 ArtilleryTeam::Functions( UINT32 aVal )
 {
+	// militia artillery: let the player choose the shell type first, keep this menu visible
+	if ( aVal == MILITIA_TEAM )
+	{
+		gArtilleryAmmo.Setup( usSector );
+		return;
+	}
+
 	Cancel();
 
 	SOLDIERTYPE * pSoldier = NULL;
@@ -746,6 +761,81 @@ ArtilleryTeam::Functions( UINT32 aVal )
 	gTraitSelection.Cancel();
 }
 /////////////////////////////// Artillery Team Selection ////////////////////////////////////////////
+
+/////////////////////////////// Artillery Ammo Selection ////////////////////////////////////////////
+void
+ArtilleryAmmo::Setup( UINT32 aVal )
+{
+	Destroy();
+
+	SOLDIERTYPE * pSoldier = NULL;
+
+	GetSoldier( &pSoldier, gusSelectedSoldier );
+
+	if ( pSoldier == NULL )
+		return;
+
+	if ( pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, TRUE) && pSoldier->bSectorZ == 0)
+	{
+		usSector = aVal;
+
+		SetupPopup("ArtilleryAmmo");
+
+		POPUP_OPTION *pOption;
+
+		CHAR16 pStr[300];
+
+		for ( UINT8 i = 0; i < ARTILLERY_AMMO_MAX; ++i )
+		{
+			UINT32 uiCost = GetArtilleryAmmoCost( i );
+
+			swprintf( pStr, pSkillMenuStrings[SKILLMENU_ARTILLERY_HE + i], uiCost );
+
+			pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void, UINT32>( &Wrapper_Function_ArtilleryAmmo, i ) );
+
+			// grey out if disabled, not unlocked by progress, no such shell, or we cannot afford it
+			if ( !IsArtilleryAmmoAllowed( i ) || LaptopSaveInfo.iCurrentBalance < (INT32)uiCost )
+			{
+				pOption->setAvail(new popupCallbackFunction<bool,void*>( &Popup_OptionOff, NULL ));
+			}
+			GetPopup()->addOption( *pOption );
+		}
+
+		// cancel option
+		swprintf( pStr, pSkillMenuStrings[SKILLMENU_CANCEL] );
+		pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void,UINT32>( &Wrapper_Cancel_ArtilleryAmmo, 0 ) );
+		GetPopup()->addOption( *pOption );
+
+		SetTraitToDisplay(RADIO_OPERATOR_NT);
+		SetGridNoForTraitDisplay(sTraitsMenuTargetGridNo);
+		ToggleTraitRangeView(FALSE);
+	}
+
+	// same y, different x
+	SetPos(gArtilleryTeam.GetMaxPosX(), usTraitMenuPosY);
+}
+
+void
+ArtilleryAmmo::Functions( UINT32 aVal )
+{
+	Cancel();
+
+	SOLDIERTYPE * pSoldier = NULL;
+
+	GetSoldier( &pSoldier, gusSelectedSoldier );
+
+	if ( pSoldier == NULL || !pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, TRUE) )
+		return;
+
+	pSoldier->OrderArtilleryStrike(usSector, sTraitsMenuTargetGridNo, MILITIA_TEAM, (INT8)aVal);
+
+	Cancel();
+	gArtilleryTeam.Cancel();
+	gArtillerySector.Cancel();
+	gSkillSelection.Cancel();
+	gTraitSelection.Cancel();
+}
+/////////////////////////////// Artillery Ammo Selection ////////////////////////////////////////////
 
 /////////////////////////////// Reinforcement Sector Selection ////////////////////////////////////////////
 extern UINT8 CountAllMilitiaInSector(INT16 sMapX, INT16 sMapY);

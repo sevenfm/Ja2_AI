@@ -121,6 +121,8 @@
 #include "Tactical Save.h"		// added by Flugente for AddItemsToUnLoadedSector()
 #include "LightEffects.h"		// added by Flugente for CreatePersonalLight()
 #include "physics.h"
+#include "finances.h"
+#include "LaptopSave.h"
 
 //forward declarations of common classes to eliminate includes
 class OBJECTTYPE;
@@ -20142,12 +20144,75 @@ BOOLEAN SOLDIERTYPE::CanAnyArtilleryStrikeBeOrdered(UINT32* pSectorID)		// can a
 	return FALSE;
 }
 
-BOOLEAN SOLDIERTYPE::OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridNo, UINT8 bTeam )
+UINT16 GetArtilleryAmmoExplosiveType( UINT8 ubAmmoIndex )
+{
+	switch ( ubAmmoIndex )
+	{
+	case ARTILLERY_AMMO_SMOKE:		return EXPLOSV_SMOKE;
+	case ARTILLERY_AMMO_TEARGAS:	return EXPLOSV_TEARGAS;
+	case ARTILLERY_AMMO_MUSTARDGAS:	return EXPLOSV_MUSTGAS;
+	case ARTILLERY_AMMO_NAPALM:		return EXPLOSV_BURNABLEGAS;
+	case ARTILLERY_AMMO_HE:
+	default:						return EXPLOSV_NORMAL;
+	}
+}
+
+UINT32 GetArtilleryAmmoCost( UINT8 ubAmmoIndex )
+{
+	if ( ubAmmoIndex >= ARTILLERY_AMMO_MAX )
+		return 0;
+
+	// base cost scaled linearly by player progress: at 100% progress it is changed by sVOArtilleryAmmoCostProgress percent
+	INT64 llPercent = 100 + (INT64)gSkillTraitValues.sVOArtilleryAmmoCostProgress[ubAmmoIndex] * HighestPlayerProgressPercentage() / 100;
+	if ( llPercent < 0 )
+		llPercent = 0;
+
+	return (UINT32)( (INT64)gSkillTraitValues.usVOArtilleryAmmoCost[ubAmmoIndex] * llPercent / 100 );
+}
+
+BOOLEAN IsArtilleryAmmoAllowed( UINT8 ubAmmoIndex )
+{
+	if ( ubAmmoIndex >= ARTILLERY_AMMO_MAX )
+		return FALSE;
+
+	if ( !gSkillTraitValues.fVOArtilleryAmmoAllowed[ubAmmoIndex] )
+		return FALSE;
+
+	if ( HighestPlayerProgressPercentage() < gSkillTraitValues.ubVOArtilleryAmmoMinProgress[ubAmmoIndex] )
+		return FALSE;
+
+	// a shell of this type must exist. HE falls back to the hardcoded mortar shell
+	UINT16 usItem = GetMortarShellOfType( GetArtilleryAmmoExplosiveType( ubAmmoIndex ) );
+	if ( usItem == 0 && ubAmmoIndex == ARTILLERY_AMMO_HE )
+		usItem = MORTAR_SHELL;
+
+	return usItem != 0 && ItemIsMortarShell( usItem );
+}
+
+BOOLEAN SOLDIERTYPE::OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridNo, UINT8 bTeam, INT8 bAmmoIndex )
 {
 	if ( !CanUseSkill(SKILLS_RADIO_ARTILLERY, TRUE) )
 	{
 		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_CANNOT_USE_SKILL ] );
 		return FALSE;
+	}
+
+	// militia strike with a chosen shell type: check config, progress and funds before anything is used up
+	UINT32 uiArtilleryCost = 0;
+	if ( bTeam == MILITIA_TEAM && bAmmoIndex >= 0 )
+	{
+		if ( bAmmoIndex >= ARTILLERY_AMMO_MAX || !IsArtilleryAmmoAllowed( (UINT8)bAmmoIndex ) )
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_ARTILLERY_AMMO_UNAVAILABLE ] );
+			return FALSE;
+		}
+
+		uiArtilleryCost = GetArtilleryAmmoCost( (UINT8)bAmmoIndex );
+		if ( uiArtilleryCost > 0 && LaptopSaveInfo.iCurrentBalance < (INT32)uiArtilleryCost )
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_ARTILLERY_NOT_ENOUGH_MONEY ] );
+			return FALSE;
+		}
 	}
 
 	// check whether radio frequencies are jammed. Not possible to do this in CanUseSkill(), as CanUseRadio() only checks if we theoretically
@@ -20270,28 +20335,42 @@ BOOLEAN SOLDIERTYPE::OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridN
 		UINT16 usMortarItem = 0;
 		UINT8 ubProgress = HighestPlayerProgressPercentage();
 
-		if (ubProgress < 25 && Chance(25))
-			usMortarItem = GetMortarShellOfType(EXPLOSV_SMOKE);
+		if (bTeam == MILITIA_TEAM && bAmmoIndex >= 0)
+		{
+			// shell type chosen by the player
+			usMortarItem = GetMortarShellOfType( GetArtilleryAmmoExplosiveType( (UINT8)bAmmoIndex ) );
+		}
+		else
+		{
+			if (ubProgress < 25 && Chance(25))
+				usMortarItem = GetMortarShellOfType(EXPLOSV_SMOKE);
 
-		if (usMortarItem == 0 && ubProgress < 50 && Chance(50))
-			usMortarItem = GetMortarShellOfType(EXPLOSV_TEARGAS);
+			if (usMortarItem == 0 && ubProgress < 50 && Chance(50))
+				usMortarItem = GetMortarShellOfType(EXPLOSV_TEARGAS);
 
-		if (usMortarItem == 0 && ubProgress > 50 && Chance(25))
-			usMortarItem = GetMortarShellOfType(EXPLOSV_MUSTGAS);
+			if (usMortarItem == 0 && ubProgress > 50 && Chance(25))
+				usMortarItem = GetMortarShellOfType(EXPLOSV_MUSTGAS);
 
-		if (usMortarItem == 0)
-			usMortarItem = GetMortarShellOfType(EXPLOSV_NORMAL);
-		
-		// if all fails, use default hardcoded item
-		if (usMortarItem == 0)
+			if (usMortarItem == 0)
+				usMortarItem = GetMortarShellOfType(EXPLOSV_NORMAL);
+		}
+
+		// if all fails, use default hardcoded item (only for HE or random choice)
+		if (usMortarItem == 0 && (bTeam != MILITIA_TEAM || bAmmoIndex < 0 || bAmmoIndex == ARTILLERY_AMMO_HE))
 			usMortarItem = MORTAR_SHELL;
 
-		if (!ItemIsMortarShell(usMortarItem))
+		if (usMortarItem == 0 || !ItemIsMortarShell(usMortarItem))
 		{
 			ScreenMsg(FONT_ORANGE, MSG_INTERFACE, New113Message[MSG113_NO_MORTAR_SHELL]);
 			return FALSE;
 		}
-		
+
+		// the militia strike costs money
+		if ( uiArtilleryCost > 0 )
+		{
+			AddTransactionToPlayersBook( FACILITY_OPERATIONS, 0, GetWorldTotalMin(), -(INT32)uiArtilleryCost );
+		}
+
 		CreateItem(usMortarItem, 100, &shellobj);	// 140 is mortar HE shell
 
 		shellobj.fFlags |= OBJECT_ARMED_BOMB;
