@@ -178,7 +178,7 @@ UINT8	GetProperItemCursor( UINT8 ubSoldierID, UINT16 ubItemIndex, INT32 usMapPos
 
 		case KNIFECURS:
 			//Madd: quick hack to make wirecutter cursor appear when using a knife that can cut through wire
-			if ( Item[ubItemIndex].wirecutters && IsCuttableWireFenceAtGridNo( sTargetGridNo ) && pSoldier->pathing.bLevel == 0 )
+			if (Item[ubItemIndex].wirecutters && (IsCuttableWireFenceAtGridNo(sTargetGridNo) || FindConcertina(sTargetGridNo)) && pSoldier->pathing.bLevel == 0)
 			{
 				ubCursorID = GOOD_WIRECUTTER_UICURSOR;
 			}
@@ -2142,7 +2142,7 @@ UINT8 HandleWirecutterCursor( SOLDIERTYPE *pSoldier, INT32 sGridNo, UINT32 uiCur
 	HandleUIMovementCursor( pSoldier, uiCursorFlags, sGridNo, MOVEUI_TARGET_WIREFENCE );
 
 	// Are we over a cuttable fence?
-	if ( IsCuttableWireFenceAtGridNo( sGridNo ) && pSoldier->pathing.bLevel == 0 && pSoldier->AnimEndHeight() != ANIM_PRONE)
+	if ((IsCuttableWireFenceAtGridNo(sGridNo) || FindConcertina(sGridNo)) && pSoldier->pathing.bLevel == 0 && pSoldier->AnimEndHeight() != ANIM_PRONE)
 	{
 		return( GOOD_WIRECUTTER_UICURSOR );
 	}

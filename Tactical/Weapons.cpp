@@ -4796,7 +4796,7 @@ BOOLEAN UseThrown( SOLDIERTYPE *pSoldier, INT32 sTargetGridNo )
 	pSoldier->usGrenadeItem2 = 0;
 
 	// play grenade pin sound
-	if (usItem && Item[usItem].usItemClass != IC_THROWING_KNIFE)
+	if (usItem && Item[usItem].usItemClass != IC_THROWING_KNIFE && !Item[usItem].rock)
 	{
 		// remember grenade item as object will be removed before animation starts
 		pSoldier->usGrenadeItem = usItem;

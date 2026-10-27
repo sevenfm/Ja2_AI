@@ -22233,7 +22233,7 @@ void SOLDIERTYPE::PickDropItemAnimation( void )
 void SOLDIERTYPE::EVENT_SoldierBeginCutFence( INT32 sGridNo, UINT8 ubDirection )
 {
 	// Make sure we have a structure here....
-	if ( IsCuttableWireFenceAtGridNo( sGridNo ) )
+	if (IsCuttableWireFenceAtGridNo(sGridNo) || FindConcertina(sGridNo))
 	{
 		// CHANGE DIRECTION AND GOTO ANIMATION NOW
 		if (this->ubDirection != ubDirection)
@@ -22253,6 +22253,9 @@ void SOLDIERTYPE::EVENT_SoldierBeginCutFence( INT32 sGridNo, UINT8 ubDirection )
 			this->EVENT_InitNewSoldierAnim( CUTTING_FENCE, 0 , FALSE );
 		else
 			this->ChangeSoldierState( CUTTING_FENCE, 0, 0 );
+
+		// sevenfm: make noise
+		MakeNoise(this->ubID, this->sGridNo, this->pathing.bLevel, this->bOverTerrainType, WEAPON_LNL_VOLUME, NOISE_BULLET_IMPACT);
 	}
 }
 
