@@ -4640,7 +4640,7 @@ BOOLEAN UIMouseOnValidAttackLocation( SOLDIERTYPE *pSoldier )
 
 	if ( ubItemCursor == WIRECUTCURS )
 	{
-		if ( IsCuttableWireFenceAtGridNo( usMapPos ) && pSoldier->pathing.bLevel == 0 && pSoldier->AnimEndHeight() != ANIM_PRONE)
+		if ((IsCuttableWireFenceAtGridNo(usMapPos) || FindConcertina(usMapPos)) && pSoldier->pathing.bLevel == 0 && pSoldier->AnimEndHeight() != ANIM_PRONE)
 		{
 			return( TRUE );
 		}

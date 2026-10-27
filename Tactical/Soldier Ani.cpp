@@ -1823,6 +1823,10 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 				{
 					CutWireFence(pSoldier->sTargetGridNo);
 				}
+				else if (FindConcertina(pSoldier->sTargetGridNo))
+				{
+					RemoveFortification(pSoldier->sTargetGridNo);
+				}
 				else if (IsCutWireFenceAtGridNo(pSoldier->sTargetGridNo))
 				{
 					if(RepairWireFence(pSoldier->sTargetGridNo))
@@ -3679,18 +3683,22 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 				break;
 
 			case 791:
-				// sevenfm: play fence open sound only when working with fence
-				if (IsCuttableWireFenceAtGridNo(NewGridNo(pSoldier->sGridNo, DirectionInc(pSoldier->ubDirection))) || IsCutWireFenceAtGridNo(NewGridNo(pSoldier->sGridNo, DirectionInc(pSoldier->ubDirection))))
 				{
-					if (PlayerCanHearNoise(pSoldier))
-						PlaySoldierJA2Sample(pSoldier->ubID, FENCE_OPEN, RATE_11025, SoundVolume(HIGHVOLUME, pSoldier->sGridNo), 1, SoundDir(pSoldier->sGridNo), TRUE);
+						INT32 sWorkGridno = NewGridNo(pSoldier->sGridNo, DirectionInc(pSoldier->ubDirection));
+						// sevenfm: play fence open sound only when working with fence
+						if (IsCuttableWireFenceAtGridNo(sWorkGridno) ||
+							IsCutWireFenceAtGridNo(sWorkGridno) ||
+							FindConcertina(sWorkGridno))
+						{
+							if (PlayerCanHearNoise(pSoldier))
+								PlaySoldierJA2Sample(pSoldier->ubID, FENCE_OPEN, RATE_11025, SoundVolume(HIGHVOLUME, pSoldier->sGridNo), 1, SoundDir(pSoldier->sGridNo), TRUE);
+						}
+						else
+						{
+							PlaySoldierJA2Sample(pSoldier->ubID, PICKING_SOMETHING_UP, RATE_11025, SoundVolume(HIGHVOLUME, pSoldier->sGridNo), 1, SoundDir(pSoldier->sGridNo), TRUE);
+						}
+						break;
 				}
-				else
-				{
-					PlaySoldierJA2Sample(pSoldier->ubID, PICKING_SOMETHING_UP, RATE_11025, SoundVolume(HIGHVOLUME, pSoldier->sGridNo), 1, SoundDir(pSoldier->sGridNo), TRUE);
-				}
-				break;
-
 			case 792:
 
 				

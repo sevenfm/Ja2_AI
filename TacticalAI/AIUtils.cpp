@@ -14982,7 +14982,7 @@ BOOLEAN FindFenceAroundSpot(INT32 sSpot)
 	{
 		sTempSpot = NewGridNo(sSpot, DirectionInc(ubDirection));
 
-		if (sTempSpot != sSpot && IsCuttableWireFenceAtGridNo(sTempSpot))
+		if (sTempSpot != sSpot && (IsCuttableWireFenceAtGridNo(sTempSpot) || FindConcertina(sTempSpot)))
 		{
 			return TRUE;
 		}
