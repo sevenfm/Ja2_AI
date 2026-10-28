@@ -921,9 +921,12 @@ INT32 HandleItem( SOLDIERTYPE *pSoldier, INT32 sGridNo, INT8 bLevel, UINT16 usHa
 			return ITEM_HANDLE_REFUSAL;
 		}
 
+		BOOLEAN fWireFence = IsCuttableWireFenceAtGridNo(sGridNo);
+		BOOLEAN fConcertina = FindConcertina(sGridNo);
+
 		// See if we can get there to stab
 		sActionGridNo =	FindAdjacentGridEx( pSoldier, sGridNo, &ubDirection, &sAdjustedGridNo, TRUE, FALSE );
-		if ( sActionGridNo != -1 && IsCuttableWireFenceAtGridNo( sGridNo ) )
+		if (sActionGridNo != -1 && (fWireFence || fConcertina))
 		{
 			// Calculate AP costs...
 			sAPCost = GetAPsToCutFence(pSoldier);
@@ -936,7 +939,7 @@ INT32 HandleItem( SOLDIERTYPE *pSoldier, INT32 sGridNo, INT8 bLevel, UINT16 usHa
 				return (ITEM_HANDLE_CANNOT_GETTO_LOCATION);
 			}
 
-			if ( EnoughPoints( pSoldier, sAPCost, 0, fFromUI ) )
+			if (EnoughPoints(pSoldier, sAPCost, 0, fFromUI))
 			{
 				// OK, set UI
 				// ATE: Set UI here, not below so that if UI is unset, we don't set again!
@@ -1830,10 +1833,8 @@ INT32 HandleItem( SOLDIERTYPE *pSoldier, INT32 sGridNo, INT8 bLevel, UINT16 usHa
 			}
 			else
 			{
-
 				SendBeginFireWeaponEvent( pSoldier, sTargetGridNo );
 				if(is_server || (is_client && pSoldier->ubID <20) ) send_fire( pSoldier, sTargetGridNo );
-
 			}
 
 			// OK, set UI
@@ -7393,7 +7394,7 @@ BOOLEAN FindConcertina(INT32 sSpot)
 				{
 					std::string tilesestr = GetNameToTileSet(uiTileType);
 
-					if (strcmp(tilesestr.c_str(), "spot_1.sti") == 0 && pStruct->pDBStructureRef->pDBStructure->usStructureNumber > 1)
+					if ((strcmpi(tilesestr.c_str(), "spot_1.sti") == 0 || strcmpi(tilesestr.c_str(), "spot_1a.sti") == 0) && pStruct->pDBStructureRef->pDBStructure->usStructureNumber > 1)
 					{
 						return TRUE;
 					}
@@ -7595,7 +7596,9 @@ BOOLEAN RemoveFortification(INT32 sGridNo)
 				const char* pTileName = gTilesets[giCurrentTilesetID].TileSurfaceFilenames[uiTileType];
 				if (!pTileName[0])
 					pTileName = gTilesets[0].TileSurfaceFilenames[uiTileType];
-				if (_strnicmp(pTileName, "sandbag.sti", 11) == 0)
+
+				// sevenfm: allow cutting concertina
+				if ((_strnicmp(pTileName, "sandbag.sti", 11) == 0 || _strnicmp(pTileName, "spot_1.sti", 11) == 0 || _strnicmp(pTileName, "spot_1a.sti", 11) == 0) && pStruct->pDBStructureRef->pDBStructure->usStructureNumber > 1)
 				//if ( _strnicmp( gTilesets[ giCurrentTilesetID ].TileSurfaceFilenames[ uiTileType ], "sandbag.sti", 11) == 0 )
 				{
 					// Remove old graphic
