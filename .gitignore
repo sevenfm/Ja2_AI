@@ -9,6 +9,7 @@ bin
 obj
 build
 lib
+/lib
 **/.DS_Store
 /tools/WindowsFormsApp1/.vs/WindowsFormsApp1/v16
 /tools/WindowsFormsApp1/packages
@@ -28,11 +29,6 @@ lib
 # Логи игры (создаются при запуске JA2)
 # ==========================================
 *.log
-game_log.log
-sound.log
-stack_trace.log
-vfs.log
-
 # ==========================================
 # Результаты сборки и временные папки
 # ==========================================
