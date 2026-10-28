@@ -4698,6 +4698,7 @@ BOOLEAN UseThrown( SOLDIERTYPE *pSoldier, INT32 sTargetGridNo )
 	UINT8			ubTargetID;
 	SOLDIERTYPE		*pTargetSoldier = NULL;
 	SOLDIERTYPE		*pCheckSoldier;
+	BOOLEAN			fThrownItem = FALSE;
 	//INT16			sAPCost = 0;//dnl ch72 180913
 
 	iHitChance = CalcThrownChanceToHit( pSoldier, sTargetGridNo, pSoldier->aiData.bAimTime, AIM_SHOT_TORSO );
@@ -4728,6 +4729,11 @@ BOOLEAN UseThrown( SOLDIERTYPE *pSoldier, INT32 sTargetGridNo )
 	if (pSoldier->IsCovert() && (!pTargetSoldier || pTargetSoldier->bSide != pSoldier->bSide || pTargetSoldier->aiData.bNeutral))
 	{
 		pSoldier->usSoldierFlagMask2 |= SOLDIER_COVERT_ACTION;
+	}
+
+	if (Item[pSoldier->inv[HANDPOS].usItem].usItemClass == IC_GRENADE || Item[pSoldier->inv[HANDPOS].usItem].usItemClass == IC_BOMB || Item[pSoldier->inv[HANDPOS].usItem].usItemClass == IC_THROWN)
+	{
+		fThrownItem = TRUE;
 	}
 
 	if ( pSoldier->bTeam == gbPlayerNum && gTacticalStatus.uiFlags & INCOMBAT )
@@ -4772,14 +4778,16 @@ BOOLEAN UseThrown( SOLDIERTYPE *pSoldier, INT32 sTargetGridNo )
 			if ( fGonnaHit ) usExpGain *= 2;   // For actually hitting the target :)
 			usExpGain += (UINT16) (100 - iHitChance) / 10; // Extra exp for a difficult target
 			StatChange( pSoldier, DEXTAMT, usExpGain / 2, ( fGonnaHit ? FALSE : FROM_FAILURE ) );
-			StatChange( pSoldier, MARKAMT, usExpGain / 2, ( fGonnaHit ? FALSE : FROM_FAILURE ) );
+			// sevenfm: only grant marksmanship experience when using grenade launcher
+			if (!fThrownItem)
+				StatChange( pSoldier, MARKAMT, usExpGain / 2, ( fGonnaHit ? FALSE : FROM_FAILURE ) );
 		}
 	}
 
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// SANDRO - new mercs' records
-	if ( Item[ pSoldier->inv[HANDPOS].usItem ].usItemClass == IC_GRENADE || Item[ pSoldier->inv[HANDPOS].usItem ].usItemClass == IC_BOMB || Item[ pSoldier->inv[HANDPOS].usItem ].usItemClass == IC_THROWN)
+	if (fThrownItem)
 	{
 		gMercProfiles[ pSoldier->ubProfile ].records.usGrenadesThrown++;			
 	}
