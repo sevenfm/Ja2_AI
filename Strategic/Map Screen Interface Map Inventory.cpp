@@ -293,6 +293,11 @@ void SaveSeenAndUnseenItems( void );
 void DrawTextOnMapInventoryBackground( void );
 void DrawTextOnSectorInventory( void );
 INT32 GetTotalNumberOfItemsInSectorStash( void );
+
+// Flugente: gear templates
+void MapInventoryWriteEquipmentTemplate(GUI_BUTTON* btn, INT32 reason);
+void MapInventoryReadEquipmentTemplate(GUI_BUTTON* btn, INT32 reason);
+
 void HandleMapSectorInventory( void );
 void ResetMapSectorInventoryPoolHighLights( void );
 void ReBuildWorldItemStashForLoadedSector( INT32 iNumberSeenItems, INT32 iNumberUnSeenItems, std::vector<WORLDITEM>& pSeenItemsList, std::vector<WORLDITEM>& pUnSeenItemsList );//dnl ch75 271013
@@ -1684,186 +1689,186 @@ void MapInvenPoolSlots(MOUSE_REGION * pRegion, INT32 iReason )
 	}
 }
 
-void CreateMapInventoryButtons( void )
+void CreateMapInventoryButtons(void)
 {
-	guiMapInvenArrowButtonImage[ 0 ]=  LoadButtonImage( "INTERFACE\\map_screen_bottom_arrows.sti" , 10, 1, -1, 3, -1 );
-	guiMapInvenArrowButton[ 0 ] = QuickCreateButton( guiMapInvenArrowButtonImage[ 0 ], (MAP_INV_X_OFFSET + 559), (SCREEN_HEIGHT - 144 - yResOffset),
-									BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-									(GUI_CALLBACK)BtnGenericMouseMoveButtonCallback, (GUI_CALLBACK)MapInventoryPoolNextBtn );
+	guiMapInvenArrowButtonImage[0] = LoadButtonImage("INTERFACE\\map_screen_bottom_arrows.sti", 10, 1, -1, 3, -1);
+	guiMapInvenArrowButton[0] = QuickCreateButton(guiMapInvenArrowButtonImage[0], (MAP_INV_X_OFFSET + 559), (SCREEN_HEIGHT - 144 - yResOffset),
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		(GUI_CALLBACK)BtnGenericMouseMoveButtonCallback, (GUI_CALLBACK)MapInventoryPoolNextBtn);
 
 
-	guiMapInvenArrowButtonImage[ 1 ]=  LoadButtonImage( "INTERFACE\\map_screen_bottom_arrows.sti" ,9, 0, -1, 2, -1 );
-	guiMapInvenArrowButton[ 1 ] = QuickCreateButton( guiMapInvenArrowButtonImage[ 1 ], (MAP_INV_X_OFFSET + 487), (SCREEN_HEIGHT - 144 - yResOffset),
-									BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-									(GUI_CALLBACK)BtnGenericMouseMoveButtonCallback, (GUI_CALLBACK)MapInventoryPoolPrevBtn );
+	guiMapInvenArrowButtonImage[1] = LoadButtonImage("INTERFACE\\map_screen_bottom_arrows.sti", 9, 0, -1, 2, -1);
+	guiMapInvenArrowButton[1] = QuickCreateButton(guiMapInvenArrowButtonImage[1], (MAP_INV_X_OFFSET + 487), (SCREEN_HEIGHT - 144 - yResOffset),
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		(GUI_CALLBACK)BtnGenericMouseMoveButtonCallback, (GUI_CALLBACK)MapInventoryPoolPrevBtn);
 
 	// set up fast help text
-	SetButtonFastHelpText( guiMapInvenArrowButton[ 0 ], pMapScreenInvenButtonHelpText[ 0 ] );
-	SetButtonFastHelpText( guiMapInvenArrowButton[ 1 ], pMapScreenInvenButtonHelpText[ 1 ] );
+	SetButtonFastHelpText(guiMapInvenArrowButton[0], pMapScreenInvenButtonHelpText[0]);
+	SetButtonFastHelpText(guiMapInvenArrowButton[1], pMapScreenInvenButtonHelpText[1]);
 
 	// HEADROCK HAM 5: Zoom Button
 	// Currently available only at 800x600 resolution or higher. There is simply not enough space for more than 6
 	// bigitem slots on 640x480.
-	if (iResolution >= _800x600 )
+	if (iResolution >= _800x600)
 	{
-		guiMapInvenZoomButtonImage =  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 0, 0, -1, 1, -1 );
-		guiMapInvenZoomButton = QuickCreateButton( guiMapInvenZoomButtonImage, INVEN_POOL_X+10 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-											BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-											NULL, (GUI_CALLBACK)MapInventoryPoolZoomBtn );
+		guiMapInvenZoomButtonImage = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 0, 0, -1, 1, -1);
+		guiMapInvenZoomButton = QuickCreateButton(guiMapInvenZoomButtonImage, INVEN_POOL_X + 10 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+			BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+			NULL, (GUI_CALLBACK)MapInventoryPoolZoomBtn);
 
-		SetButtonFastHelpText( guiMapInvenZoomButton, pMapScreenInvenButtonHelpText[ 3 ] );
+		SetButtonFastHelpText(guiMapInvenZoomButton, pMapScreenInvenButtonHelpText[3]);
 		// Set to current selected state.
 		if (fMapInventoryZoom)
 		{
-			ButtonList[ guiMapInvenZoomButton ]->uiFlags |= (BUTTON_CLICKED_ON);
+			ButtonList[guiMapInvenZoomButton]->uiFlags |= (BUTTON_CLICKED_ON);
 		}
 	}
 
 	// HEADROCK HAM 5: Stack and Merge button
-	guiMapInvenSortButtonImage[ 0 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 16, 14, -1, 15, -1 );
-	guiMapInvenSortButton[ 0 ] = QuickCreateButton( guiMapInvenSortButtonImage[ 0 ], INVEN_POOL_X+50 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolStackAndMergeBtn );
+	guiMapInvenSortButtonImage[0] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 16, 14, -1, 15, -1);
+	guiMapInvenSortButton[0] = QuickCreateButton(guiMapInvenSortButtonImage[0], INVEN_POOL_X + 50 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolStackAndMergeBtn);
 
-	SetButtonFastHelpText( guiMapInvenSortButton[ 0 ], pMapScreenInvenButtonHelpText[ 4 ] );
+	SetButtonFastHelpText(guiMapInvenSortButton[0], pMapScreenInvenButtonHelpText[4]);
 
 	// HEADROCK HAM 5: Sort Ammo Button
-	guiMapInvenSortButtonImage[ 1 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 4, 2, -1, 3, -1 );
-	guiMapInvenSortButton[ 1 ] = QuickCreateButton( guiMapInvenSortButtonImage[ 1 ], INVEN_POOL_X+80 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolSortAmmoBtn );
+	guiMapInvenSortButtonImage[1] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 4, 2, -1, 3, -1);
+	guiMapInvenSortButton[1] = QuickCreateButton(guiMapInvenSortButtonImage[1], INVEN_POOL_X + 80 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolSortAmmoBtn);
 
-	SetButtonFastHelpText( guiMapInvenSortButton[ 1 ], pMapScreenInvenButtonHelpText[ 5 ] );
-
-	// HEADROCK HAM 5: Sort Attachments Button
-	guiMapInvenSortButtonImage[ 2 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 10, 8, -1, 9, -1 );
-	guiMapInvenSortButton[ 2 ] = QuickCreateButton( guiMapInvenSortButtonImage[ 2 ], INVEN_POOL_X+110 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolSortAttachmentsBtn );
-
-	SetButtonFastHelpText( guiMapInvenSortButton[ 2 ], pMapScreenInvenButtonHelpText[ 6 ] );
+	SetButtonFastHelpText(guiMapInvenSortButton[1], pMapScreenInvenButtonHelpText[5]);
 
 	// HEADROCK HAM 5: Sort Attachments Button
-	guiMapInvenSortButtonImage[ 3 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 13, 11, -1, 12, -1 );
-	guiMapInvenSortButton[ 3 ] = QuickCreateButton( guiMapInvenSortButtonImage[ 3 ], INVEN_POOL_X+140 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolEjectAmmoBtn );
+	guiMapInvenSortButtonImage[2] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 10, 8, -1, 9, -1);
+	guiMapInvenSortButton[2] = QuickCreateButton(guiMapInvenSortButtonImage[2], INVEN_POOL_X + 110 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolSortAttachmentsBtn);
 
-	SetButtonFastHelpText( guiMapInvenSortButton[ 3 ], pMapScreenInvenButtonHelpText[ 7 ] );
+	SetButtonFastHelpText(guiMapInvenSortButton[2], pMapScreenInvenButtonHelpText[6]);
+
+	// HEADROCK HAM 5: Sort Attachments Button
+	guiMapInvenSortButtonImage[3] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 13, 11, -1, 12, -1);
+	guiMapInvenSortButton[3] = QuickCreateButton(guiMapInvenSortButtonImage[3], INVEN_POOL_X + 140 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolEjectAmmoBtn);
+
+	SetButtonFastHelpText(guiMapInvenSortButton[3], pMapScreenInvenButtonHelpText[7]);
 
 	// HEADROCK HAM 5: Filter Toggle Button
-	guiMapInvenFilterButtonImage[ 0 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 7, 5, -1, 6, -1 );
-	guiMapInvenFilterButton[ 0 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 0 ], INVEN_POOL_X+185 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[0] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 7, 5, -1, 6, -1);
+	guiMapInvenFilterButton[0] = QuickCreateButton(guiMapInvenFilterButtonImage[0], INVEN_POOL_X + 185 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 0 ], pMapScreenInvenButtonHelpText[ 8 ] );
-	ButtonList[ guiMapInvenFilterButton[ 0 ] ]->UserData[0] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 0 ] ]->UserData[1] = IC_MAPFILTER_ALL;
-	ButtonList[ guiMapInvenFilterButton[ 0 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 0 ] ]->UserData[3] = 0;
+	SetButtonFastHelpText(guiMapInvenFilterButton[0], pMapScreenInvenButtonHelpText[8]);
+	ButtonList[guiMapInvenFilterButton[0]]->UserData[0] = 0;
+	ButtonList[guiMapInvenFilterButton[0]]->UserData[1] = IC_MAPFILTER_ALL;
+	ButtonList[guiMapInvenFilterButton[0]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[0]]->UserData[3] = 0;
 
-	guiMapInvenFilterButtonImage[ 1 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 20, 20, -1, 21, -1 );
-	guiMapInvenFilterButton[ 1 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 1 ], INVEN_POOL_X+214 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[1] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 20, 20, -1, 21, -1);
+	guiMapInvenFilterButton[1] = QuickCreateButton(guiMapInvenFilterButtonImage[1], INVEN_POOL_X + 214 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 1 ], pMapScreenInvenButtonHelpText[ 9 ] );
-	ButtonList[ guiMapInvenFilterButton[ 1 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 1 ] ]->UserData[1] = IC_MAPFILTER_GUN;
-	ButtonList[ guiMapInvenFilterButton[ 1 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 1 ] ]->UserData[3] = IC_MAPFILTER_GUN;
+	SetButtonFastHelpText(guiMapInvenFilterButton[1], pMapScreenInvenButtonHelpText[9]);
+	ButtonList[guiMapInvenFilterButton[1]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[1]]->UserData[1] = IC_MAPFILTER_GUN;
+	ButtonList[guiMapInvenFilterButton[1]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[1]]->UserData[3] = IC_MAPFILTER_GUN;
 
-	guiMapInvenFilterButtonImage[ 2 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 22, 22, -1, 23, -1 );
-	guiMapInvenFilterButton[ 2 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 2 ], INVEN_POOL_X+214 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[2] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 22, 22, -1, 23, -1);
+	guiMapInvenFilterButton[2] = QuickCreateButton(guiMapInvenFilterButtonImage[2], INVEN_POOL_X + 214 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 2 ], pMapScreenInvenButtonHelpText[ 10 ] );
-	ButtonList[ guiMapInvenFilterButton[ 2 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 2 ] ]->UserData[1] = IC_MAPFILTER_AMMO;
-	ButtonList[ guiMapInvenFilterButton[ 2 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 2 ] ]->UserData[3] = IC_MAPFILTER_AMMO;
+	SetButtonFastHelpText(guiMapInvenFilterButton[2], pMapScreenInvenButtonHelpText[10]);
+	ButtonList[guiMapInvenFilterButton[2]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[2]]->UserData[1] = IC_MAPFILTER_AMMO;
+	ButtonList[guiMapInvenFilterButton[2]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[2]]->UserData[3] = IC_MAPFILTER_AMMO;
 
-	guiMapInvenFilterButtonImage[ 3 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 24, 24, -1, 25, -1 );
-	guiMapInvenFilterButton[ 3 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 3 ], INVEN_POOL_X+243 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[3] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 24, 24, -1, 25, -1);
+	guiMapInvenFilterButton[3] = QuickCreateButton(guiMapInvenFilterButtonImage[3], INVEN_POOL_X + 243 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 3 ], pMapScreenInvenButtonHelpText[ 11 ] );
-	ButtonList[ guiMapInvenFilterButton[ 3 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 3 ] ]->UserData[1] = IC_MAPFILTER_EXPLOSV;
-	ButtonList[ guiMapInvenFilterButton[ 3 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 3 ] ]->UserData[3] = IC_MAPFILTER_EXPLOSV;
+	SetButtonFastHelpText(guiMapInvenFilterButton[3], pMapScreenInvenButtonHelpText[11]);
+	ButtonList[guiMapInvenFilterButton[3]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[3]]->UserData[1] = IC_MAPFILTER_EXPLOSV;
+	ButtonList[guiMapInvenFilterButton[3]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[3]]->UserData[3] = IC_MAPFILTER_EXPLOSV;
 
-	guiMapInvenFilterButtonImage[ 4 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 26, 26, -1, 27, -1 );
-	guiMapInvenFilterButton[ 4 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 4 ], INVEN_POOL_X+243 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[4] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 26, 26, -1, 27, -1);
+	guiMapInvenFilterButton[4] = QuickCreateButton(guiMapInvenFilterButtonImage[4], INVEN_POOL_X + 243 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 4 ], pMapScreenInvenButtonHelpText[ 12 ] );
-	ButtonList[ guiMapInvenFilterButton[ 4 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 4 ] ]->UserData[1] = IC_MAPFILTER_MELEE;
-	ButtonList[ guiMapInvenFilterButton[ 4 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 4 ] ]->UserData[3] = IC_MAPFILTER_MELEE;
+	SetButtonFastHelpText(guiMapInvenFilterButton[4], pMapScreenInvenButtonHelpText[12]);
+	ButtonList[guiMapInvenFilterButton[4]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[4]]->UserData[1] = IC_MAPFILTER_MELEE;
+	ButtonList[guiMapInvenFilterButton[4]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[4]]->UserData[3] = IC_MAPFILTER_MELEE;
 
-	guiMapInvenFilterButtonImage[ 5 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 28, 28, -1, 29, -1 );
-	guiMapInvenFilterButton[ 5 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 5 ], INVEN_POOL_X+272 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[5] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 28, 28, -1, 29, -1);
+	guiMapInvenFilterButton[5] = QuickCreateButton(guiMapInvenFilterButtonImage[5], INVEN_POOL_X + 272 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 5 ], pMapScreenInvenButtonHelpText[ 13 ] );
-	ButtonList[ guiMapInvenFilterButton[ 5 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 5 ] ]->UserData[1] = IC_MAPFILTER_ARMOR;
-	ButtonList[ guiMapInvenFilterButton[ 5 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 5 ] ]->UserData[3] = IC_MAPFILTER_ARMOR;
+	SetButtonFastHelpText(guiMapInvenFilterButton[5], pMapScreenInvenButtonHelpText[13]);
+	ButtonList[guiMapInvenFilterButton[5]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[5]]->UserData[1] = IC_MAPFILTER_ARMOR;
+	ButtonList[guiMapInvenFilterButton[5]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[5]]->UserData[3] = IC_MAPFILTER_ARMOR;
 
-	guiMapInvenFilterButtonImage[ 6 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 30, 30, -1, 31, -1 );
-	guiMapInvenFilterButton[ 6 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 6 ], INVEN_POOL_X+272 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[6] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 30, 30, -1, 31, -1);
+	guiMapInvenFilterButton[6] = QuickCreateButton(guiMapInvenFilterButtonImage[6], INVEN_POOL_X + 272 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 6 ], pMapScreenInvenButtonHelpText[ 14 ] );
-	ButtonList[ guiMapInvenFilterButton[ 6 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 6 ] ]->UserData[1] = IC_MAPFILTER_LBE;
-	ButtonList[ guiMapInvenFilterButton[ 6 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 6 ] ]->UserData[3] = IC_MAPFILTER_LBE;
+	SetButtonFastHelpText(guiMapInvenFilterButton[6], pMapScreenInvenButtonHelpText[14]);
+	ButtonList[guiMapInvenFilterButton[6]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[6]]->UserData[1] = IC_MAPFILTER_LBE;
+	ButtonList[guiMapInvenFilterButton[6]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[6]]->UserData[3] = IC_MAPFILTER_LBE;
 
-	guiMapInvenFilterButtonImage[ 7 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 32, 32, -1, 33, -1 );
-	guiMapInvenFilterButton[ 7 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 7 ], INVEN_POOL_X+301 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[7] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 32, 32, -1, 33, -1);
+	guiMapInvenFilterButton[7] = QuickCreateButton(guiMapInvenFilterButtonImage[7], INVEN_POOL_X + 301 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 7 ], pMapScreenInvenButtonHelpText[ 15 ] );
-	ButtonList[ guiMapInvenFilterButton[ 7 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 7 ] ]->UserData[1] = IC_MAPFILTER_KIT;
-	ButtonList[ guiMapInvenFilterButton[ 7 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 7 ] ]->UserData[3] = IC_MAPFILTER_KIT;
+	SetButtonFastHelpText(guiMapInvenFilterButton[7], pMapScreenInvenButtonHelpText[15]);
+	ButtonList[guiMapInvenFilterButton[7]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[7]]->UserData[1] = IC_MAPFILTER_KIT;
+	ButtonList[guiMapInvenFilterButton[7]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[7]]->UserData[3] = IC_MAPFILTER_KIT;
 
-	guiMapInvenFilterButtonImage[ 8 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 34, 34, -1, 35, -1 );
-	guiMapInvenFilterButton[ 8 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 8 ], INVEN_POOL_X+301 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn );
+	guiMapInvenFilterButtonImage[8] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 34, 34, -1, 35, -1);
+	guiMapInvenFilterButton[8] = QuickCreateButton(guiMapInvenFilterButtonImage[8], INVEN_POOL_X + 301 + xResOffset, INVEN_POOL_Y + 24 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtn);
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 8 ], pMapScreenInvenButtonHelpText[ 16 ] );
-	ButtonList[ guiMapInvenFilterButton[ 8 ] ]->UserData[0] = 1;
-	ButtonList[ guiMapInvenFilterButton[ 8 ] ]->UserData[1] = IC_MAPFILTER_MISC;
-	ButtonList[ guiMapInvenFilterButton[ 8 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 8 ] ]->UserData[3] = IC_MAPFILTER_MISC;
+	SetButtonFastHelpText(guiMapInvenFilterButton[8], pMapScreenInvenButtonHelpText[16]);
+	ButtonList[guiMapInvenFilterButton[8]]->UserData[0] = 1;
+	ButtonList[guiMapInvenFilterButton[8]]->UserData[1] = IC_MAPFILTER_MISC;
+	ButtonList[guiMapInvenFilterButton[8]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[8]]->UserData[3] = IC_MAPFILTER_MISC;
 
 	// Flugente: toggle button for move item display
-	guiMapInvenFilterButtonImage[ 9 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 36, 36, -1, 37, -1 );
-	guiMapInvenFilterButton[ 9 ] = QuickCreateButton( guiMapInvenFilterButtonImage[ 9 ], INVEN_POOL_X+336 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
-										BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
-										NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtnMoveItemDisplay );
+	guiMapInvenFilterButtonImage[9] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 36, 36, -1, 37, -1);
+	guiMapInvenFilterButton[9] = QuickCreateButton(guiMapInvenFilterButtonImage[9], INVEN_POOL_X + 336 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryPoolFilterBtnMoveItemDisplay);
 
 	// INVEN_POOL_X+336 is last button that can be accomodated in 640x480 resolution
 
-	SetButtonFastHelpText( guiMapInvenFilterButton[ 9 ], pMapScreenInvenButtonHelpText[ 17 ] );
-	ButtonList[ guiMapInvenFilterButton[ 9 ] ]->UserData[0] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 9 ] ]->UserData[1] = IC_MAPFILTER_MISC;
-	ButtonList[ guiMapInvenFilterButton[ 9 ] ]->UserData[2] = 0;
-	ButtonList[ guiMapInvenFilterButton[ 9 ] ]->UserData[3] = IC_MAPFILTER_MISC;
+	SetButtonFastHelpText(guiMapInvenFilterButton[9], pMapScreenInvenButtonHelpText[17]);
+	ButtonList[guiMapInvenFilterButton[9]]->UserData[0] = 0;
+	ButtonList[guiMapInvenFilterButton[9]]->UserData[1] = IC_MAPFILTER_MISC;
+	ButtonList[guiMapInvenFilterButton[9]]->UserData[2] = 0;
+	ButtonList[guiMapInvenFilterButton[9]]->UserData[3] = IC_MAPFILTER_MISC;
 
 	/*
 	guiMapInvenFilterButtonImage[ 9 ]=  LoadButtonImage( "INTERFACE\\sector_inventory_buttons.sti" , 19, 17, -1, 18, -1 );
@@ -1881,9 +1886,22 @@ void CreateMapInventoryButtons( void )
 
 	HandleSetFilterButtons();
 
+	// Gear Template: Save template button
+	guiMapInvenFilterButtonImage[10] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 40, 40, -1, 41, -1);
+	guiMapInvenFilterButton[10] = QuickCreateButton(guiMapInvenFilterButtonImage[10], INVEN_POOL_X + 371 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryWriteEquipmentTemplate);
+	// Gear Template: Read template button
+	guiMapInvenFilterButtonImage[11] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 42, 42, -1, 43, -1);
+	guiMapInvenFilterButton[11] = QuickCreateButton(guiMapInvenFilterButtonImage[11], INVEN_POOL_X + 406 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryReadEquipmentTemplate);
 	return;
 }
 
+
+// Flugente: 
+extern void EquipmentListMenuCancel();
 
 void DestroyMapInventoryButtons( void )
 {
@@ -6325,5 +6343,173 @@ void HandleSectorCooldownFunctions( INT16 sMapX, INT16 sMapY, INT8 sMapZ, std::v
 			}
 		}
 */
+	}
+}
+
+// Flugente: on a key press, we loop over each team members' inventory and exchange it with world items that have a higher status
+// however, we ignore items that have inseparable attachments
+// the goal is to simulate the player manually changing items, as that is rather tedious
+BOOL GetBetterObject_InventoryPool(UINT16 usItem, INT16 status, UINT32& arLoop, UINT8& arIndex)
+{
+	OBJECTTYPE* pBestObj = NULL;
+
+	INT16	beststatus = status;
+	BOOLEAN	found = FALSE;
+
+	for (UINT32 uiLoop = 0; uiLoop < pInventoryPoolList.size(); ++uiLoop)				// ... for all items in the world ...
+	{
+		if (pInventoryPoolList[uiLoop].object.exists() &&
+			pInventoryPoolList[uiLoop].usFlags & WORLD_ITEM_REACHABLE &&
+			!(pInventoryPoolList[uiLoop].usFlags & WORLD_ITEM_ARMED_BOMB) &&
+			pInventoryPoolList[uiLoop].bVisible == VISIBLE &&
+			pInventoryPoolList[uiLoop].object.usItem == usItem)
+		{
+			OBJECTTYPE* pObj = &(pInventoryPoolList[uiLoop].object);
+
+			if (pObj != NULL)
+			{
+				for (UINT8 i = 0; i < pObj->ubNumberOfObjects; ++i)
+				{
+					if ((*pObj)[i]->data.objectStatus > beststatus)
+					{
+						// ignore if there are inseparable attachments - we wouldn't be able to change those by hand
+						attachmentList::iterator iterend = (*pObj)[i]->attachments.end();
+						for (attachmentList::iterator iter = (*pObj)[i]->attachments.begin(); iter != iterend; ++iter)
+						{
+							if (iter->exists() && Item[iter->usItem].inseparable)
+							{
+								continue;
+							}
+						}
+
+						beststatus = (*pObj)[i]->data.objectStatus;
+						arLoop = uiLoop;
+						arIndex = i;
+						found = TRUE;
+					}
+				}
+			}
+		}
+	}
+
+	return found;
+}
+
+// Flugente: tell us the position of the first inventory item with a fitting calibre and ammotype
+BOOL GetFittingAmmo_InventoryPool(UINT8 usCalibre, UINT8 usAmmoType, UINT32& arLoop)
+{
+	for (UINT32 uiLoop = 0; uiLoop < pInventoryPoolList.size(); ++uiLoop)
+	{
+		if (pInventoryPoolList[uiLoop].object.exists() &&
+			pInventoryPoolList[uiLoop].usFlags & WORLD_ITEM_REACHABLE &&
+			!(pInventoryPoolList[uiLoop].usFlags & WORLD_ITEM_ARMED_BOMB) &&
+			pInventoryPoolList[uiLoop].bVisible == VISIBLE &&
+			(Item[pInventoryPoolList[uiLoop].object.usItem].usItemClass & IC_AMMO))
+		{
+			UINT16 usMagIndex = Item[pInventoryPoolList[uiLoop].object.usItem].ubClassIndex;
+
+			if (usCalibre == Magazine[usMagIndex].ubCalibre)
+			{
+				if (usAmmoType == Magazine[usMagIndex].ubAmmoType)
+				{
+					arLoop = uiLoop;
+
+					return TRUE;
+				}
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+// Flugente: gear templates
+extern void WriteEquipmentTemplate(SOLDIERTYPE* pSoldier, STR16 name);
+extern void EquipmentListMenu();
+
+void TemplateNameInputCallBack(UINT8 ubResult)
+{
+	if (ubResult == MSG_BOX_RETURN_OK && wcscmp(gszMsgBoxInputString, L"") > 0)
+	{
+		//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
+		SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
+		if (pSoldier)
+		{
+			WriteEquipmentTemplate(pSoldier, gszMsgBoxInputString);
+
+			// The refresh function moves the necessary items from the Seen to the Unseen inventories, and vice versa.
+			RefreshSeenAndUnseenPools();
+
+			BlitInventoryPoolGraphic();
+
+			HandleSetFilterButtons();
+		}
+	}
+	memset(gszMsgBoxInputString, 0, sizeof(gszMsgBoxInputString));
+}
+
+void MapInventoryWriteEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
+{
+	if (reason & MSYS_CALLBACK_REASON_LBUTTON_DWN ||
+		reason & MSYS_CALLBACK_REASON_RBUTTON_DWN)
+	{
+		if (!(btn->uiFlags & (BUTTON_CLICKED_ON)))
+		{
+			// Set as "clicked on", but do nothing until the mouse is released.
+			btn->uiFlags |= (BUTTON_CLICKED_ON);
+		}
+	}
+
+	if (reason & MSYS_CALLBACK_REASON_LBUTTON_UP)
+	{
+		if (btn->uiFlags & (BUTTON_CLICKED_ON))
+		{
+			//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
+			SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
+			if (pSoldier)
+			{
+				DoMessageBox(MSG_BOX_BASIC_SMALL_BUTTONS, szGearTemplateText[0], guiCurrentScreen, MSG_BOX_FLAG_INPUTBOX, TemplateNameInputCallBack, NULL);
+			}
+		}
+	}
+}
+
+void MapInventoryReadEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
+{
+	if (reason & MSYS_CALLBACK_REASON_LBUTTON_DWN ||
+		reason & MSYS_CALLBACK_REASON_RBUTTON_DWN)
+	{
+		if (!(btn->uiFlags & (BUTTON_CLICKED_ON)))
+		{
+			// Set as "clicked on", but do nothing until the mouse is released.
+			btn->uiFlags |= (BUTTON_CLICKED_ON);
+		}
+	}
+
+	if (reason & MSYS_CALLBACK_REASON_LBUTTON_UP)
+	{
+		if (btn->uiFlags & (BUTTON_CLICKED_ON))
+		{
+			//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
+			SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
+			if (pSoldier &&
+				pSoldier->sSectorX == sSelMapX && pSoldier->sSectorY == sSelMapY && pSoldier->bSectorZ == iCurrentMapSectorZ &&
+				!pSoldier->flags.fBetweenSectors)
+			{
+				if ((gTacticalStatus.uiFlags & INCOMBAT || gTacticalStatus.fEnemyInSector))
+				{
+					DoScreenIndependantMessageBox(szGearTemplateText[1], MSG_BOX_FLAG_OK, NULL);
+				}
+				else
+				{
+					// open the menu
+					EquipmentListMenu();
+				}
+			}
+			else
+			{
+				DoScreenIndependantMessageBox(szGearTemplateText[2], MSG_BOX_FLAG_OK, NULL);
+			}
+		}
 	}
 }

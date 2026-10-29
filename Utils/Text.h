@@ -3046,4 +3046,6 @@ void this_is_the_Ja25FrenchText_public_symbol(void);
 void this_is_the_Ja25GermanText_public_symbol(void);
 void this_is_the_Ja25ItalianText_public_symbol(void);
 void this_is_the_Ja25PolishText_public_symbol(void);
+// Flugente: gear templates
+extern STR16 szGearTemplateText[];
 void this_is_the_Ja25RussianText_public_symbol(void);

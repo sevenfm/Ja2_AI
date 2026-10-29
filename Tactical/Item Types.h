@@ -856,6 +856,9 @@ extern OBJECTTYPE gTempObject;
 #define TAKEN_TACTICAL						0x0000002000000000	//		sevenfm: item was taken in tactical by AI soldier
 #define EXTRA_UNDROPPABLE					0x0000004000000000	//		sevenfm: extra item given to AI
 
+
+#define ITEM_twohanded			0x0000020000000000 //item two handler 
+
 // Flugente TODO 2012-09-17: next time we break savegame compatibility, extend the flagmasks from UINT32 to UINT64. I didn't do it this time (see double-used flag above), as we try to minimise those breaks. But it is needed.
 // ----------------------------------------------------------------
 
