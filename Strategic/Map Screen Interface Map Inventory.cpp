@@ -6466,11 +6466,18 @@ void MapInventoryWriteEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
 	{
 		if (btn->uiFlags & (BUTTON_CLICKED_ON))
 		{
+			// ИСПРАВЛЕНИЕ: Сразу снимаем флаг нажатия, чтобы кнопка вернулась в исходное состояние
+			btn->uiFlags &= ~(BUTTON_CLICKED_ON);
+
 			//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
 			SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
 			if (pSoldier)
 			{
-				DoMessageBox(MSG_BOX_BASIC_SMALL_BUTTONS, szGearTemplateText[0], guiCurrentScreen, MSG_BOX_FLAG_INPUTBOX, TemplateNameInputCallBack, NULL);
+				DoMessageBox(MSG_BOX_BASIC_SMALL_BUTTONS, szGearTemplateText[0],
+					guiCurrentScreen,
+					MSG_BOX_FLAG_INPUTBOX,
+					TemplateNameInputCallBack,
+					NULL);
 			}
 		}
 	}
@@ -6492,6 +6499,9 @@ void MapInventoryReadEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
 	{
 		if (btn->uiFlags & (BUTTON_CLICKED_ON))
 		{
+			// ИСПРАВЛЕНИЕ: Снимаем флаг нажатия. Меню откроется рядом, а кнопка визуально отожмется.
+			btn->uiFlags &= ~(BUTTON_CLICKED_ON);
+
 			//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
 			SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
 			if (pSoldier &&
