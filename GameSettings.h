@@ -1963,6 +1963,11 @@ typedef struct
 	UINT8 usVOMortarPointsElite;
 	UINT8 usVOMortarRadius;
 	UINT8 usVOMortarSignalShellRadius;
+	// militia artillery: per shell type (0 = HE, 1 = smoke, 2 = tear gas, 3 = mustard gas, 4 = napalm)
+	BOOLEAN fVOArtilleryAmmoAllowed[5];
+	UINT32 usVOArtilleryAmmoCost[5];
+	UINT8 ubVOArtilleryAmmoMinProgress[5];
+	INT32 sVOArtilleryAmmoCostProgress[5];
 	INT8  sVOScanAssignmentBaseRange;
 	INT8  sVOListeningHearingBonus;
 	BOOLEAN fVOJammingBlocksRemoteBombs;

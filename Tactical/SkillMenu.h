@@ -129,6 +129,19 @@ private:
 	UINT32 usSector;
 };
 
+// select the shell type for militia artillery
+class ArtilleryAmmo : public SkillMenuItem
+{
+public:
+	ArtilleryAmmo()	:	usSector(0)	{}
+
+	void Setup( UINT32 aVal );
+	void Functions( UINT32 aVal );
+
+private:
+	UINT32 usSector;
+};
+
 // select the sector we call reinforcements from
 class ReinforcementSector : public SkillMenuItem
 {

@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <JA2Config>JA2</JA2Config>
-    <JA2LangPrefix>EN</JA2LangPrefix>
-    <JA2Language>ENGLISH</JA2Language>
+    <JA2LangPrefix>RU</JA2LangPrefix>
+    <JA2Language>RUSSIAN</JA2Language>
   </PropertyGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>ja2</_PropertySheetDisplayName>

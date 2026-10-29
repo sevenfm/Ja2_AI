@@ -211,7 +211,9 @@ EXPLOSION_DATA gExpAniData[ NUM_EXP_TYPES ] =
 
 #define BOMB_QUEUE_DELAY (1000 + Random( 500 ) )
 
+// sevenfm: increased value
 #define MAX_BOMB_QUEUE 40
+//#define MAX_BOMB_QUEUE 255
 
 ExplosionQueueElement	gExplosionQueue[MAX_BOMB_QUEUE];
 UINT8			gubElementsOnExplosionQueue = 0;

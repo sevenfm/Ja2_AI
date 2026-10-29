@@ -2385,6 +2385,11 @@ STR16 pSkillMenuStrings[] =
 	L"无线电",	//L"Radio",
 
 	L"民兵部署",	//L"Militia placements",
+	L"HE shell ($%d)",
+	L"Smoke shell ($%d)",
+	L"Tear gas shell ($%d)",
+	L"Mustard gas shell ($%d)",
+	L"Napalm shell ($%d)",
 };
 
 STR16 pSnitchMenuStrings[] =
@@ -7035,6 +7040,8 @@ STR16 New113Message[] =
 	L"民兵没有找到合适的装备，只好用脏话来骂死敌人了！",					//L"Militia found no items to equip, uses harsh language instead!", // MSG113_MILITIA_NO_ITEMS
 	L"心脏病发作！",											//L"Heart attack!", //MSG113_DRUG_HEART_ATTACK
 	L"拆弹失败。%s的物品栏内的物品和生命值受到了伤害",			//L"Disarming of bomb failed. Resulting explosion damages %s's inventory and health", // MSG113_DISARM_FAILED
+	L"Selected artillery ammo is not available.",	// MSG113_ARTILLERY_AMMO_UNAVAILABLE
+	L"Not enough money to call artillery.",	// MSG113_ARTILLERY_NOT_ENOUGH_MONEY
 };
 
 STR16 New113HAMMessage[] = 

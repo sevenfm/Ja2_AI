@@ -2381,6 +2381,11 @@ STR16 pSkillMenuStrings[] =	// TODO.Translate
 	L"Radio",
 
 	L"Militia placements",	//TODO.Translate
+	L"HE shell ($%d)",
+	L"Smoke shell ($%d)",
+	L"Tear gas shell ($%d)",
+	L"Mustard gas shell ($%d)",
+	L"Napalm shell ($%d)",
 };
 
 // TODO.Translate
@@ -7044,6 +7049,8 @@ STR16 New113Message[] =
 	L"Militia found no items to equip, uses harsh language instead!",			//TODO.Translate	MSG113_MILITIA_NO_ITEMS
 	L"Heart attack!",									//TODO.Translate	MSG113_DRUG_HEART_ATTACK
 	L"Disarming of bomb failed. Resulting explosion damages %s's inventory and health",	//TODO.Translate	MSG113_DISARM_FAILED
+	L"Selected artillery ammo is not available.",	// MSG113_ARTILLERY_AMMO_UNAVAILABLE
+	L"Not enough money to call artillery.",	// MSG113_ARTILLERY_NOT_ENOUGH_MONEY
 };
 
 // TODO.Translate
