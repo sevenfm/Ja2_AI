@@ -14,12 +14,10 @@
 #include "Handle Items.h"
 
 #include "Map Screen Interface.h"
+#include "GearTemplate.h" // Подключаем новый класс
 
-extern void GetEquipmentTemplates();
-
+ // Переменную gTemplateVector оставляем здесь, так как она используется в функциях этого файла
 std::vector<std::string> gTemplateVector;
-
-extern void ReadEquipmentTable( SOLDIERTYPE* pSoldier, std::string name );
 
 extern INT8 bSelectedInfoChar;
 // sevenfm
@@ -1523,7 +1521,8 @@ EquipmentSelection::Setup(UINT32 aVal)
 	CHAR16 pStr[300];
 
 	// create entries for the sub-menus for each trait
-	GetEquipmentTemplates();
+	GearTemplateManager gearManager;
+	gearManager.RefreshTemplateList();
 
 	// we limit the maximum number of entries shown at once - too many entries could theoretically cause the button system to freak out
 	gEquipmentSelectionMaxEntriesShown = min(40, max(0, (SCREEN_HEIGHT - 150 - usTraitMenuPosY) / 12));
@@ -1597,7 +1596,9 @@ void EquipmentSelection::Functions(UINT32 aVal)
 		if (pSoldier)
 		{
 			std::string name = gTemplateVector[aVal];
-			ReadEquipmentTable(pSoldier, name);
+			// Используем объектно-ориентированный подход нового класса
+			GearTemplateManager gearManager;
+			gearManager.ApplyToSoldier(pSoldier, name);
 		}
 	}
 }

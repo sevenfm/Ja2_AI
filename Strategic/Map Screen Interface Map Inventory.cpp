@@ -44,6 +44,10 @@
 #include "Food.h"	// added by Flugente
 #include "Campaign Types.h"	// added by Flugente
 
+// Flugente: gear templates
+#include "GearTemplate.h" // Подключаем новый класс менеджера шаблонов
+extern void EquipmentListMenu();
+
 //forward declarations of common classes to eliminate includes
 class OBJECTTYPE;
 class SOLDIERTYPE;
@@ -6423,10 +6427,6 @@ BOOL GetFittingAmmo_InventoryPool(UINT8 usCalibre, UINT8 usAmmoType, UINT32& arL
 	return FALSE;
 }
 
-// Flugente: gear templates
-extern void WriteEquipmentTemplate(SOLDIERTYPE* pSoldier, STR16 name);
-extern void EquipmentListMenu();
-
 void TemplateNameInputCallBack(UINT8 ubResult)
 {
 	if (ubResult == MSG_BOX_RETURN_OK && wcscmp(gszMsgBoxInputString, L"") > 0)
@@ -6435,7 +6435,9 @@ void TemplateNameInputCallBack(UINT8 ubResult)
 		SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
 		if (pSoldier)
 		{
-			WriteEquipmentTemplate(pSoldier, gszMsgBoxInputString);
+			// ИСПРАВЛЕНО: Создаем экземпляр нового класса менеджера на стеке и вызываем его метод
+			GearTemplateManager gearManager;
+			gearManager.CreateFromSoldier(pSoldier, gszMsgBoxInputString);
 
 			// The refresh function moves the necessary items from the Seen to the Unseen inventories, and vice versa.
 			RefreshSeenAndUnseenPools();
