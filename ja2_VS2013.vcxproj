@@ -103,10 +103,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\JA2_Game</OutDir>
+    <OutDir>..\..\JA2_Game</OutDir>
     <TargetName>Ja2+AI_travnik_debug</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IntDir>..\..\temp\vs\AI</IntDir>
+    <IntDir>.\vs</IntDir>
     <IncludePath>c:\Dev\Visual Leak Detector\Include;$(IncludePath)</IncludePath>
     <LibraryPath>c:\Dev\Visual Leak Detector\lib\Win32;c:\Dev\Visual Leak Detector\lib\Win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -119,10 +119,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\JA2_Game</OutDir>
+    <OutDir>..\..\JA2_Game</OutDir>
     <TargetName>ja2+AI_travnik_edition</TargetName>
     <TargetExt>.exe</TargetExt>
-    <IntDir>..\..\temp\vs\AI_travnik</IntDir>
+    <IntDir>.\vs</IntDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <IncludePath>c:\Dev\Visual Leak Detector\include;$(IncludePath)</IncludePath>
     <LibraryPath>c:\Dev\Visual Leak Detector\lib\Win32;c:\Dev\Visual Leak Detector\lib\Win64;$(LibraryPath)</LibraryPath>

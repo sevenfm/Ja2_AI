@@ -17828,3 +17828,12 @@ BOOLEAN FindAttachmentRange(UINT16 usAttachment, UINT32* pStartIndex, UINT32* pE
 
 	return result;
 }
+
+BOOLEAN ItemIsCanteen(UINT16 usItem)
+{
+	return Item[usItem].canteen;
+}
+BOOLEAN ItemIsTwoHanded(UINT16 usItem)
+{
+	return Item[usItem].twohanded;
+}

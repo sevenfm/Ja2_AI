@@ -9219,4 +9219,15 @@ STR16 TalkCursorStr[] =
 	L"Bad",
 };
 
+
+// Flugente: gear templates
+STR16 szGearTemplateText[] =
+{
+	L"Enter Template Name",
+	L"Not possible during combat.",
+	L"Selected mercenary is not in this sector.",
+	L"%s is not in that sector.",
+	L"%s could not equip %s.",
+	L"We cannot attach %s (item %d) as that might damage items.",
+};
 #endif //ENGLISH
