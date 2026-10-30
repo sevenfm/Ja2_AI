@@ -119,7 +119,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\JA2_Game</OutDir>
+    <OutDir>..\JA2_Game</OutDir>
     <TargetName>ja2+AI_travnik_edition</TargetName>
     <TargetExt>.exe</TargetExt>
     <IntDir>.\vs</IntDir>

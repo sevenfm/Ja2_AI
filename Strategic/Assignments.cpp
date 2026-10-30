@@ -77,6 +77,7 @@ class OBJECTTYPE;
 class SOLDIERTYPE;
 
 #include "MilitiaSquads.h"
+#include "Sound Control.h"
 // HEADROCK HAM 3.5: Include Facility data
 #include "Facilities.h"
 
@@ -201,6 +202,10 @@ INT32 ghFacilityAssignmentBox = -1;
 INT32 ghSnitchBox = -1;
 INT32 ghSnitchToggleBox = -1;
 INT32 ghSnitchSectorBox = -1;
+// radio menus
+INT32 ghRadioBox = -1;
+INT32 ghRadioSectorBox = -1;
+INT32 ghRadioNumberBox = -1;
 
 // the x,y position of assignment pop up in tactical
 INT16 gsAssignmentBoxesX, gsAssignmentBoxesY;
@@ -229,6 +234,9 @@ MOUSE_REGION	gFacilityAssignmentMenuRegion[ NUM_FACILITY_ASSIGNMENTS ];
 MOUSE_REGION	gSnitchMenuRegion[ MAX_SNITCH_MENU_STRING_COUNT ];
 MOUSE_REGION	gSnitchToggleMenuRegion[ MAX_SNITCH_TOGGLE_MENU_STRING_COUNT ];
 MOUSE_REGION	gSnitchSectorMenuRegion[ MAX_SNITCH_SECTOR_MENU_STRING_COUNT ];
+MOUSE_REGION	gRadioMenuRegion[ MAX_RADIO_MENU_STRING_COUNT ];
+MOUSE_REGION	gRadioSectorMenuRegion[ MAX_RADIO_SECTOR_MENU_STRING_COUNT ];
+MOUSE_REGION	gRadioNumberMenuRegion[ MAX_RADIO_NUMBER_MENU_STRING_COUNT ];
 
 MOUSE_REGION	gAssignmentScreenMaskRegion;
 
@@ -241,6 +249,19 @@ BOOLEAN fShownContractMenu = FALSE;
 BOOLEAN fShowSnitchMenu = FALSE;
 BOOLEAN fShowSnitchToggleMenu = FALSE;
 BOOLEAN fShowSnitchSectorMenu = FALSE;
+BOOLEAN fShowRadioMenu = FALSE;
+BOOLEAN fShowRadioSectorMenu = FALSE;
+BOOLEAN fShowRadioNumberMenu = FALSE;
+
+// radio operator: militia call menus
+#define RADIO_SECTOR_MENU_LINES			4
+#define RADIO_SECTOR_MENU_CANCEL		4
+#define RADIO_NUMBER_MENU_ALL			6
+#define RADIO_NUMBER_MENU_CANCEL		7
+#define RADIO_SECTOR_INVALID			0xFFFF
+INT32 giRadioSectorMenuHighLine = -1;
+UINT16 gusRadioSectorLine[ RADIO_SECTOR_MENU_LINES ] = { RADIO_SECTOR_INVALID, RADIO_SECTOR_INVALID, RADIO_SECTOR_INVALID, RADIO_SECTOR_INVALID };
+UINT16 gusRadioSelectedSector = RADIO_SECTOR_INVALID;
 
 BOOLEAN fFirstClickInAssignmentScreenMask = FALSE;
 
@@ -487,6 +508,9 @@ void HandleShadingOfLinesForFacilityAssignmentMenu( void );
 void HandleShadingOfLinesForSnitchMenu( void );
 void HandleShadingOfLinesForSnitchToggleMenu( void );
 void HandleShadingOfLinesForSnitchSectorMenu( void );
+void HandleShadingOfLinesForRadioMenu( void );
+void HandleShadingOfLinesForRadioSectorMenu( void );
+void HandleShadingOfLinesForRadioNumberMenu( void );
 
 // post message about contract
 void PostContractMessage( SOLDIERTYPE *pCharacter, INT32 iContract );
@@ -516,6 +540,10 @@ void CreateFacilityAssignmentBox( void );
 void CreateSnitchBox( void );
 void CreateSnitchToggleBox( void );
 void CreateSnitchSectorBox( void );
+void CreateRadioBox( void );
+void CreateRadioSectorBox( void );
+void CreateRadioNumberBox( void );
+void RebuildRadioSectorBox( SOLDIERTYPE *pSoldier );
 /*
 // get how fast the person regains sleep
 INT8 GetRegainDueToSleepNeeded( SOLDIERTYPE *pSoldier, INT32 iRateOfReGain );
@@ -550,6 +578,8 @@ BOOLEAN HandleAssignmentExpansionAndHighLightForAssignMenu( SOLDIERTYPE *pSoldie
 BOOLEAN HandleAssignmentExpansionAndHighLightForTrainingMenu( void );
 BOOLEAN HandleAssignmentExpansionAndHighLightForFacilityMenu ( void ); // Facility menu and submenu expansion
 BOOLEAN HandleAssignmentExpansionAndHighLightForSnitchMenu ( void );
+BOOLEAN HandleAssignmentExpansionAndHighLightForRadioMenu ( void );
+BOOLEAN HandleAssignmentExpansionAndHighLightForRadioSectorMenu ( void );
 BOOLEAN HandleShowingOfMovementBox( void );
 //BOOLEAN HandleShowingOfUpBox( void );
 void ReportTrainersTraineesWithoutPartners( void );
@@ -2274,6 +2304,113 @@ BOOLEAN CanCharacterSnitch( SOLDIERTYPE *pSoldier )
 	}
 
 	return( FALSE );
+}
+
+BOOLEAN CanCharacterCallMilitia( SOLDIERTYPE *pSoldier )
+{
+	AssertNotNIL(pSoldier);
+
+	if ( !gGameExternalOptions.gfAllowReinforcements )
+	{
+		return( FALSE );
+	}
+
+	if ( !BasicCanCharacterAssignment( pSoldier, TRUE ) )
+	{
+		return( FALSE );
+	}
+
+	if ( pSoldier->stats.bLife < OKLIFE )
+	{
+		return( FALSE );
+	}
+
+	if ( pSoldier->bSectorZ != 0 )
+	{
+		return( FALSE );
+	}
+
+	if ( IsCharacterInTransit( pSoldier ) == TRUE )
+	{
+		return( FALSE );
+	}
+
+	if ( CharacterIsBetweenSectors( pSoldier ) )
+	{
+		return( FALSE );
+	}
+
+	if ( pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC )
+	{
+		return( FALSE );
+	}
+
+	if ( pSoldier->bAssignment == VEHICLE )
+	{
+		if ( ( iHelicopterVehicleId != -1 ) && ( pSoldier->iVehicleId == iHelicopterVehicleId ) )
+		{
+			return( FALSE );
+		}
+	}
+
+	return( pSoldier->CanUseRadio( FALSE ) );
+}
+
+BOOLEAN ExecuteStrategicMilitiaCall( SOLDIERTYPE *pSoldier, UINT32 usSector, UINT16 usNumber )
+{
+	if ( pSoldier == NULL || usNumber == 0 || usSector >= 256 )
+	{
+		return( FALSE );
+	}
+
+	if ( !CanCharacterCallMilitia( pSoldier ) )
+	{
+		return( FALSE );
+	}
+
+	// the operator's sector is the target, usSector is the sector militia is pulled from
+	INT16 sSrcX = SECTORX( usSector );
+	INT16 sSrcY = SECTORY( usSector );
+
+	if ( abs( sSrcX - pSoldier->sSectorX ) + abs( sSrcY - pSoldier->sSectorY ) != 1 )
+	{
+		return( FALSE );
+	}
+
+	// operator stands in the currently loaded sector: the tactical routine spawns the militia on the loaded map
+	BOOLEAN fOperatorInLoadedSector = ( pSoldier->sSectorX == gWorldSectorX ) && ( pSoldier->sSectorY == gWorldSectorY ) && ( pSoldier->bSectorZ == gbWorldSectorZ );
+
+	if ( fOperatorInLoadedSector )
+	{
+		return( pSoldier->RadioCallReinforcements( usSector, usNumber ) );
+	}
+
+	// operator is in an unloaded sector: only the strategic militia counts are changed
+	if ( CountAllMilitiaInSector( sSrcX, sSrcY ) == 0 )
+	{
+		return( FALSE );
+	}
+
+	if ( !pSoldier->UseRadio( SKILLS_RADIO_CALLREINFORCEMENTS ) )
+	{
+		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_RADIO_ACTION_FAILED ] );
+		PlayJA2SampleFromFile( "Sounds\\radioerror.wav", RATE_11025, MIDVOLUME, 1, MIDDLEPAN );
+		return( FALSE );
+	}
+
+	pSoldier->SwitchOffRadio();
+
+	if ( !CallMilitiaReinforcementsNoTactical( pSoldier->sSectorX, pSoldier->sSectorY, sSrcX, sSrcY, usNumber ) )
+	{
+		return( FALSE );
+	}
+
+	CHAR16 pStr[ 128 ];
+	GetSectorIDString( sSrcX, sSrcY, 0, pStr, FALSE );
+	ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_ORDERS_REINFORCEMENTS ], pSoldier->name, pStr );
+	PlayJA2SampleFromFile( "Sounds\\scan1.wav", RATE_11025, MIDVOLUME, 1, MIDDLEPAN );
+
+	return( TRUE );
 }
 
 BOOLEAN CanCharacterSpreadPropaganda( SOLDIERTYPE *pSoldier )
@@ -8844,6 +8981,11 @@ void HandleShadingOfLinesForAssignmentMenus( void )
 	HandleShadingOfLinesForSnitchMenu( );
 	HandleShadingOfLinesForSnitchToggleMenu( );
 	HandleShadingOfLinesForSnitchSectorMenu( );
+
+	// radio menus shading
+	HandleShadingOfLinesForRadioMenu( );
+	HandleShadingOfLinesForRadioSectorMenu( );
+	HandleShadingOfLinesForRadioNumberMenu( );
 }
 
 
@@ -8896,6 +9038,9 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 		fShowFacilityMenu = FALSE;
 		// anv: reset show snitch menu
 		fShowSnitchMenu = FALSE;
+		fShowRadioMenu = FALSE;
+		fShowRadioSectorMenu = FALSE;
+		fShowRadioNumberMenu = FALSE;
 
 		// destroy mask, if needed
 		CreateDestroyScreenMaskForAssignmentAndContractMenus( );
@@ -8915,6 +9060,9 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 		CreateDestroyMouseRegionsForSnitchMenu( );
 		CreateDestroyMouseRegionsForSnitchToggleMenu( );
 		CreateDestroyMouseRegionsForSnitchSectorMenu( );
+		CreateDestroyMouseRegionsForRadioMenu( );
+		CreateDestroyMouseRegionsForRadioSectorMenu( );
+		CreateDestroyMouseRegionsForRadioNumberMenu( );
 
 		// hide all boxes being shown
 		if ( IsBoxShown( ghEpcBox ) )
@@ -8992,6 +9140,24 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 			fTeamPanelDirty = TRUE;
 			gfRenderPBInterface = TRUE;
 		}
+		if ( IsBoxShown( ghRadioBox ) )
+		{
+			HideBox( ghRadioBox );
+			fTeamPanelDirty = TRUE;
+			gfRenderPBInterface = TRUE;
+		}
+		if ( IsBoxShown( ghRadioSectorBox ) )
+		{
+			HideBox( ghRadioSectorBox );
+			fTeamPanelDirty = TRUE;
+			gfRenderPBInterface = TRUE;
+		}
+		if ( IsBoxShown( ghRadioNumberBox ) )
+		{
+			HideBox( ghRadioNumberBox );
+			fTeamPanelDirty = TRUE;
+			gfRenderPBInterface = TRUE;
+		}
 		// do we really want ot hide this box?
 		if( fShowContractMenu == FALSE )
 		{
@@ -9027,6 +9193,9 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 	CreateDestroyMouseRegionsForSnitchMenu( );
 	CreateDestroyMouseRegionsForSnitchToggleMenu( );
 	CreateDestroyMouseRegionsForSnitchSectorMenu( );
+	CreateDestroyMouseRegionsForRadioMenu( );
+	CreateDestroyMouseRegionsForRadioSectorMenu( );
+	CreateDestroyMouseRegionsForRadioNumberMenu( );
 
 	UINT16 usSelectedCharacter = gCharactersList[bSelectedInfoChar].usSolID;
 	if (usSelectedCharacter < NOBODY && 
@@ -9233,6 +9402,57 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 			//	SetRenderFlags(RENDER_FLAG_FULL);
 		}
 	}
+
+	// RADIO menu
+	if( fShowRadioMenu == TRUE )
+	{
+		HandleShadingOfLinesForRadioMenu( );
+		ShowBox( ghRadioBox );
+	}
+	else
+	{
+		if( IsBoxShown( ghRadioBox ) )
+		{
+			HideBox( ghRadioBox );
+			fTeamPanelDirty = TRUE;
+			fMapPanelDirty = TRUE;
+			gfRenderPBInterface = TRUE;
+		}
+	}
+
+	// RADIO sub-menu 1
+	if( fShowRadioSectorMenu == TRUE )
+	{
+		HandleShadingOfLinesForRadioSectorMenu( );
+		ShowBox( ghRadioSectorBox );
+	}
+	else
+	{
+		if( IsBoxShown( ghRadioSectorBox ) )
+		{
+			HideBox( ghRadioSectorBox );
+			fTeamPanelDirty = TRUE;
+			fMapPanelDirty = TRUE;
+			gfRenderPBInterface = TRUE;
+		}
+	}
+
+	// RADIO sub-menu 2
+	if( fShowRadioNumberMenu == TRUE )
+	{
+		HandleShadingOfLinesForRadioNumberMenu( );
+		ShowBox( ghRadioNumberBox );
+	}
+	else
+	{
+		if( IsBoxShown( ghRadioNumberBox ) )
+		{
+			HideBox( ghRadioNumberBox );
+			fTeamPanelDirty = TRUE;
+			fMapPanelDirty = TRUE;
+			gfRenderPBInterface = TRUE;
+		}
+	}
 }
 
 
@@ -9331,6 +9551,9 @@ void ClearScreenMaskForMapScreenExit( void )
 	CreateDestroyMouseRegionsForSnitchMenu( );
 	CreateDestroyMouseRegionsForSnitchToggleMenu( );
 	CreateDestroyMouseRegionsForSnitchSectorMenu( );
+	CreateDestroyMouseRegionsForRadioMenu( );
+	CreateDestroyMouseRegionsForRadioSectorMenu( );
+	CreateDestroyMouseRegionsForRadioNumberMenu( );
 }
 
 void CreateDestroyMouseRegions( void )
@@ -10263,6 +10486,357 @@ void CreateDestroyMouseRegionsForSnitchSectorMenu( void )
 			// remove highlight on the parent menu
 			UnHighLightBox( ghSnitchBox );
 		}
+	}
+}
+
+static void DefineRadioBoxRegions( INT32 hBox, MOUSE_REGION *pRegions, MOUSE_CALLBACK pMvtCallback, MOUSE_CALLBACK pBtnCallback )
+{
+	SGPPoint pPosition;
+	SGPRect pDimensions;
+
+	INT32 iFontHeight = GetLineSpace( hBox ) + GetFontHeight( GetBoxFont( hBox ) );
+
+	GetBoxPosition( hBox, &pPosition );
+	GetBoxSize( hBox, &pDimensions );
+	SetBoxSecondaryShade( hBox, FONT_YELLOW );
+
+	SetCurrentBox( hBox );
+
+	for( UINT32 iCounter = 0; iCounter < GetNumberOfLinesOfTextInBox( hBox ); iCounter++ )
+	{
+		MSYS_DefineRegion( &pRegions[ iCounter ], ( INT16 )( pPosition.iX ), ( INT16 )( pPosition.iY + GetTopMarginSize( hBox ) + ( iFontHeight ) * iCounter ), ( INT16 )( pPosition.iX + pDimensions.iRight ), ( INT16 )( pPosition.iY + GetTopMarginSize( hBox ) + ( iFontHeight ) * ( iCounter + 1 ) ), MSYS_PRIORITY_HIGHEST - 3,
+			MSYS_NO_CURSOR, pMvtCallback, pBtnCallback );
+
+		MSYS_SetRegionUserData( &pRegions[ iCounter ], 0, iCounter );
+	}
+
+	UnHighLightBox( hBox );
+}
+
+static void RemoveRadioBoxRegions( INT32 hBox, MOUSE_REGION *pRegions, UINT32 uiNumRegions )
+{
+	for( UINT32 iCounter = 0; iCounter < uiNumRegions; iCounter++ )
+	{
+		MSYS_RemoveRegion( &pRegions[ iCounter ] );
+	}
+
+	RestorePopUpBoxes( );
+
+	fMapPanelDirty = TRUE;
+	fCharacterInfoPanelDirty = TRUE;
+	fTeamPanelDirty = TRUE;
+	fMapScreenBottomDirty = TRUE;
+
+	if( hBox != -1 )
+	{
+		HideBox( hBox );
+	}
+
+	SetRenderFlags( RENDER_FLAG_FULL );
+}
+
+void CreateDestroyMouseRegionsForRadioMenu( void )
+{
+	static BOOLEAN fCreated = FALSE;
+
+	if( ( fShowRadioMenu == TRUE ) && ( fCreated == FALSE ) && ( ghRadioBox != -1 ) )
+	{
+		DefineRadioBoxRegions( ghRadioBox, gRadioMenuRegion, RadioMenuMvtCallBack, RadioMenuBtnCallback );
+		fCreated = TRUE;
+	}
+	else if( ( ( fShowAssignmentMenu == FALSE ) || ( fShowRadioMenu == FALSE ) ) && ( fCreated == TRUE ) )
+	{
+		RemoveRadioBoxRegions( ghRadioBox, gRadioMenuRegion, MAX_RADIO_MENU_STRING_COUNT );
+
+		if( fShowAssignmentMenu == FALSE )
+		{
+			fShowRadioMenu = FALSE;
+		}
+
+		fCreated = FALSE;
+
+		if( fShowAssignmentMenu )
+		{
+			// remove highlight on the parent menu
+			UnHighLightBox( ghAssignmentBox );
+		}
+	}
+}
+
+void CreateDestroyMouseRegionsForRadioSectorMenu( void )
+{
+	static BOOLEAN fCreated = FALSE;
+
+	if( ( fShowRadioSectorMenu == TRUE ) && ( fCreated == FALSE ) && ( ghRadioSectorBox != -1 ) )
+	{
+		DefineRadioBoxRegions( ghRadioSectorBox, gRadioSectorMenuRegion, RadioSectorMenuMvtCallBack, RadioSectorMenuBtnCallback );
+		fCreated = TRUE;
+	}
+	else if( ( ( fShowAssignmentMenu == FALSE ) || ( fShowRadioMenu == FALSE ) || ( fShowRadioSectorMenu == FALSE ) ) && ( fCreated == TRUE ) )
+	{
+		RemoveRadioBoxRegions( ghRadioSectorBox, gRadioSectorMenuRegion, MAX_RADIO_SECTOR_MENU_STRING_COUNT );
+
+		if( fShowAssignmentMenu == FALSE )
+		{
+			fShowRadioMenu = FALSE;
+		}
+		if( fShowRadioMenu == FALSE )
+		{
+			fShowRadioSectorMenu = FALSE;
+		}
+
+		fCreated = FALSE;
+
+		if( fShowRadioMenu )
+		{
+			// remove highlight on the parent menu
+			UnHighLightBox( ghRadioBox );
+		}
+	}
+}
+
+void CreateDestroyMouseRegionsForRadioNumberMenu( void )
+{
+	static BOOLEAN fCreated = FALSE;
+
+	if( ( fShowRadioNumberMenu == TRUE ) && ( fCreated == FALSE ) && ( ghRadioNumberBox != -1 ) )
+	{
+		DefineRadioBoxRegions( ghRadioNumberBox, gRadioNumberMenuRegion, RadioNumberMenuMvtCallBack, RadioNumberMenuBtnCallback );
+		fCreated = TRUE;
+	}
+	else if( ( ( fShowAssignmentMenu == FALSE ) || ( fShowRadioMenu == FALSE ) || ( fShowRadioSectorMenu == FALSE ) || ( fShowRadioNumberMenu == FALSE ) ) && ( fCreated == TRUE ) )
+	{
+		RemoveRadioBoxRegions( ghRadioNumberBox, gRadioNumberMenuRegion, MAX_RADIO_NUMBER_MENU_STRING_COUNT );
+
+		if( fShowAssignmentMenu == FALSE )
+		{
+			fShowRadioMenu = FALSE;
+		}
+		if( fShowRadioMenu == FALSE )
+		{
+			fShowRadioSectorMenu = FALSE;
+		}
+		if( fShowRadioSectorMenu == FALSE )
+		{
+			fShowRadioNumberMenu = FALSE;
+		}
+
+		fCreated = FALSE;
+
+		if( fShowRadioSectorMenu )
+		{
+			// remove highlight on the parent menu
+			UnHighLightBox( ghRadioSectorBox );
+		}
+	}
+}
+
+void RadioMenuMvtCallBack( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
+
+	if( HandleAssignmentExpansionAndHighLightForRadioMenu( ) == TRUE )
+	{
+		return;
+	}
+
+	if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
+	{
+		if( GetBoxShadeFlag( ghRadioBox, iValue ) == FALSE )
+		{
+			HighLightBoxLine( ghRadioBox, iValue );
+		}
+	}
+	else if( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
+	{
+		UnHighLightBox( ghRadioBox );
+	}
+}
+
+void RadioSectorMenuMvtCallBack( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
+
+	if( HandleAssignmentExpansionAndHighLightForRadioSectorMenu( ) == TRUE )
+	{
+		return;
+	}
+
+	if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
+	{
+		if( GetBoxShadeFlag( ghRadioSectorBox, iValue ) == FALSE )
+		{
+			HighLightBoxLine( ghRadioSectorBox, iValue );
+		}
+	}
+	else if( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
+	{
+		UnHighLightBox( ghRadioSectorBox );
+	}
+}
+
+void RadioNumberMenuMvtCallBack( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
+
+	if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
+	{
+		if( GetBoxShadeFlag( ghRadioNumberBox, iValue ) == FALSE )
+		{
+			HighLightBoxLine( ghRadioNumberBox, iValue );
+		}
+	}
+	else if( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
+	{
+		UnHighLightBox( ghRadioNumberBox );
+	}
+}
+
+void RadioMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
+{
+	INT32 iValue = MSYS_GetRegionUserData(pRegion, 0);
+	SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier(FALSE);
+
+	if ((fShowRadioSectorMenu) || (fShowRadioNumberMenu))
+	{
+		return;
+	}
+
+	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
+	{
+		if (iValue == RADIO_MENU_CANCEL)
+		{
+			fShowRadioMenu = FALSE;
+			UnHighLightBox(ghRadioBox);
+		}
+		else if ((iValue == RADIO_MENU_SCAN) && pSoldier)
+		{
+			if (pSoldier->CanUseRadio())
+			{
+				fShowRadioMenu = FALSE;
+				fShowAssignmentMenu = FALSE;
+				giAssignHighLine = -1;
+
+				pSoldier->bOldAssignment = pSoldier->bAssignment;
+
+				if (pSoldier->bAssignment != RADIO_SCAN)
+				{
+					SetTimeOfAssignmentChangeForMerc(pSoldier);
+				}
+
+				if (pSoldier->bOldAssignment == VEHICLE)
+				{
+					TakeSoldierOutOfVehicle(pSoldier);
+				}
+
+				RemoveCharacterFromSquads(pSoldier);
+				ChangeSoldiersAssignment(pSoldier, RADIO_SCAN);
+				AssignMercToAMovementGroup(pSoldier);
+				MakeSoldiersTacticalAnimationReflectAssignment(pSoldier);
+
+				fTeamPanelDirty = TRUE;
+				fMapScreenBottomDirty = TRUE;
+
+				SetAssignmentForList((INT8)RADIO_SCAN, 0);
+			}
+		}
+		else if ((iValue == RADIO_MENU_CALL_MILITIA) && pSoldier)
+		{
+			if (CanCharacterCallMilitia(pSoldier))
+			{
+				RebuildRadioSectorBox(pSoldier);
+				fShowRadioSectorMenu = TRUE;
+				DetermineBoxPositions();
+
+				// ÏÐÈÍÓÄÈÒÅËÜÍÛÉ ÐÅÍÄÅÐ: Ïîìå÷àåì ñèñòåìó áîêñîâ äëÿ ïåðåðèñîâêè
+				MarkAllBoxesAsAltered();
+			}
+		}
+
+		gfRenderPBInterface = TRUE;
+		fTeamPanelDirty = TRUE;
+		fMapPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
+	}
+}
+
+
+void RadioSectorMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
+
+	if( fShowRadioNumberMenu )
+	{
+		return;
+	}
+
+	if( iReason & MSYS_CALLBACK_REASON_LBUTTON_UP )
+	{
+		if( iValue == RADIO_SECTOR_MENU_CANCEL )
+		{
+			fShowRadioSectorMenu = FALSE;
+			UnHighLightBox( ghRadioSectorBox );
+		}
+		else if( iValue >= 0 && iValue < RADIO_SECTOR_MENU_LINES )
+		{
+			if( ( gusRadioSectorLine[ iValue ] != RADIO_SECTOR_INVALID ) && ( GetBoxShadeFlag( ghRadioSectorBox, iValue ) == FALSE ) )
+			{
+				giRadioSectorMenuHighLine = iValue;
+				gusRadioSelectedSector = gusRadioSectorLine[ iValue ];
+
+				fShowRadioNumberMenu = TRUE;
+				DetermineBoxPositions( );
+			}
+		}
+
+		gfRenderPBInterface = TRUE;
+		fTeamPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
+	}
+}
+
+void RadioNumberMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	static const UINT16 usRadioNumbers[ RADIO_NUMBER_MENU_ALL ] = { 5, 10, 15, 20, 30, 40 };
+
+	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
+	SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier( FALSE );
+
+	if( iReason & MSYS_CALLBACK_REASON_LBUTTON_UP )
+	{
+		if( iValue == RADIO_NUMBER_MENU_CANCEL )
+		{
+			fShowRadioNumberMenu = FALSE;
+			UnHighLightBox( ghRadioNumberBox );
+		}
+		else if( iValue >= 0 && iValue <= RADIO_NUMBER_MENU_ALL && pSoldier && gusRadioSelectedSector != RADIO_SECTOR_INVALID && GetBoxShadeFlag( ghRadioNumberBox, iValue ) == FALSE )
+		{
+			UINT16 usNumber;
+
+			if( iValue == RADIO_NUMBER_MENU_ALL )
+			{
+				usNumber = CountAllMilitiaInSector( SECTORX( gusRadioSelectedSector ), SECTORY( gusRadioSelectedSector ) );
+			}
+			else
+			{
+				usNumber = usRadioNumbers[ iValue ];
+			}
+
+			ExecuteStrategicMilitiaCall( pSoldier, gusRadioSelectedSector, usNumber );
+
+			// close all menus
+			fShowRadioNumberMenu = FALSE;
+			fShowRadioSectorMenu = FALSE;
+			fShowRadioMenu = FALSE;
+			fShowAssignmentMenu = FALSE;
+			giAssignHighLine = -1;
+			giRadioSectorMenuHighLine = -1;
+			gusRadioSelectedSector = RADIO_SECTOR_INVALID;
+		}
+
+		gfRenderPBInterface = TRUE;
+		fTeamPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
 	}
 }
 
@@ -11503,7 +12077,7 @@ void AssignmentMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
 	{
 		// HEADROCK HAM 3.6: Added facility menu.
-		if( ( fShowAttributeMenu )||( fShowTrainingMenu ) || ( fShowRepairMenu ) || fShowMoveItemMenu || ( fShowVehicleMenu ) ||( fShowSquadMenu ) || ( fShowFacilityMenu ) || ( fShowFacilityAssignmentMenu ) || ( fShowSnitchMenu ) )
+		if( ( fShowAttributeMenu )||( fShowTrainingMenu ) || ( fShowRepairMenu ) || fShowMoveItemMenu || ( fShowVehicleMenu ) ||( fShowSquadMenu ) || ( fShowFacilityMenu ) || ( fShowFacilityAssignmentMenu ) || ( fShowSnitchMenu ) || ( fShowRadioMenu ) )
 		{
 			return;
 		}
@@ -11874,36 +12448,18 @@ void AssignmentMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 				case( ASSIGN_MENU_RADIO_SCAN ):
 					if( pSoldier->CanUseRadio() )
 					{
-						// stop showing menu
-						fShowAssignmentMenu = FALSE;
-						giAssignHighLine = -1;
+						fShowRadioMenu = TRUE;
+						DetermineBoxPositions( );
+						fShowSquadMenu = FALSE;
+						fShowVehicleMenu = FALSE;
+						fShowRepairMenu = FALSE;
+						fShowTrainingMenu = FALSE;
+						fShowMoveItemMenu = FALSE;
+						fShowFacilityMenu = FALSE;
+						fShowSnitchMenu = FALSE;
 
-						pSoldier->bOldAssignment = pSoldier->bAssignment;
-
-						if( ( pSoldier->bAssignment != RADIO_SCAN ) )
-						{
-							SetTimeOfAssignmentChangeForMerc( pSoldier );
-						}
-
-						// remove from squad
-						if( pSoldier->bOldAssignment == VEHICLE )
-						{
-							TakeSoldierOutOfVehicle( pSoldier );
-						}
-						RemoveCharacterFromSquads(	pSoldier );
-
-						ChangeSoldiersAssignment( pSoldier, RADIO_SCAN );
-
-						AssignMercToAMovementGroup( pSoldier );
-
-						MakeSoldiersTacticalAnimationReflectAssignment( pSoldier );
-
-						// set dirty flag
 						fTeamPanelDirty = TRUE;
 						fMapScreenBottomDirty = TRUE;
-
-						// set assignment for group
-						SetAssignmentForList( ( INT8 ) RADIO_SCAN, 0 );
 					}
 					break;
 				case( ASSIGN_MENU_SNITCH ):
@@ -12025,8 +12581,11 @@ void AssignmentMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 	else if( iReason & MSYS_CALLBACK_REASON_RBUTTON_UP )
 	{
 		// HEADROCK HAM 3.6: Added facility menu
-		if( ( fShowAttributeMenu )||( fShowTrainingMenu ) || ( fShowRepairMenu ) || fShowMoveItemMenu || ( fShowVehicleMenu ) ||( fShowSquadMenu ) || ( fShowFacilityMenu ) || ( fShowFacilityAssignmentMenu ) || ( fShowSnitchMenu ) )
+		if( ( fShowAttributeMenu )||( fShowTrainingMenu ) || ( fShowRepairMenu ) || fShowMoveItemMenu || ( fShowVehicleMenu ) ||( fShowSquadMenu ) || ( fShowFacilityMenu ) || ( fShowFacilityAssignmentMenu ) || ( fShowSnitchMenu ) || ( fShowRadioMenu ) )
 		{
+			fShowRadioMenu = FALSE;
+			fShowRadioSectorMenu = FALSE;
+			fShowRadioNumberMenu = FALSE;
 			fShowAttributeMenu = FALSE;
 			fShowTrainingMenu = FALSE;
 			fShowRepairMenu = FALSE;
@@ -12512,6 +13071,171 @@ void CreateSnitchToggleBox()
 	ResizeBoxToText( ghSnitchToggleBox );
 
 	DetermineBoxPositions( );
+}
+
+static void FinishRadioBoxSetup( INT32 hBox )
+{
+	// set font type
+	SetBoxFont( hBox, MAP_SCREEN_FONT );
+
+	// set highlight color
+	SetBoxHighLight( hBox, FONT_WHITE );
+
+	// unhighlighted color
+	SetBoxForeground( hBox, FONT_LTGREEN );
+
+	// background color
+	SetBoxBackground( hBox, FONT_BLACK );
+
+	// shaded color..for darkened text
+	SetBoxShade( hBox, FONT_GRAY7 );
+
+	// resize box to text
+	ResizeBoxToText( hBox );
+}
+
+static void SetupRadioBoxCommon( INT32 hBox )
+{
+	SetBoxBuffer( hBox, FRAME_BUFFER );
+	SetBorderType( hBox, guiPOPUPBORDERS );
+	SetBackGroundSurface( hBox, guiPOPUPTEX );
+	SetMargins( hBox, 6, 6, 4, 4 );
+	SetLineSpace( hBox, 2 );
+	SetCurrentBox( hBox );
+}
+
+void CreateRadioBox()
+{
+	UINT32 hStringHandle;
+	UINT32 uiCounter;
+
+	RadioPosition.iX = OrigRadioPosition.iX;
+
+	if( giBoxY != 0 )
+	{
+		RadioPosition.iY = giBoxY + ( ASSIGN_MENU_RADIO_SCAN * GetFontHeight( MAP_SCREEN_FONT ) );
+	}
+
+	CreatePopUpBox( &ghRadioBox, RadioDimensions, RadioPosition, ( POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE ) );
+	SetupRadioBoxCommon( ghRadioBox );
+
+	for( uiCounter = 0; uiCounter < MAX_RADIO_MENU_STRING_COUNT; uiCounter++ )
+	{
+		AddMonoString( &hStringHandle, pRadioMenuStrings[ uiCounter ] );
+		UnHighLightLine( hStringHandle );
+	}
+
+	FinishRadioBoxSetup( ghRadioBox );
+	DetermineBoxPositions( );
+}
+
+void CreateRadioSectorBox()
+{
+	UINT32 hStringHandle;
+	UINT32 uiCounter;
+
+	RadioSectorPosition.iX = OrigRadioSectorPosition.iX;
+
+	if( giBoxY != 0 )
+	{
+		RadioSectorPosition.iY = giBoxY + ( ASSIGN_MENU_RADIO_SCAN * GetFontHeight( MAP_SCREEN_FONT ) );
+	}
+
+	CreatePopUpBox( &ghRadioSectorBox, RadioSectorDimensions, RadioSectorPosition, ( POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE ) );
+	SetupRadioBoxCommon( ghRadioSectorBox );
+
+	// sector lines are filled in by RebuildRadioSectorBox when the menu opens
+	for( uiCounter = 0; uiCounter < RADIO_SECTOR_MENU_LINES; uiCounter++ )
+	{
+		AddMonoString( &hStringHandle, L"-" );
+		UnHighLightLine( hStringHandle );
+	}
+
+	AddMonoString( &hStringHandle, pRadioMenuStrings[ RADIO_MENU_CANCEL ] );
+	UnHighLightLine( hStringHandle );
+
+	FinishRadioBoxSetup( ghRadioSectorBox );
+	DetermineBoxPositions( );
+}
+
+void CreateRadioNumberBox()
+{
+	UINT32 hStringHandle;
+	UINT32 uiCounter;
+
+	RadioNumberPosition.iX = OrigRadioNumberPosition.iX;
+
+	if( giBoxY != 0 )
+	{
+		RadioNumberPosition.iY = giBoxY + ( ASSIGN_MENU_RADIO_SCAN * GetFontHeight( MAP_SCREEN_FONT ) );
+	}
+
+	CreatePopUpBox( &ghRadioNumberBox, RadioNumberDimensions, RadioNumberPosition, ( POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE ) );
+	SetupRadioBoxCommon( ghRadioNumberBox );
+
+	for( uiCounter = 0; uiCounter < MAX_RADIO_NUMBER_MENU_STRING_COUNT; uiCounter++ )
+	{
+		AddMonoString( &hStringHandle, pRadioNumberMenuStrings[ uiCounter ] );
+		UnHighLightLine( hStringHandle );
+	}
+
+	FinishRadioBoxSetup( ghRadioNumberBox );
+	DetermineBoxPositions( );
+}
+
+void RebuildRadioSectorBox(SOLDIERTYPE* pSoldier)
+{
+	UINT32 hStringHandle;
+	CHAR16 sString[32];
+
+	static const INT16 sDeltaX[RADIO_SECTOR_MENU_LINES] = { 0, 1, 0, -1 };
+	static const INT16 sDeltaY[RADIO_SECTOR_MENU_LINES] = { 1, 0, -1, 0 };
+
+	if ((pSoldier == NULL) || (ghRadioSectorBox == -1))
+	{
+		return;
+	}
+
+	SetCurrentBox(ghRadioSectorBox);
+	RemoveAllCurrentBoxStrings();
+
+	// ÂÎÑÑÒÀÍÎÂËÅÍÈÅ ÑÂÎÉÑÒÂ ÎÊÍÀ ÏÎÑËÅ Î×ÈÑÒÊÈ ÑÒÐÎÊ
+	SetBoxBuffer(ghRadioSectorBox, FRAME_BUFFER);
+	SetBorderType(ghRadioSectorBox, guiPOPUPBORDERS);
+	SetBackGroundSurface(ghRadioSectorBox, guiPOPUPTEX);
+	SetMargins(ghRadioSectorBox, 6, 6, 4, 4);
+	SetLineSpace(ghRadioSectorBox, 2);
+
+	SetBoxFont(ghRadioSectorBox, MAP_SCREEN_FONT);
+	SetBoxHighLight(ghRadioSectorBox, FONT_WHITE);
+	SetBoxForeground(ghRadioSectorBox, FONT_LTGREEN);
+	SetBoxBackground(ghRadioSectorBox, FONT_BLACK);
+	SetBoxShade(ghRadioSectorBox, FONT_GRAY7);
+
+	for (INT32 iCounter = 0; iCounter < RADIO_SECTOR_MENU_LINES; iCounter++)
+	{
+		INT16 sLoopX = pSoldier->sSectorX + sDeltaX[iCounter];
+		INT16 sLoopY = pSoldier->sSectorY + sDeltaY[iCounter];
+
+		if (sLoopX < 1 || sLoopX >= MAP_WORLD_X - 1 || sLoopY < 1 || sLoopY >= MAP_WORLD_Y - 1)
+		{
+			swprintf(sString, L"-");
+			gusRadioSectorLine[iCounter] = RADIO_SECTOR_INVALID;
+		}
+		else
+		{
+			swprintf(sString, L"%c%d (%d)", sLoopY + 'A' - 1, sLoopX, CountAllMilitiaInSector(sLoopX, sLoopY));
+			gusRadioSectorLine[iCounter] = SECTOR(sLoopX, sLoopY);
+		}
+
+		AddMonoString(&hStringHandle, sString);
+		UnHighLightLine(hStringHandle);
+	}
+
+	AddMonoString(&hStringHandle, pRadioMenuStrings[RADIO_MENU_CANCEL]);
+	UnHighLightLine(hStringHandle);
+
+	ResizeBoxToText(ghRadioSectorBox);
 }
 
 void CreateSnitchSectorBox()
@@ -13014,6 +13738,9 @@ BOOLEAN CreateDestroyAssignmentPopUpBoxes( void )
 		CreateSnitchBox( );
 		CreateSnitchToggleBox( );
 		CreateSnitchSectorBox( );
+		CreateRadioBox( );
+		CreateRadioSectorBox( );
+		CreateRadioNumberBox( );
 		UpdateMapScreenAssignmentPositions( );
 
 		fCreated = TRUE;
@@ -13064,6 +13791,15 @@ BOOLEAN CreateDestroyAssignmentPopUpBoxes( void )
 
 		RemoveBox(ghSnitchSectorBox);
 		ghSnitchSectorBox = -1;
+
+		RemoveBox(ghRadioBox);
+		ghRadioBox = -1;
+
+		RemoveBox(ghRadioSectorBox);
+		ghRadioSectorBox = -1;
+
+		RemoveBox(ghRadioNumberBox);
+		ghRadioNumberBox = -1;
 
 		fCreated = FALSE;
 		gfIgnoreScrolling = FALSE;
@@ -13221,6 +13957,66 @@ void DetermineBoxPositions( void )
 			pNewPoint.iY = pPoint.iY;
 			SetBoxPosition( ghSnitchSectorBox, pNewPoint );
 		}
+	}
+
+	if ((fShowRadioMenu == TRUE) && (ghRadioBox != -1))
+	{
+		SGPRect pDim1, pDim3;
+		SGPPoint pPos1, pPos3;
+
+		// --- 1 ÌÅÍÞ: ÐÀÄÈÎ (ghRadioBox) ---
+		GetBoxSize(ghAssignmentBox, &pDim1);
+		pNewPoint.iX = gsAssignmentBoxesX + pDim1.iRight;
+		pNewPoint.iY = gsAssignmentBoxesY + ((GetFontHeight(MAP_SCREEN_FONT) + 2) * ASSIGN_MENU_RADIO_SCAN);
+
+		SetBoxPosition(ghRadioBox, pNewPoint);
+		ResizeBoxToText(ghRadioBox);
+
+		RadioPosition = pNewPoint;
+		OrigRadioPosition = pNewPoint;
+
+		// --- 3 ÌÅÍÞ: ÂÛÁÎÐ ÑÅÊÒÎÐÀ (ghRadioSectorBox) ---
+		GetBoxPosition(ghRadioBox, &pPos1);
+		GetBoxSize(ghRadioBox, &pDim1);
+
+		if ((fShowRadioSectorMenu == TRUE) && (ghRadioSectorBox != -1))
+		{
+			pNewPoint.iX = pPos1.iX + pDim1.iRight;
+			// Ñìåùàåì íà óðîâåíü ñòðîêè "Âûçâàòü îïîë÷åíèå"
+			pNewPoint.iY = pPos1.iY + ((GetFontHeight(MAP_SCREEN_FONT) + 2) * RADIO_MENU_CALL_MILITIA);
+
+			// Ñíà÷àëà æåñòêî îáíîâëÿåì òåêñò è âíóòðåííîñòè
+			ResizeBoxToText(ghRadioSectorBox);
+			SetBoxPosition(ghRadioSectorBox, pNewPoint);
+
+			RadioSectorPosition = pNewPoint;
+			OrigRadioSectorPosition = pNewPoint;
+
+			// ÑÈÑÒÅÌÀ ÎÁÍÎÂËÅÍÈß ÔÎÍÀ: Íàêàòûâàåì òåêñòóðó ïîâåðõ êàðòû
+			ForceUpDateOfBox(ghRadioBox);
+			ForceUpDateOfBox(ghRadioSectorBox);
+
+			// --- 4 ÌÅÍÞ: ÊÎËÈ×ÅÑÒÂÎ (ghRadioNumberBox) ---
+			GetBoxPosition(ghRadioSectorBox, &pPos3);
+			GetBoxSize(ghRadioSectorBox, &pDim3);
+
+			if ((fShowRadioNumberMenu == TRUE) && (ghRadioNumberBox != -1))
+			{
+				pNewPoint.iX = pPos3.iX + pDim3.iRight;
+				pNewPoint.iY = pPos3.iY; // Âûðàâíèâàåì ïî âûñîòå ñ 3-ì ìåíþ
+
+				ResizeBoxToText(ghRadioNumberBox);
+				SetBoxPosition(ghRadioNumberBox, pNewPoint);
+
+				RadioNumberPosition = pNewPoint;
+				OrigRadioNumberPosition = pNewPoint;
+
+				// Îáíîâëÿåì âñþ ôèíàëüíóþ öåïî÷êó îêîí
+				ForceUpDateOfBox(ghRadioNumberBox);
+			}
+		}
+		// Îáíîâëÿåì îáùóþ îòðèñîâêó áîêñîâ â ñèñòåìå
+		MarkAllBoxesAsAltered();
 	}
 
 	return;
@@ -14736,6 +15532,12 @@ BOOLEAN HandleAssignmentExpansionAndHighLightForAssignMenu( SOLDIERTYPE *pSoldie
 		HighLightBoxLine( ghSnitchBox, ASSIGN_MENU_SNITCH );
 		return( TRUE );
 	}
+	else if( fShowRadioMenu )
+	{
+		// highlight the radio line in the previous menu
+		HighLightBoxLine( ghAssignmentBox, ASSIGN_MENU_RADIO_SCAN );
+		return( TRUE );
+	}
 	return( FALSE );
 }
 
@@ -14760,6 +15562,28 @@ BOOLEAN HandleAssignmentExpansionAndHighLightForTrainingMenu( void )
 				Assert( FALSE );
 				break;
 		}
+	}
+
+	return( FALSE );
+}
+
+BOOLEAN HandleAssignmentExpansionAndHighLightForRadioMenu( void )
+{
+	if( fShowRadioSectorMenu )
+	{
+		HighLightBoxLine( ghRadioBox, RADIO_MENU_CALL_MILITIA );
+		return( TRUE );
+	}
+
+	return( FALSE );
+}
+
+BOOLEAN HandleAssignmentExpansionAndHighLightForRadioSectorMenu( void )
+{
+	if( fShowRadioNumberMenu )
+	{
+		HighLightBoxLine( ghRadioSectorBox, giRadioSectorMenuHighLine );
+		return( TRUE );
 	}
 
 	return( FALSE );
@@ -14991,6 +15815,95 @@ void HandleShadingOfLinesForAttributeMenus( void )
 	}
 
 	return;
+}
+
+void HandleShadingOfLinesForRadioMenu( void )
+{
+	SOLDIERTYPE *pSoldier = NULL;
+
+	if( ( fShowRadioMenu == FALSE ) || ( ghRadioBox == -1 ) )
+	{
+		return;
+	}
+
+	pSoldier = GetSelectedAssignSoldier( FALSE );
+
+	if( pSoldier && pSoldier->CanUseRadio() )
+	{
+		UnShadeStringInBox( ghRadioBox, RADIO_MENU_SCAN );
+	}
+	else
+	{
+		ShadeStringInBox( ghRadioBox, RADIO_MENU_SCAN );
+	}
+
+	if( pSoldier && CanCharacterCallMilitia( pSoldier ) )
+	{
+		UnShadeStringInBox( ghRadioBox, RADIO_MENU_CALL_MILITIA );
+	}
+	else
+	{
+		ShadeStringInBox( ghRadioBox, RADIO_MENU_CALL_MILITIA );
+	}
+}
+
+void HandleShadingOfLinesForRadioSectorMenu( void )
+{
+	if( ( fShowRadioSectorMenu == FALSE ) || ( ghRadioSectorBox == -1 ) )
+	{
+		return;
+	}
+
+	for( INT32 iCounter = 0; iCounter < RADIO_SECTOR_MENU_LINES; iCounter++ )
+	{
+		UINT16 usSector = gusRadioSectorLine[ iCounter ];
+
+		if( ( usSector == RADIO_SECTOR_INVALID ) || ( CountAllMilitiaInSector( SECTORX( usSector ), SECTORY( usSector ) ) == 0 ) )
+		{
+			ShadeStringInBox( ghRadioSectorBox, iCounter );
+		}
+		else
+		{
+			UnShadeStringInBox( ghRadioSectorBox, iCounter );
+		}
+	}
+}
+
+void HandleShadingOfLinesForRadioNumberMenu( void )
+{
+	static const UINT16 usRadioNumbers[ RADIO_NUMBER_MENU_ALL ] = { 5, 10, 15, 20, 30, 40 };
+	UINT32 uiMilitia = 0;
+
+	if( ( fShowRadioNumberMenu == FALSE ) || ( ghRadioNumberBox == -1 ) )
+	{
+		return;
+	}
+
+	if( gusRadioSelectedSector != RADIO_SECTOR_INVALID )
+	{
+		uiMilitia = CountAllMilitiaInSector( SECTORX( gusRadioSelectedSector ), SECTORY( gusRadioSelectedSector ) );
+	}
+
+	for( INT32 iCounter = 0; iCounter < RADIO_NUMBER_MENU_ALL; iCounter++ )
+	{
+		if( uiMilitia < usRadioNumbers[ iCounter ] )
+		{
+			ShadeStringInBox( ghRadioNumberBox, iCounter );
+		}
+		else
+		{
+			UnShadeStringInBox( ghRadioNumberBox, iCounter );
+		}
+	}
+
+	if( uiMilitia == 0 )
+	{
+		ShadeStringInBox( ghRadioNumberBox, RADIO_NUMBER_MENU_ALL );
+	}
+	else
+	{
+		UnShadeStringInBox( ghRadioNumberBox, RADIO_NUMBER_MENU_ALL );
+	}
 }
 
 void HandleShadingOfLinesForSnitchMenu( void )

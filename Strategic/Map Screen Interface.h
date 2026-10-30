@@ -161,6 +161,20 @@ enum {
 	MAX_SNITCH_SECTOR_MENU_STRING_COUNT,
 };
 
+// radio menu defines
+enum {
+	RADIO_MENU_SCAN = 0,
+	RADIO_MENU_CALL_MILITIA,
+	RADIO_MENU_CANCEL,
+	MAX_RADIO_MENU_STRING_COUNT,
+};
+
+// sector selection for militia call: up to 4 adjacent sectors + cancel
+#define MAX_RADIO_SECTOR_MENU_STRING_COUNT	5
+
+// number selection for militia call: 5/10/15/20/30/40/all + cancel
+#define MAX_RADIO_NUMBER_MENU_STRING_COUNT	8
+
 // training assignment menu defines
 enum {
 	TRAIN_MENU_SELF,
@@ -308,6 +322,11 @@ extern BOOLEAN fShowSnitchMenu;
 extern BOOLEAN fShowSnitchToggleMenu;
 extern BOOLEAN fShowSnitchSectorMenu;
 
+// radio menus
+extern BOOLEAN fShowRadioMenu;
+extern BOOLEAN fShowRadioSectorMenu;
+extern BOOLEAN fShowRadioNumberMenu;
+
 extern BOOLEAN fFirstTimeInMapScreen;
 extern BOOLEAN fLockOutMapScreenInterface;
 
@@ -367,6 +386,12 @@ extern SGPPoint SnitchTogglePosition;
 extern SGPRect SnitchToggleDimensions;
 extern SGPPoint SnitchSectorPosition;
 extern SGPRect SnitchSectorDimensions;
+extern SGPPoint RadioPosition;
+extern SGPRect RadioDimensions;
+extern SGPPoint RadioSectorPosition;
+extern SGPRect RadioSectorDimensions;
+extern SGPPoint RadioNumberPosition;
+extern SGPRect RadioNumberDimensions;
 
 extern SGPPoint MilitiaControlPosition; //lal
 extern SGPRect MilitiaControlDimensions;
@@ -387,6 +412,9 @@ extern SGPPoint OrigFacilityAssignmentPosition; // HEADROCK HAM 3.6
 extern SGPPoint OrigSnitchPosition;
 extern SGPPoint OrigSnitchTogglePosition;
 extern SGPPoint OrigSnitchSectorPosition;
+extern SGPPoint OrigRadioPosition;
+extern SGPPoint OrigRadioSectorPosition;
+extern SGPPoint OrigRadioNumberPosition;
 
 // disble team info panel due to showing of battle roster
 extern BOOLEAN fDisableDueToBattleRoster;

@@ -178,6 +178,8 @@ enum
 
 extern STR16 pSkillMenuStrings[];			//Flugente
 //extern STR16 pTalkToAllMenuStrings[];
+extern STR16 pRadioMenuStrings[];
+extern STR16 pRadioNumberMenuStrings[];
 extern STR16 pSnitchMenuStrings[];
 extern STR16 pSnitchMenuDescStrings[];
 extern STR16 pSnitchToggleMenuStrings[];

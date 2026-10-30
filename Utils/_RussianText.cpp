@@ -2391,6 +2391,25 @@ STR16 pSkillMenuStrings[] =
 	L"Напалмовый снаряд ($%d)",
 };
 
+STR16 pRadioMenuStrings[] =
+{
+	L"Радио-сканирование",
+	L"Вызвать ополчение",
+	L"Отмена",
+};
+
+STR16 pRadioNumberMenuStrings[] =
+{
+	L"5",
+	L"10",
+	L"15",
+	L"20",
+	L"30",
+	L"40",
+	L"Все",
+	L"Отмена",
+};
+
 STR16 pSnitchMenuStrings[] =
 {
 	// snitch
@@ -9231,7 +9250,7 @@ STR16 TalkCursorStr[] =
 
 
 // Flugente: gear templates
-STR16 szGearTemplateText[] =	
+STR16 szGearTemplateText[] =
 {
 	L"Введите название шаблона",
 	L"Невозможно во время боя.",
