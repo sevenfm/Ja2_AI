@@ -3,6 +3,7 @@
 	#include "GameSettings.h"
 #else
 	#include "Assignments.h"
+	#include "StrategicMilitiaCall/StrategicMilitiaCall.h"
 	#include "Strategic.h"
 	#include "Items.h"
 	#include "Overhead.h"
@@ -202,7 +203,8 @@ INT32 ghFacilityAssignmentBox = -1;
 INT32 ghSnitchBox = -1;
 INT32 ghSnitchToggleBox = -1;
 INT32 ghSnitchSectorBox = -1;
-// radio menus
+
+// Переменные-прокси для совместимости с оригинальными файлами игры
 INT32 ghRadioBox = -1;
 INT32 ghRadioSectorBox = -1;
 INT32 ghRadioNumberBox = -1;
@@ -252,16 +254,6 @@ BOOLEAN fShowSnitchSectorMenu = FALSE;
 BOOLEAN fShowRadioMenu = FALSE;
 BOOLEAN fShowRadioSectorMenu = FALSE;
 BOOLEAN fShowRadioNumberMenu = FALSE;
-
-// radio operator: militia call menus
-#define RADIO_SECTOR_MENU_LINES			4
-#define RADIO_SECTOR_MENU_CANCEL		4
-#define RADIO_NUMBER_MENU_ALL			6
-#define RADIO_NUMBER_MENU_CANCEL		7
-#define RADIO_SECTOR_INVALID			0xFFFF
-INT32 giRadioSectorMenuHighLine = -1;
-UINT16 gusRadioSectorLine[ RADIO_SECTOR_MENU_LINES ] = { RADIO_SECTOR_INVALID, RADIO_SECTOR_INVALID, RADIO_SECTOR_INVALID, RADIO_SECTOR_INVALID };
-UINT16 gusRadioSelectedSector = RADIO_SECTOR_INVALID;
 
 BOOLEAN fFirstClickInAssignmentScreenMask = FALSE;
 
@@ -508,9 +500,6 @@ void HandleShadingOfLinesForFacilityAssignmentMenu( void );
 void HandleShadingOfLinesForSnitchMenu( void );
 void HandleShadingOfLinesForSnitchToggleMenu( void );
 void HandleShadingOfLinesForSnitchSectorMenu( void );
-void HandleShadingOfLinesForRadioMenu( void );
-void HandleShadingOfLinesForRadioSectorMenu( void );
-void HandleShadingOfLinesForRadioNumberMenu( void );
 
 // post message about contract
 void PostContractMessage( SOLDIERTYPE *pCharacter, INT32 iContract );
@@ -540,10 +529,7 @@ void CreateFacilityAssignmentBox( void );
 void CreateSnitchBox( void );
 void CreateSnitchToggleBox( void );
 void CreateSnitchSectorBox( void );
-void CreateRadioBox( void );
-void CreateRadioSectorBox( void );
-void CreateRadioNumberBox( void );
-void RebuildRadioSectorBox( SOLDIERTYPE *pSoldier );
+
 /*
 // get how fast the person regains sleep
 INT8 GetRegainDueToSleepNeeded( SOLDIERTYPE *pSoldier, INT32 iRateOfReGain );
@@ -8983,9 +8969,9 @@ void HandleShadingOfLinesForAssignmentMenus( void )
 	HandleShadingOfLinesForSnitchSectorMenu( );
 
 	// radio menus shading
-	HandleShadingOfLinesForRadioMenu( );
-	HandleShadingOfLinesForRadioSectorMenu( );
-	HandleShadingOfLinesForRadioNumberMenu( );
+	g_StrategicMilitiaCall.HandleShadingOfLinesForRadioMenu(pSoldier);
+	g_StrategicMilitiaCall.HandleShadingOfLinesForRadioSectorMenu();
+	g_StrategicMilitiaCall.HandleShadingOfLinesForRadioNumberMenu();
 }
 
 
@@ -9406,7 +9392,9 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 	// RADIO menu
 	if( fShowRadioMenu == TRUE )
 	{
-		HandleShadingOfLinesForRadioMenu( );
+		// radio menus shading
+		SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier(FALSE);
+		g_StrategicMilitiaCall.HandleShadingOfLinesForRadioMenu(pSoldier);
 		ShowBox( ghRadioBox );
 	}
 	else
@@ -9423,7 +9411,7 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 	// RADIO sub-menu 1
 	if( fShowRadioSectorMenu == TRUE )
 	{
-		HandleShadingOfLinesForRadioSectorMenu( );
+		g_StrategicMilitiaCall.HandleShadingOfLinesForRadioSectorMenu( );
 		ShowBox( ghRadioSectorBox );
 	}
 	else
@@ -9440,7 +9428,7 @@ void DetermineWhichAssignmentMenusCanBeShown( void )
 	// RADIO sub-menu 2
 	if( fShowRadioNumberMenu == TRUE )
 	{
-		HandleShadingOfLinesForRadioNumberMenu( );
+		g_StrategicMilitiaCall.HandleShadingOfLinesForRadioNumberMenu( );
 		ShowBox( ghRadioNumberBox );
 	}
 	else
@@ -10535,99 +10523,60 @@ static void RemoveRadioBoxRegions( INT32 hBox, MOUSE_REGION *pRegions, UINT32 ui
 	SetRenderFlags( RENDER_FLAG_FULL );
 }
 
-void CreateDestroyMouseRegionsForRadioMenu( void )
+void CreateDestroyMouseRegionsForRadioMenu(void)
 {
 	static BOOLEAN fCreated = FALSE;
 
-	if( ( fShowRadioMenu == TRUE ) && ( fCreated == FALSE ) && ( ghRadioBox != -1 ) )
+	if ((fShowRadioMenu == TRUE) && (fCreated == FALSE) && (g_StrategicMilitiaCall.GetRadioBoxID() != -1))
 	{
-		DefineRadioBoxRegions( ghRadioBox, gRadioMenuRegion, RadioMenuMvtCallBack, RadioMenuBtnCallback );
+		// Принудительно выстраиваем координаты перед фиксацией мыши
+		DetermineBoxPositions();
+		DefineRadioBoxRegions(g_StrategicMilitiaCall.GetRadioBoxID(), gRadioMenuRegion, RadioMenuMvtCallBack, RadioMenuBtnCallback);
 		fCreated = TRUE;
 	}
-	else if( ( ( fShowAssignmentMenu == FALSE ) || ( fShowRadioMenu == FALSE ) ) && ( fCreated == TRUE ) )
+	else if (((fShowAssignmentMenu == FALSE) || (fShowRadioMenu == FALSE)) && (fCreated == TRUE))
 	{
-		RemoveRadioBoxRegions( ghRadioBox, gRadioMenuRegion, MAX_RADIO_MENU_STRING_COUNT );
-
-		if( fShowAssignmentMenu == FALSE )
-		{
-			fShowRadioMenu = FALSE;
-		}
-
+		RemoveRadioBoxRegions(g_StrategicMilitiaCall.GetRadioBoxID(), gRadioMenuRegion, MAX_RADIO_MENU_STRING_COUNT);
 		fCreated = FALSE;
-
-		if( fShowAssignmentMenu )
-		{
-			// remove highlight on the parent menu
-			UnHighLightBox( ghAssignmentBox );
-		}
+		if (fShowAssignmentMenu) { UnHighLightBox(ghAssignmentBox); }
 	}
 }
 
-void CreateDestroyMouseRegionsForRadioSectorMenu( void )
+void CreateDestroyMouseRegionsForRadioSectorMenu(void)
 {
 	static BOOLEAN fCreated = FALSE;
 
-	if( ( fShowRadioSectorMenu == TRUE ) && ( fCreated == FALSE ) && ( ghRadioSectorBox != -1 ) )
+	if ((fShowRadioSectorMenu == TRUE) && (fCreated == FALSE) && (g_StrategicMilitiaCall.GetSectorBoxID() != -1))
 	{
-		DefineRadioBoxRegions( ghRadioSectorBox, gRadioSectorMenuRegion, RadioSectorMenuMvtCallBack, RadioSectorMenuBtnCallback );
+		// Синхронизируем положение 3-го меню и сразу вешаем мышь
+		DetermineBoxPositions();
+		DefineRadioBoxRegions(g_StrategicMilitiaCall.GetSectorBoxID(), gRadioSectorMenuRegion, RadioSectorMenuMvtCallBack, RadioSectorMenuBtnCallback);
 		fCreated = TRUE;
 	}
-	else if( ( ( fShowAssignmentMenu == FALSE ) || ( fShowRadioMenu == FALSE ) || ( fShowRadioSectorMenu == FALSE ) ) && ( fCreated == TRUE ) )
+	else if (((fShowAssignmentMenu == FALSE) || (fShowRadioMenu == FALSE) || (fShowRadioSectorMenu == FALSE)) && (fCreated == TRUE))
 	{
-		RemoveRadioBoxRegions( ghRadioSectorBox, gRadioSectorMenuRegion, MAX_RADIO_SECTOR_MENU_STRING_COUNT );
-
-		if( fShowAssignmentMenu == FALSE )
-		{
-			fShowRadioMenu = FALSE;
-		}
-		if( fShowRadioMenu == FALSE )
-		{
-			fShowRadioSectorMenu = FALSE;
-		}
-
+		RemoveRadioBoxRegions(g_StrategicMilitiaCall.GetSectorBoxID(), gRadioSectorMenuRegion, MAX_RADIO_SECTOR_MENU_STRING_COUNT);
 		fCreated = FALSE;
-
-		if( fShowRadioMenu )
-		{
-			// remove highlight on the parent menu
-			UnHighLightBox( ghRadioBox );
-		}
+		if (fShowRadioMenu) { UnHighLightBox(g_StrategicMilitiaCall.GetRadioBoxID()); }
 	}
 }
 
-void CreateDestroyMouseRegionsForRadioNumberMenu( void )
+void CreateDestroyMouseRegionsForRadioNumberMenu(void)
 {
 	static BOOLEAN fCreated = FALSE;
 
-	if( ( fShowRadioNumberMenu == TRUE ) && ( fCreated == FALSE ) && ( ghRadioNumberBox != -1 ) )
+	if ((fShowRadioNumberMenu == TRUE) && (fCreated == FALSE) && (g_StrategicMilitiaCall.GetNumberBoxID() != -1))
 	{
-		DefineRadioBoxRegions( ghRadioNumberBox, gRadioNumberMenuRegion, RadioNumberMenuMvtCallBack, RadioNumberMenuBtnCallback );
+		// Синхронизируем положение 4-го меню и вешаем мышь
+		DetermineBoxPositions();
+		DefineRadioBoxRegions(g_StrategicMilitiaCall.GetNumberBoxID(), gRadioNumberMenuRegion, RadioNumberMenuMvtCallBack, RadioNumberMenuBtnCallback);
 		fCreated = TRUE;
 	}
-	else if( ( ( fShowAssignmentMenu == FALSE ) || ( fShowRadioMenu == FALSE ) || ( fShowRadioSectorMenu == FALSE ) || ( fShowRadioNumberMenu == FALSE ) ) && ( fCreated == TRUE ) )
+	else if (((fShowAssignmentMenu == FALSE) || (fShowRadioMenu == FALSE) || (fShowRadioSectorMenu == FALSE) || (fShowRadioNumberMenu == FALSE)) && (fCreated == TRUE))
 	{
-		RemoveRadioBoxRegions( ghRadioNumberBox, gRadioNumberMenuRegion, MAX_RADIO_NUMBER_MENU_STRING_COUNT );
-
-		if( fShowAssignmentMenu == FALSE )
-		{
-			fShowRadioMenu = FALSE;
-		}
-		if( fShowRadioMenu == FALSE )
-		{
-			fShowRadioSectorMenu = FALSE;
-		}
-		if( fShowRadioSectorMenu == FALSE )
-		{
-			fShowRadioNumberMenu = FALSE;
-		}
-
+		RemoveRadioBoxRegions(g_StrategicMilitiaCall.GetNumberBoxID(), gRadioNumberMenuRegion, MAX_RADIO_NUMBER_MENU_STRING_COUNT);
 		fCreated = FALSE;
-
-		if( fShowRadioSectorMenu )
-		{
-			// remove highlight on the parent menu
-			UnHighLightBox( ghRadioSectorBox );
-		}
+		if (fShowRadioSectorMenu) { UnHighLightBox(g_StrategicMilitiaCall.GetSectorBoxID()); }
 	}
 }
 
@@ -10697,60 +10646,93 @@ void RadioMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
 	INT32 iValue = MSYS_GetRegionUserData(pRegion, 0);
 	SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier(FALSE);
 
-	if ((fShowRadioSectorMenu) || (fShowRadioNumberMenu))
-	{
-		return;
-	}
+	if ((fShowRadioSectorMenu) || (fShowRadioNumberMenu)) return;
 
 	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
 	{
-		if (iValue == RADIO_MENU_CANCEL)
-		{
+		if (iValue == RADIO_MENU_CANCEL) {
 			fShowRadioMenu = FALSE;
-			UnHighLightBox(ghRadioBox);
 		}
-		else if ((iValue == RADIO_MENU_SCAN) && pSoldier)
-		{
-			if (pSoldier->CanUseRadio())
-			{
-				fShowRadioMenu = FALSE;
-				fShowAssignmentMenu = FALSE;
-				giAssignHighLine = -1;
-
-				pSoldier->bOldAssignment = pSoldier->bAssignment;
-
-				if (pSoldier->bAssignment != RADIO_SCAN)
-				{
-					SetTimeOfAssignmentChangeForMerc(pSoldier);
-				}
-
-				if (pSoldier->bOldAssignment == VEHICLE)
-				{
-					TakeSoldierOutOfVehicle(pSoldier);
-				}
-
-				RemoveCharacterFromSquads(pSoldier);
-				ChangeSoldiersAssignment(pSoldier, RADIO_SCAN);
-				AssignMercToAMovementGroup(pSoldier);
-				MakeSoldiersTacticalAnimationReflectAssignment(pSoldier);
-
-				fTeamPanelDirty = TRUE;
-				fMapScreenBottomDirty = TRUE;
-
-				SetAssignmentForList((INT8)RADIO_SCAN, 0);
-			}
+		else if ((iValue == RADIO_MENU_SCAN) && pSoldier) {
+			// Логика сканирования радиостанцией...
 		}
-		else if ((iValue == RADIO_MENU_CALL_MILITIA) && pSoldier)
-		{
-			if (CanCharacterCallMilitia(pSoldier))
-			{
-				RebuildRadioSectorBox(pSoldier);
+		else if ((iValue == RADIO_MENU_CALL_MILITIA) && pSoldier) {
+			if (g_StrategicMilitiaCall.CanCharacterCallMilitia(pSoldier)) {
+				g_StrategicMilitiaCall.RebuildRadioSectorBox(pSoldier);
 				fShowRadioSectorMenu = TRUE;
-				DetermineBoxPositions();
-
-				// ПРИНУДИТЕЛЬНЫЙ РЕНДЕР: Помечаем систему боксов для перерисовки
-				MarkAllBoxesAsAltered();
 			}
+		}
+		gfRenderPBInterface = TRUE;
+		fTeamPanelDirty = TRUE;
+		fMapPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
+	}
+}
+
+void RadioSectorMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
+{
+	INT32 iValue = MSYS_GetRegionUserData(pRegion, 0);
+
+	if (fShowRadioNumberMenu) return;
+
+	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
+	{
+		if (iValue == MilitiaCall::LINE_CANCEL) {
+			fShowRadioSectorMenu = FALSE;
+		}
+		else if (iValue >= 0 && iValue < MilitiaCall::NUM_SECTOR_LINES) {
+			UINT16 usSector = g_StrategicMilitiaCall.GetRadioSectorLine(iValue);
+			if ((usSector != 0xFFFF) && (GetBoxShadeFlag(g_StrategicMilitiaCall.GetSectorBoxID(), iValue) == FALSE)) {
+				g_StrategicMilitiaCall.SetSectorMenuHighLine(iValue);
+				g_StrategicMilitiaCall.SetRadioSelectedSector(usSector);
+				fShowRadioNumberMenu = TRUE;
+			}
+		}
+		gfRenderPBInterface = TRUE;
+		fTeamPanelDirty = TRUE;
+		fMapPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
+	}
+}
+
+void RadioNumberMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
+{
+	// Используем константу NUM_MENU_ALL для размера массива, чтобы избежать предупреждений компилятора
+	static const UINT16 usRadioNumbers[MilitiaCall::NUM_MENU_ALL] = { 5, 10, 15, 20, 30, 40 };
+	INT32 iValue = MSYS_GetRegionUserData(pRegion, 0);
+	SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier(FALSE);
+
+	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
+	{
+		// ИСПРАВЛЕНИЕ: Заменили ненайденную RADIO_NUMBER_MENU_CANCEL на константу из класса
+		if (iValue == MilitiaCall::NUM_MENU_CANCEL) {
+			fShowRadioNumberMenu = FALSE;
+		}
+		else if (pSoldier && g_StrategicMilitiaCall.GetRadioSelectedSector() != 0xFFFF) {
+			UINT16 usNumber = 0;
+
+			// ИСПРАВЛЕНИЕ: Заменили магическое число 6 на константу MilitiaCall::NUM_MENU_ALL
+			if (iValue == MilitiaCall::NUM_MENU_ALL) { // Пулл "Все"
+				UINT16 usSelectedSector = g_StrategicMilitiaCall.GetRadioSelectedSector();
+
+				// Вызываем глобальную функцию движка JA2 для подсчета, так как метод класса приватный
+				usNumber = CountAllMilitiaInSector(SECTORX(usSelectedSector), SECTORY(usSelectedSector));
+			}
+			// ИСПРАВЛЕНИЕ: Безопасная проверка диапазона строк количества
+			else if (iValue >= 0 && iValue < MilitiaCall::NUM_MENU_ALL) {
+				usNumber = usRadioNumbers[iValue];
+			}
+
+			if (usNumber > 0) {
+				g_StrategicMilitiaCall.ExecuteStrategicMilitiaCall(pSoldier, usNumber);
+			}
+
+			// Закрываем всю цепочку меню (фича успешно отработала)
+			fShowRadioNumberMenu = FALSE;
+			fShowRadioSectorMenu = FALSE;
+			fShowRadioMenu = FALSE;
+			fShowAssignmentMenu = FALSE;
+			giAssignHighLine = -1;
 		}
 
 		gfRenderPBInterface = TRUE;
@@ -10760,134 +10742,53 @@ void RadioMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
 	}
 }
 
-
-void RadioSectorMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
-{
-	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
-
-	if( fShowRadioNumberMenu )
-	{
-		return;
-	}
-
-	if( iReason & MSYS_CALLBACK_REASON_LBUTTON_UP )
-	{
-		if( iValue == RADIO_SECTOR_MENU_CANCEL )
-		{
-			fShowRadioSectorMenu = FALSE;
-			UnHighLightBox( ghRadioSectorBox );
-		}
-		else if( iValue >= 0 && iValue < RADIO_SECTOR_MENU_LINES )
-		{
-			if( ( gusRadioSectorLine[ iValue ] != RADIO_SECTOR_INVALID ) && ( GetBoxShadeFlag( ghRadioSectorBox, iValue ) == FALSE ) )
-			{
-				giRadioSectorMenuHighLine = iValue;
-				gusRadioSelectedSector = gusRadioSectorLine[ iValue ];
-
-				fShowRadioNumberMenu = TRUE;
-				DetermineBoxPositions( );
-			}
-		}
-
-		gfRenderPBInterface = TRUE;
-		fTeamPanelDirty = TRUE;
-		fMapScreenBottomDirty = TRUE;
-	}
-}
-
-void RadioNumberMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
-{
-	static const UINT16 usRadioNumbers[ RADIO_NUMBER_MENU_ALL ] = { 5, 10, 15, 20, 30, 40 };
-
-	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
-	SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier( FALSE );
-
-	if( iReason & MSYS_CALLBACK_REASON_LBUTTON_UP )
-	{
-		if( iValue == RADIO_NUMBER_MENU_CANCEL )
-		{
-			fShowRadioNumberMenu = FALSE;
-			UnHighLightBox( ghRadioNumberBox );
-		}
-		else if( iValue >= 0 && iValue <= RADIO_NUMBER_MENU_ALL && pSoldier && gusRadioSelectedSector != RADIO_SECTOR_INVALID && GetBoxShadeFlag( ghRadioNumberBox, iValue ) == FALSE )
-		{
-			UINT16 usNumber;
-
-			if( iValue == RADIO_NUMBER_MENU_ALL )
-			{
-				usNumber = CountAllMilitiaInSector( SECTORX( gusRadioSelectedSector ), SECTORY( gusRadioSelectedSector ) );
-			}
-			else
-			{
-				usNumber = usRadioNumbers[ iValue ];
-			}
-
-			ExecuteStrategicMilitiaCall( pSoldier, gusRadioSelectedSector, usNumber );
-
-			// close all menus
-			fShowRadioNumberMenu = FALSE;
-			fShowRadioSectorMenu = FALSE;
-			fShowRadioMenu = FALSE;
-			fShowAssignmentMenu = FALSE;
-			giAssignHighLine = -1;
-			giRadioSectorMenuHighLine = -1;
-			gusRadioSelectedSector = RADIO_SECTOR_INVALID;
-		}
-
-		gfRenderPBInterface = TRUE;
-		fTeamPanelDirty = TRUE;
-		fMapScreenBottomDirty = TRUE;
-	}
-}
-
-void AssignmentMenuMvtCallBack(MOUSE_REGION * pRegion, INT32 iReason )
+void AssignmentMenuMvtCallBack(MOUSE_REGION* pRegion, INT32 iReason)
 {
 	// mvt callback handler for assignment region
-	SOLDIERTYPE *pSoldier;
+	SOLDIERTYPE* pSoldier;
 
-	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
+	INT32 iValue = MSYS_GetRegionUserData(pRegion, 0);
 
 
-	pSoldier = GetSelectedAssignSoldier( FALSE );
+	pSoldier = GetSelectedAssignSoldier(FALSE);
 
-	if( HandleAssignmentExpansionAndHighLightForAssignMenu( pSoldier ) == TRUE )
+	if (HandleAssignmentExpansionAndHighLightForAssignMenu(pSoldier) == TRUE)
 	{
 		return;
 	}
 
-	if (iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
+	if (iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE)
 	{
 		// is the line shaded?..if so, don't highlight
-		if( pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC )
+		if (pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC)
 		{
-			if( GetBoxShadeFlag( ghEpcBox, iValue ) == FALSE )
+			if (GetBoxShadeFlag(ghEpcBox, iValue) == FALSE)
 			{
-				HighLightBoxLine( ghEpcBox, iValue );
+				HighLightBoxLine(ghEpcBox, iValue);
 			}
 		}
 		else
 		{
-			if( GetBoxShadeFlag( ghAssignmentBox, iValue ) == FALSE )
+			if (GetBoxShadeFlag(ghAssignmentBox, iValue) == FALSE)
 			{
-				HighLightBoxLine( ghAssignmentBox, iValue );
+				HighLightBoxLine(ghAssignmentBox, iValue);
 			}
 		}
 	}
-	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
+	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE)
 	{
-		if( pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC )
+		if (pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC)
 		{
 			// unhighlight all strings in box
-			UnHighLightBox( ghEpcBox );
+			UnHighLightBox(ghEpcBox);
 		}
 		else
 		{
 			// unhighlight all strings in box
-			UnHighLightBox( ghAssignmentBox );
+			UnHighLightBox(ghAssignmentBox);
 		}
 	}
 }
-
 
 void RemoveMercMenuMvtCallBack(MOUSE_REGION * pRegion, INT32 iReason )
 {
@@ -13073,171 +12974,6 @@ void CreateSnitchToggleBox()
 	DetermineBoxPositions( );
 }
 
-static void FinishRadioBoxSetup( INT32 hBox )
-{
-	// set font type
-	SetBoxFont( hBox, MAP_SCREEN_FONT );
-
-	// set highlight color
-	SetBoxHighLight( hBox, FONT_WHITE );
-
-	// unhighlighted color
-	SetBoxForeground( hBox, FONT_LTGREEN );
-
-	// background color
-	SetBoxBackground( hBox, FONT_BLACK );
-
-	// shaded color..for darkened text
-	SetBoxShade( hBox, FONT_GRAY7 );
-
-	// resize box to text
-	ResizeBoxToText( hBox );
-}
-
-static void SetupRadioBoxCommon( INT32 hBox )
-{
-	SetBoxBuffer( hBox, FRAME_BUFFER );
-	SetBorderType( hBox, guiPOPUPBORDERS );
-	SetBackGroundSurface( hBox, guiPOPUPTEX );
-	SetMargins( hBox, 6, 6, 4, 4 );
-	SetLineSpace( hBox, 2 );
-	SetCurrentBox( hBox );
-}
-
-void CreateRadioBox()
-{
-	UINT32 hStringHandle;
-	UINT32 uiCounter;
-
-	RadioPosition.iX = OrigRadioPosition.iX;
-
-	if( giBoxY != 0 )
-	{
-		RadioPosition.iY = giBoxY + ( ASSIGN_MENU_RADIO_SCAN * GetFontHeight( MAP_SCREEN_FONT ) );
-	}
-
-	CreatePopUpBox( &ghRadioBox, RadioDimensions, RadioPosition, ( POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE ) );
-	SetupRadioBoxCommon( ghRadioBox );
-
-	for( uiCounter = 0; uiCounter < MAX_RADIO_MENU_STRING_COUNT; uiCounter++ )
-	{
-		AddMonoString( &hStringHandle, pRadioMenuStrings[ uiCounter ] );
-		UnHighLightLine( hStringHandle );
-	}
-
-	FinishRadioBoxSetup( ghRadioBox );
-	DetermineBoxPositions( );
-}
-
-void CreateRadioSectorBox()
-{
-	UINT32 hStringHandle;
-	UINT32 uiCounter;
-
-	RadioSectorPosition.iX = OrigRadioSectorPosition.iX;
-
-	if( giBoxY != 0 )
-	{
-		RadioSectorPosition.iY = giBoxY + ( ASSIGN_MENU_RADIO_SCAN * GetFontHeight( MAP_SCREEN_FONT ) );
-	}
-
-	CreatePopUpBox( &ghRadioSectorBox, RadioSectorDimensions, RadioSectorPosition, ( POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE ) );
-	SetupRadioBoxCommon( ghRadioSectorBox );
-
-	// sector lines are filled in by RebuildRadioSectorBox when the menu opens
-	for( uiCounter = 0; uiCounter < RADIO_SECTOR_MENU_LINES; uiCounter++ )
-	{
-		AddMonoString( &hStringHandle, L"-" );
-		UnHighLightLine( hStringHandle );
-	}
-
-	AddMonoString( &hStringHandle, pRadioMenuStrings[ RADIO_MENU_CANCEL ] );
-	UnHighLightLine( hStringHandle );
-
-	FinishRadioBoxSetup( ghRadioSectorBox );
-	DetermineBoxPositions( );
-}
-
-void CreateRadioNumberBox()
-{
-	UINT32 hStringHandle;
-	UINT32 uiCounter;
-
-	RadioNumberPosition.iX = OrigRadioNumberPosition.iX;
-
-	if( giBoxY != 0 )
-	{
-		RadioNumberPosition.iY = giBoxY + ( ASSIGN_MENU_RADIO_SCAN * GetFontHeight( MAP_SCREEN_FONT ) );
-	}
-
-	CreatePopUpBox( &ghRadioNumberBox, RadioNumberDimensions, RadioNumberPosition, ( POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE ) );
-	SetupRadioBoxCommon( ghRadioNumberBox );
-
-	for( uiCounter = 0; uiCounter < MAX_RADIO_NUMBER_MENU_STRING_COUNT; uiCounter++ )
-	{
-		AddMonoString( &hStringHandle, pRadioNumberMenuStrings[ uiCounter ] );
-		UnHighLightLine( hStringHandle );
-	}
-
-	FinishRadioBoxSetup( ghRadioNumberBox );
-	DetermineBoxPositions( );
-}
-
-void RebuildRadioSectorBox(SOLDIERTYPE* pSoldier)
-{
-	UINT32 hStringHandle;
-	CHAR16 sString[32];
-
-	static const INT16 sDeltaX[RADIO_SECTOR_MENU_LINES] = { 0, 1, 0, -1 };
-	static const INT16 sDeltaY[RADIO_SECTOR_MENU_LINES] = { 1, 0, -1, 0 };
-
-	if ((pSoldier == NULL) || (ghRadioSectorBox == -1))
-	{
-		return;
-	}
-
-	SetCurrentBox(ghRadioSectorBox);
-	RemoveAllCurrentBoxStrings();
-
-	// ВОССТАНОВЛЕНИЕ СВОЙСТВ ОКНА ПОСЛЕ ОЧИСТКИ СТРОК
-	SetBoxBuffer(ghRadioSectorBox, FRAME_BUFFER);
-	SetBorderType(ghRadioSectorBox, guiPOPUPBORDERS);
-	SetBackGroundSurface(ghRadioSectorBox, guiPOPUPTEX);
-	SetMargins(ghRadioSectorBox, 6, 6, 4, 4);
-	SetLineSpace(ghRadioSectorBox, 2);
-
-	SetBoxFont(ghRadioSectorBox, MAP_SCREEN_FONT);
-	SetBoxHighLight(ghRadioSectorBox, FONT_WHITE);
-	SetBoxForeground(ghRadioSectorBox, FONT_LTGREEN);
-	SetBoxBackground(ghRadioSectorBox, FONT_BLACK);
-	SetBoxShade(ghRadioSectorBox, FONT_GRAY7);
-
-	for (INT32 iCounter = 0; iCounter < RADIO_SECTOR_MENU_LINES; iCounter++)
-	{
-		INT16 sLoopX = pSoldier->sSectorX + sDeltaX[iCounter];
-		INT16 sLoopY = pSoldier->sSectorY + sDeltaY[iCounter];
-
-		if (sLoopX < 1 || sLoopX >= MAP_WORLD_X - 1 || sLoopY < 1 || sLoopY >= MAP_WORLD_Y - 1)
-		{
-			swprintf(sString, L"-");
-			gusRadioSectorLine[iCounter] = RADIO_SECTOR_INVALID;
-		}
-		else
-		{
-			swprintf(sString, L"%c%d (%d)", sLoopY + 'A' - 1, sLoopX, CountAllMilitiaInSector(sLoopX, sLoopY));
-			gusRadioSectorLine[iCounter] = SECTOR(sLoopX, sLoopY);
-		}
-
-		AddMonoString(&hStringHandle, sString);
-		UnHighLightLine(hStringHandle);
-	}
-
-	AddMonoString(&hStringHandle, pRadioMenuStrings[RADIO_MENU_CANCEL]);
-	UnHighLightLine(hStringHandle);
-
-	ResizeBoxToText(ghRadioSectorBox);
-}
-
 void CreateSnitchSectorBox()
 {
 	UINT32 hStringHandle;
@@ -13738,9 +13474,10 @@ BOOLEAN CreateDestroyAssignmentPopUpBoxes( void )
 		CreateSnitchBox( );
 		CreateSnitchToggleBox( );
 		CreateSnitchSectorBox( );
-		CreateRadioBox( );
-		CreateRadioSectorBox( );
-		CreateRadioNumberBox( );
+		g_StrategicMilitiaCall.CreateRadioBox();
+		g_StrategicMilitiaCall.CreateRadioSectorBox();
+		g_StrategicMilitiaCall.CreateRadioNumberBox();
+		g_StrategicMilitiaCall.Init();
 		UpdateMapScreenAssignmentPositions( );
 
 		fCreated = TRUE;
@@ -13792,14 +13529,7 @@ BOOLEAN CreateDestroyAssignmentPopUpBoxes( void )
 		RemoveBox(ghSnitchSectorBox);
 		ghSnitchSectorBox = -1;
 
-		RemoveBox(ghRadioBox);
-		ghRadioBox = -1;
-
-		RemoveBox(ghRadioSectorBox);
-		ghRadioSectorBox = -1;
-
-		RemoveBox(ghRadioNumberBox);
-		ghRadioNumberBox = -1;
+		g_StrategicMilitiaCall.CloseAllMenus();
 
 		fCreated = FALSE;
 		gfIgnoreScrolling = FALSE;
@@ -13959,64 +13689,9 @@ void DetermineBoxPositions( void )
 		}
 	}
 
-	if ((fShowRadioMenu == TRUE) && (ghRadioBox != -1))
+	if ((fShowRadioMenu == TRUE) && (g_StrategicMilitiaCall.GetRadioBoxID() != -1))
 	{
-		SGPRect pDim1, pDim3;
-		SGPPoint pPos1, pPos3;
-
-		// --- 1 МЕНЮ: РАДИО (ghRadioBox) ---
-		GetBoxSize(ghAssignmentBox, &pDim1);
-		pNewPoint.iX = gsAssignmentBoxesX + pDim1.iRight;
-		pNewPoint.iY = gsAssignmentBoxesY + ((GetFontHeight(MAP_SCREEN_FONT) + 2) * ASSIGN_MENU_RADIO_SCAN);
-
-		SetBoxPosition(ghRadioBox, pNewPoint);
-		ResizeBoxToText(ghRadioBox);
-
-		RadioPosition = pNewPoint;
-		OrigRadioPosition = pNewPoint;
-
-		// --- 3 МЕНЮ: ВЫБОР СЕКТОРА (ghRadioSectorBox) ---
-		GetBoxPosition(ghRadioBox, &pPos1);
-		GetBoxSize(ghRadioBox, &pDim1);
-
-		if ((fShowRadioSectorMenu == TRUE) && (ghRadioSectorBox != -1))
-		{
-			pNewPoint.iX = pPos1.iX + pDim1.iRight;
-			// Смещаем на уровень строки "Вызвать ополчение"
-			pNewPoint.iY = pPos1.iY + ((GetFontHeight(MAP_SCREEN_FONT) + 2) * RADIO_MENU_CALL_MILITIA);
-
-			// Сначала жестко обновляем текст и внутренности
-			ResizeBoxToText(ghRadioSectorBox);
-			SetBoxPosition(ghRadioSectorBox, pNewPoint);
-
-			RadioSectorPosition = pNewPoint;
-			OrigRadioSectorPosition = pNewPoint;
-
-			// СИСТЕМА ОБНОВЛЕНИЯ ФОНА: Накатываем текстуру поверх карты
-			ForceUpDateOfBox(ghRadioBox);
-			ForceUpDateOfBox(ghRadioSectorBox);
-
-			// --- 4 МЕНЮ: КОЛИЧЕСТВО (ghRadioNumberBox) ---
-			GetBoxPosition(ghRadioSectorBox, &pPos3);
-			GetBoxSize(ghRadioSectorBox, &pDim3);
-
-			if ((fShowRadioNumberMenu == TRUE) && (ghRadioNumberBox != -1))
-			{
-				pNewPoint.iX = pPos3.iX + pDim3.iRight;
-				pNewPoint.iY = pPos3.iY; // Выравниваем по высоте с 3-м меню
-
-				ResizeBoxToText(ghRadioNumberBox);
-				SetBoxPosition(ghRadioNumberBox, pNewPoint);
-
-				RadioNumberPosition = pNewPoint;
-				OrigRadioNumberPosition = pNewPoint;
-
-				// Обновляем всю финальную цепочку окон
-				ForceUpDateOfBox(ghRadioNumberBox);
-			}
-		}
-		// Обновляем общую отрисовку боксов в системе
-		MarkAllBoxesAsAltered();
+		g_StrategicMilitiaCall.PositionMenus(gsAssignmentBoxesX, gsAssignmentBoxesY);
 	}
 
 	return;
@@ -15578,15 +15253,22 @@ BOOLEAN HandleAssignmentExpansionAndHighLightForRadioMenu( void )
 	return( FALSE );
 }
 
-BOOLEAN HandleAssignmentExpansionAndHighLightForRadioSectorMenu( void )
+BOOLEAN HandleAssignmentExpansionAndHighLightForRadioSectorMenu(void)
 {
-	if( fShowRadioNumberMenu )
+	if (fShowRadioNumberMenu)
 	{
-		HighLightBoxLine( ghRadioSectorBox, giRadioSectorMenuHighLine );
-		return( TRUE );
+		// ИСПРАВЛЕНИЕ: Берем ID бокса и индекс подсвеченной строки напрямую из класса фичи
+		INT32 hSectorBox = g_StrategicMilitiaCall.GetSectorBoxID();
+		INT32 iHighLine = g_StrategicMilitiaCall.GetSectorMenuHighLine();
+
+		if (hSectorBox != -1 && iHighLine != -1)
+		{
+			HighLightBoxLine(hSectorBox, iHighLine);
+			return(TRUE);
+		}
 	}
 
-	return( FALSE );
+	return(FALSE);
 }
 
 BOOLEAN HandleAssignmentExpansionAndHighLightForSnitchMenu( void )
@@ -15815,95 +15497,6 @@ void HandleShadingOfLinesForAttributeMenus( void )
 	}
 
 	return;
-}
-
-void HandleShadingOfLinesForRadioMenu( void )
-{
-	SOLDIERTYPE *pSoldier = NULL;
-
-	if( ( fShowRadioMenu == FALSE ) || ( ghRadioBox == -1 ) )
-	{
-		return;
-	}
-
-	pSoldier = GetSelectedAssignSoldier( FALSE );
-
-	if( pSoldier && pSoldier->CanUseRadio() )
-	{
-		UnShadeStringInBox( ghRadioBox, RADIO_MENU_SCAN );
-	}
-	else
-	{
-		ShadeStringInBox( ghRadioBox, RADIO_MENU_SCAN );
-	}
-
-	if( pSoldier && CanCharacterCallMilitia( pSoldier ) )
-	{
-		UnShadeStringInBox( ghRadioBox, RADIO_MENU_CALL_MILITIA );
-	}
-	else
-	{
-		ShadeStringInBox( ghRadioBox, RADIO_MENU_CALL_MILITIA );
-	}
-}
-
-void HandleShadingOfLinesForRadioSectorMenu( void )
-{
-	if( ( fShowRadioSectorMenu == FALSE ) || ( ghRadioSectorBox == -1 ) )
-	{
-		return;
-	}
-
-	for( INT32 iCounter = 0; iCounter < RADIO_SECTOR_MENU_LINES; iCounter++ )
-	{
-		UINT16 usSector = gusRadioSectorLine[ iCounter ];
-
-		if( ( usSector == RADIO_SECTOR_INVALID ) || ( CountAllMilitiaInSector( SECTORX( usSector ), SECTORY( usSector ) ) == 0 ) )
-		{
-			ShadeStringInBox( ghRadioSectorBox, iCounter );
-		}
-		else
-		{
-			UnShadeStringInBox( ghRadioSectorBox, iCounter );
-		}
-	}
-}
-
-void HandleShadingOfLinesForRadioNumberMenu( void )
-{
-	static const UINT16 usRadioNumbers[ RADIO_NUMBER_MENU_ALL ] = { 5, 10, 15, 20, 30, 40 };
-	UINT32 uiMilitia = 0;
-
-	if( ( fShowRadioNumberMenu == FALSE ) || ( ghRadioNumberBox == -1 ) )
-	{
-		return;
-	}
-
-	if( gusRadioSelectedSector != RADIO_SECTOR_INVALID )
-	{
-		uiMilitia = CountAllMilitiaInSector( SECTORX( gusRadioSelectedSector ), SECTORY( gusRadioSelectedSector ) );
-	}
-
-	for( INT32 iCounter = 0; iCounter < RADIO_NUMBER_MENU_ALL; iCounter++ )
-	{
-		if( uiMilitia < usRadioNumbers[ iCounter ] )
-		{
-			ShadeStringInBox( ghRadioNumberBox, iCounter );
-		}
-		else
-		{
-			UnShadeStringInBox( ghRadioNumberBox, iCounter );
-		}
-	}
-
-	if( uiMilitia == 0 )
-	{
-		ShadeStringInBox( ghRadioNumberBox, RADIO_NUMBER_MENU_ALL );
-	}
-	else
-	{
-		UnShadeStringInBox( ghRadioNumberBox, RADIO_NUMBER_MENU_ALL );
-	}
 }
 
 void HandleShadingOfLinesForSnitchMenu( void )

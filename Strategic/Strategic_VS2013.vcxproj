@@ -71,6 +71,7 @@
     <ClInclude Include="Strategic Turns.h" />
     <ClInclude Include="strategic.h" />
     <ClInclude Include="strategicmap.h" />
+    <ClInclude Include="StrategicMilitiaCall\StrategicMilitiaCall.h" />
     <ClInclude Include="Town Militia.h" />
     <ClInclude Include="UndergroundInit.h" />
   </ItemGroup>
@@ -124,6 +125,7 @@
     <ClCompile Include="Strategic Turns.cpp" />
     <ClCompile Include="strategic.cpp" />
     <ClCompile Include="strategicmap.cpp" />
+    <ClCompile Include="StrategicMilitiaCall\StrategicMilitiaCall.cpp" />
     <ClCompile Include="Town Militia.cpp" />
     <ClCompile Include="UndergroundInit.cpp" />
     <ClCompile Include="XML_Army.cpp" />
