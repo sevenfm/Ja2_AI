@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -61,6 +61,7 @@
     <ClInclude Include="InterfaceItemImages.h" />
     <ClInclude Include="Inventory Choosing.h" />
     <ClInclude Include="Item Types.h" />
+    <ClInclude Include="CraftInfo.h" />
     <ClInclude Include="Items.h" />
     <ClInclude Include="Ja25_Tactical.h" />
     <ClInclude Include="Keys.h" />
@@ -161,6 +162,7 @@
     <ClCompile Include="InterfaceItemImages.cpp" />
     <ClCompile Include="Inventory Choosing.cpp" />
     <ClCompile Include="Item Types.cpp" />
+    <ClCompile Include="CraftInfo.cpp" />
     <ClCompile Include="Items.cpp" />
     <ClCompile Include="Ja25_Tactical.cpp" />
     <ClCompile Include="Keys.cpp" />

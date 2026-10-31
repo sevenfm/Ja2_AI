@@ -91,6 +91,7 @@
 #ifdef JA2UB
 #include "Ja25_Tactical.h"
 #endif
+#include "CraftInfo.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -331,6 +332,7 @@ void TransformationMenuPopup_Hide(void);
 void TransformationMenuPopup_Transform(TransformInfoStruct * Transform);
 BOOLEAN TransformationMenuPopup_TestValid(TransformInfoStruct * Transform);
 void ItemDescTransformRegionCallback( MOUSE_REGION *pRegion, INT32 reason );
+void TransformationMenuPopup_CraftInfo( UINT16 usItemIndex );
 void TransformationMenuPopup_Unjam();
 BOOLEAN TransformationMenuPopup_Unjam_TestValid(OBJECTTYPE* pObj);
 void TransformationMenuPopup_Clean();
@@ -449,8 +451,6 @@ void ItemDescAdvButtonOff( UINT8 ubItemDescAdvButtonIndex );
 void ItemDescAdvButtonCheck( void );
 // HEADROCK HAM 5: Item Adjustment Button(s)
 void ItemDescTransformRegionCallback( MOUSE_REGION *pRegion, INT32 reason );
-// MVP: craft recipes viewer (text output)
-void TransformationMenuPopup_CraftInfo( UINT16 usItemIndex );
 
 // the done descrition button callback
 void ItemDescDoneButtonCallback( GUI_BUTTON *btn, INT32 reason );
@@ -14046,9 +14046,7 @@ void TransformationMenuPopup_Hide(void)
 // MVP: callback for the "View crafts (Text)" menu option - prints craft recipes as text messages
 void TransformationMenuPopup_CraftInfo(UINT16 usItemIndex)
 {
-	gItemDescTransformPopup->hide();
-
-	PrintItemCraftInfo(usItemIndex);
+	ShowItemCraftInfo( usItemIndex );
 }
 
 // This function handles callback when one of the options on the Transformation menu is clicked.

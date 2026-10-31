@@ -202,8 +202,6 @@ UINT16 GetLauncherFromLaunchable( UINT16 usLaunchable );
 BOOLEAN ValidMerge( UINT16 usMerge, UINT16 usItem );
 BOOLEAN EvaluateValidMerge( UINT16 usMerge, UINT16 usItem, UINT16 * pusResult, UINT16 * pusResult2, UINT8 * pubType, UINT8 * pubAPCost, UINT16 *pusPointsUsed, UINT16 *pusPointsAdded, UINT16 *pusExtraItem, UINT16 *pusExtraItemPointsUsed, UINT16 *pusSkillCheck, UINT16 *pusSkillDifficulty );
 
-void PrintItemCraftInfo( UINT16 usItemIndex );
-
 // is the item passed a medical/ first aid kit? and what type?
 INT8 IsMedicalKitItem( OBJECTTYPE *pObject );
 
