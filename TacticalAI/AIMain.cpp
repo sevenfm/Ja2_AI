@@ -1685,7 +1685,7 @@ void RefreshAI(SOLDIERTYPE *pSoldier)
 }
 
 
-void AIDecideRadioAnimation( SOLDIERTYPE *pSoldier, BOOLEAN fForce )
+void AIDecideRadioAnimation(SOLDIERTYPE *pSoldier)
 {
 	if ( pSoldier->ubBodyType != REGMALE && pSoldier->ubBodyType != BIGMALE )
 	{
@@ -1716,16 +1716,6 @@ void AIDecideRadioAnimation( SOLDIERTYPE *pSoldier, BOOLEAN fForce )
 		ActionDone( pSoldier );
 		return;
 	}
-
-	// sevenfm: only allow radio animation on initial red alert
-	/*if (!fForce && 
-		pSoldier->aiData.bAlertStatus >= STATUS_RED && 
-		gTacticalStatus.Team[pSoldier->bTeam].bAwareOfOpposition > 1)
-	{
-		// don't play animation
-		ActionDone(pSoldier);
-		return;
-	}*/
 
 	switch( gAnimControl[ pSoldier->usAnimState ].ubEndHeight )
 	{
@@ -2254,7 +2244,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 
         case AI_ACTION_RED_ALERT:             // tell friends opponent(s) seen
             // if a computer merc, and up to now they didn't know you're here
-            if (!(pSoldier->flags.uiStatusFlags & SOLDIER_PC) && 
+            if (!pSoldier->IsSoldierPC() &&
 				(!gTacticalStatus.Team[pSoldier->bTeam].bAwareOfOpposition || (gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE) && gTacticalStatus.ubTheChosenOne == NOBODY))
 			{
 				// SANDRO - ENEMY TAUNTS
@@ -2262,7 +2252,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 				if (!gTacticalStatus.Team[pSoldier->bTeam].bAwareOfOpposition)
 					PossiblyStartEnemyTaunt(pSoldier, TAUNT_ALERT);
 
-				HandleInitialRedAlert(pSoldier->bTeam, TRUE);
+				HandleInitialRedAlert(pSoldier->bTeam);
 			}
 			else
 			{
@@ -2283,7 +2273,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
             // action completed immediately, cancel it right away
 
             // ATE: Change to an animation!
-            AIDecideRadioAnimation( pSoldier, FALSE );
+			AIDecideRadioAnimation(pSoldier);
 
 			// SANDRO - ENEMY TAUNTS
 			if (pSoldier->aiData.bAction == AI_ACTION_YELLOW_ALERT )
@@ -2628,7 +2618,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 			DeductPoints(pSoldier,APBPConstants[AP_RADIO],APBPConstants[BP_RADIO], AFTERACTION_INTERRUPT);
 			pSoldier->RadioCallStart();
 			PossiblyStartEnemyTaunt(pSoldier, TAUNT_SUSPICIOUS);
-			AIDecideRadioAnimation( pSoldier, TRUE );			
+			AIDecideRadioAnimation(pSoldier);
 			break;
 
 		case AI_ACTION_DRINK_CANTEEN:
@@ -2913,7 +2903,7 @@ void ATTACKTYPE::Init(void)//dnl ch69 140913
 	ubFriendlyFireChance = 0;
 }
 
-void HandleInitialRedAlert( INT8 bTeam, UINT8 ubCommunicate)
+void HandleInitialRedAlert(INT8 bTeam)
 {
 	//ScreenMsg(FONT_ORANGE, MSG_INTERFACE, L"Initial red alert!");
 

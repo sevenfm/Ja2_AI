@@ -3536,7 +3536,7 @@ void RadioSightings(SOLDIERTYPE *pSoldier, UINT8 ubAbout, UINT8 ubTeamToRadioTo)
 				// radioing to militia that we saw someone! alert them!
 				if (gTacticalStatus.Team[MILITIA_TEAM].bTeamActive && !gTacticalStatus.Team[MILITIA_TEAM].bAwareOfOpposition)
 				{
-					HandleInitialRedAlert(MILITIA_TEAM, FALSE);
+					HandleInitialRedAlert(MILITIA_TEAM);
 				}
 			}
 		} 	// end of our team's merc sees new opponent

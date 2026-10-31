@@ -6396,7 +6396,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 
 		DebugAI(AI_MSG_TOPIC, pSoldier, String("[Turn to closest possibly seen]"));
 		// sevenfm: try to turn to closest possibly seen opponent
-		if (//pSoldier->CheckInitialAP() &&
+		if (pSoldier->CheckInitialAP() &&
 			pSoldier->AnimEndHeight() >= ANIM_CROUCH &&
 			!pSoldier->bBlindedCounter &&
 			!(pSoldier->usSoldierFlagMask2 & SOLDIER_AI_TURN_UNSEEN) &&
@@ -6589,10 +6589,17 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 					DebugAI( AI_MSG_INFO, pSoldier, String("Weights: hide = %d, seek = %d, watch = %d, help = %d",bHidePts,bSeekPts,bWatchPts,bHelpPts));
 				}
 
+				BOOLEAN fAllowWatch = FALSE;
+				// sevenfm: sometimes allow watch even in dangerous place to make AI behavior more diverse and surprise player
+				if (Chance(10 * GetHighestWatchedLocPoints(pSoldier->ubID)))
+				{
+					fAllowWatch = TRUE;
+				}
+
 				// sevenfm: penalize watching if soldier is under fire or in dangerous place
 				if( pSoldier->CheckInitialAP() &&
-					(!fAnyCover && !fProneSightCover && pSoldier->pathing.bLevel == 0 ||
-					pSoldier->aiData.bUnderFire ||
+					(!fAnyCover && !fProneSightCover && pSoldier->pathing.bLevel == 0 && !fAllowWatch ||
+					pSoldier->aiData.bUnderFire && !fAllowWatch ||
 					InLightAtNight(pSoldier->sGridNo, pSoldier->pathing.bLevel) && !InARoom(pSoldier->sGridNo, NULL)) )
 				{
 					// prefer hiding when in dangerous place
@@ -6605,9 +6612,9 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 				}
 
 				// sevenfm: don't watch when overcrowded and not in a building
-				if( !InARoom(pSoldier->sGridNo, NULL) && !fAnyCover)
+				if (!InARoom(pSoldier->sGridNo, NULL) && !fAnyCover && !fAllowWatch)
 				{
-					bWatchPts -= CountNearbyFriends(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE / 8);
+					bWatchPts -= CountNearbyFriends(pSoldier, pSoldier->sGridNo, TACTICAL_RANGE / 8);
 					DebugAI( AI_MSG_INFO, pSoldier, String("Overcrowded: hide = %d, seek = %d, watch = %d, help = %d",bHidePts,bSeekPts,bWatchPts,bHelpPts));
 				}								
 
@@ -6630,7 +6637,11 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 						if (pSoldier->aiData.bOrders != STATIONARY && !AIRoleSniper(pSoldier))
 						{
 							UINT8 ubFriendsBlackWatch = CountFriendsBlack(pSoldier, sWatchSpot);
-							bWatchPts -= ubFriendsBlackWatch;
+							if (!fAllowWatch)
+							{
+								bWatchPts -= ubFriendsBlackWatch;
+							}
+							
 							DebugAI(AI_MSG_INFO, pSoldier, String("Friends black at watched location %d", ubFriendsBlackWatch));
 							DebugAI(AI_MSG_INFO, pSoldier, String("Weight: hide = %d, seek = %d, watch = %d, help = %d", bHidePts, bSeekPts, bWatchPts, bHelpPts));
 
@@ -6654,9 +6665,10 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 							}
 
 							// penalize watching if enemy has high interrupt level and watching soldier has no prone sight cover
-							INT8 bMaxEnemyLevel = FindMaxEnemyInterruptLevel(pSoldier, sWatchSpot, bWatchLevel, DAY_VISION_RANGE / 8);
-							INT8 bMyEffectiveLevel = AIEstimateInterruptLevel(pSoldier) + CountNearbyFriends(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE / 8);
+							INT8 bMaxEnemyLevel = FindMaxEnemyInterruptLevel(pSoldier, sWatchSpot, bWatchLevel, TACTICAL_RANGE / 8);
+							INT8 bMyEffectiveLevel = AIEstimateInterruptLevel(pSoldier) + CountNearbyFriends(pSoldier, pSoldier->sGridNo, TACTICAL_RANGE / 4);
 							if (bMaxEnemyLevel > bMyEffectiveLevel &&
+								!fAllowWatch &&
 								LOS_LocationStance(sWatchSpot, bWatchLevel, ANIM_STAND, pSoldier->sGridNo, pSoldier->pathing.bLevel, ANIM_PRONE, MAX_VISION_RANGE))
 							{
 								bWatchPts -= bMaxEnemyLevel - bMyEffectiveLevel;
@@ -6665,7 +6677,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 							}
 
 							// penalize watching if we outnumber enemy
-							if (AICheckWeOutnumber(pSoldier, sWatchSpot))
+							if (AICheckWeOutnumber(pSoldier, sWatchSpot) && !fAllowWatch)
 							{
 								bWatchPts -= 1;
 								DebugAI(AI_MSG_INFO, pSoldier, String("We outnumber: hide = %d, seek = %d, watch = %d, help = %d", bHidePts, bSeekPts, bWatchPts, bHelpPts));
@@ -6736,11 +6748,11 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 				}
 
 				// sevenfm: more active civilians
-				if(pSoldier->bTeam == CIV_TEAM && !pSoldier->aiData.bNeutral && pSoldier->ubCivilianGroup != NON_CIV_GROUP)
+				/*if(pSoldier->bTeam == CIV_TEAM && !pSoldier->aiData.bNeutral && pSoldier->ubCivilianGroup != NON_CIV_GROUP)
 				{
 					bSeekPts += 2;
 					bWatchPts -= 2;
-				}
+				}*/
 
 				// AI medics prefer help over seek
 				if (AIRoleMedic(pSoldier))

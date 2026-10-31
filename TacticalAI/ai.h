@@ -232,7 +232,7 @@ UINT8 GetMostThreateningOpponent( SOLDIERTYPE *pSoldier );
 INT16 DistanceToClosestEnemy(INT32 sMySpot, INT8 bMyTeam);
 
 void HandleSoldierAI( SOLDIERTYPE *pSoldier );
-void HandleInitialRedAlert( INT8 bTeam, UINT8 ubCommunicate);
+void HandleInitialRedAlert(INT8 bTeam);
 
 void InitPanicSystem();
 INT16 InWaterOrGas(SOLDIERTYPE *pSoldier, INT32 sGridno);
