@@ -7138,7 +7138,7 @@ STR16 gzCraftInfoMessage[] =
 	// 2
 	L"Created from: %s => %s",
 	// 3
-	L"Can be crafted from: %s + %s = %s",
+	L"Can be crafted from: %s => %s",
 	// 4
 	L"No craft recipes found for this item.",
 	// 5

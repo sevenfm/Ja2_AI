@@ -1992,12 +1992,12 @@ BOOLEAN ValidMerge( UINT16 usMerge, UINT16 usItem )
 	return(EvaluateValidMerge(usMerge, usItem, &usIgnoreResult, &usIgnoreResult2, &ubIgnoreType, &ubIgnoreAPCost, &usPointsUsed, &usPointsAdded, &usExtraItem, &usExtraItemPointsUsed, &usSkillCheck, &usSkillDifficulty));
 }
 
-// MVP: print all craft recipes (merge + transformation) for the given item as text messages
+// MVP: craft recipes viewer (text output)
 void PrintItemCraftInfo( UINT16 usItemIndex )
 {
-	ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_HEADER], ItemNames[usItemIndex], usItemIndex );
-
 	BOOLEAN fFound = FALSE;
+
+	ScreenMsg( FONT_MCOLOR_WHITE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_HEADER], ItemNames[usItemIndex], usItemIndex );
 
 	// recipes where this item is the result (Merge[][2] or Merge[][3]) - "can be crafted from A + B"
 	for ( UINT16 i = 0; i <= MAXITEMS; i++ )
@@ -2017,7 +2017,14 @@ void PrintItemCraftInfo( UINT16 usItemIndex )
 		}
 
 		fFound = TRUE;
-		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CAN_BE_CRAFTED_FROM], ItemNames[usMergeItem], ItemNames[usTarget], ItemNames[usItemIndex] );
+		if ( ItemIsLegal( usResult1, TRUE ) )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CAN_BE_CRAFTED_FROM], ItemNames[usMergeItem], ItemNames[usTarget], ItemNames[usResult1] );
+		}
+		if ( ItemIsLegal( usResult2, TRUE ) )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CAN_BE_CRAFTED_FROM], ItemNames[usMergeItem], ItemNames[usTarget], ItemNames[usResult2] );
+		}
 	}
 
 	// recipes where this item is the reactant (Merge[][0]) - "this item + target = result"
@@ -2093,6 +2100,90 @@ void PrintItemCraftInfo( UINT16 usItemIndex )
 		{
 			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_USED_FOR], ItemNames[usItemIndex], ItemNames[usMergeItem], ItemNames[usResult2] );
 		}
+	}
+
+	// attachment combo merges where this item is the base item - "this item + attachments = result"
+	for ( UINT16 i = 0; i <= MAXITEMS; i++ )
+	{
+		if ( AttachmentComboMerge[i].usItem != usItemIndex )
+		{
+			continue;
+		}
+		if ( !ItemIsLegal( AttachmentComboMerge[i].usResult, TRUE ) )
+		{
+			continue;
+		}
+
+		fFound = TRUE;
+
+		CHAR16 zResults[300] = L"";
+		wcscpy( zResults, ItemNames[usItemIndex] );
+		for ( UINT16 a = 0; a < MAX_DEFAULT_ATTACHMENTS; a++ )
+		{
+			if ( AttachmentComboMerge[i].usAttachment[a] == NOTHING || AttachmentComboMerge[i].usAttachment[a] == 0 )
+			{
+				continue;
+			}
+			if ( !ItemIsLegal( AttachmentComboMerge[i].usAttachment[a], TRUE ) )
+			{
+				continue;
+			}
+
+			CHAR16 zTmp[200];
+			swprintf( zTmp, L" + %s", ItemNames[AttachmentComboMerge[i].usAttachment[a]] );
+			wcscat( zResults, zTmp );
+		}
+
+		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CAN_BE_CRAFTED_FROM], zResults, ItemNames[AttachmentComboMerge[i].usResult] );
+	}
+
+	// attachment combo merges where this item is one of the attachments - "base + this item + ... = result"
+	for ( UINT16 i = 0; i <= MAXITEMS; i++ )
+	{
+		if ( AttachmentComboMerge[i].usItem == usItemIndex )
+		{
+			continue;
+		}
+		if ( !ItemIsLegal( AttachmentComboMerge[i].usItem, TRUE ) || !ItemIsLegal( AttachmentComboMerge[i].usResult, TRUE ) )
+		{
+			continue;
+		}
+
+		BOOLEAN fIsIngredient = FALSE;
+		for ( UINT16 a = 0; a < MAX_DEFAULT_ATTACHMENTS; a++ )
+		{
+			if ( AttachmentComboMerge[i].usAttachment[a] == usItemIndex )
+			{
+				fIsIngredient = TRUE;
+				break;
+			}
+		}
+		if ( !fIsIngredient )
+		{
+			continue;
+		}
+
+		fFound = TRUE;
+
+		CHAR16 zResults[300] = L"";
+		wcscpy( zResults, ItemNames[AttachmentComboMerge[i].usItem] );
+		for ( UINT16 a = 0; a < MAX_DEFAULT_ATTACHMENTS; a++ )
+		{
+			if ( AttachmentComboMerge[i].usAttachment[a] == NOTHING || AttachmentComboMerge[i].usAttachment[a] == 0 )
+			{
+				continue;
+			}
+			if ( !ItemIsLegal( AttachmentComboMerge[i].usAttachment[a], TRUE ) )
+			{
+				continue;
+			}
+
+			CHAR16 zTmp[200];
+			swprintf( zTmp, L" + %s", ItemNames[AttachmentComboMerge[i].usAttachment[a]] );
+			wcscat( zResults, zTmp );
+		}
+
+		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CAN_BE_CRAFTED_FROM], zResults, ItemNames[AttachmentComboMerge[i].usResult] );
 	}
 
 	// self-transformations of this item
