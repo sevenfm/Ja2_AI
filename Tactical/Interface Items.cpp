@@ -449,6 +449,8 @@ void ItemDescAdvButtonOff( UINT8 ubItemDescAdvButtonIndex );
 void ItemDescAdvButtonCheck( void );
 // HEADROCK HAM 5: Item Adjustment Button(s)
 void ItemDescTransformRegionCallback( MOUSE_REGION *pRegion, INT32 reason );
+// MVP: craft recipes viewer (text output)
+void TransformationMenuPopup_CraftInfo( UINT16 usItemIndex );
 
 // the done descrition button callback
 void ItemDescDoneButtonCallback( GUI_BUTTON *btn, INT32 reason );
@@ -12685,8 +12687,8 @@ void GetHelpTextForItem( STR16 pzStr, OBJECTTYPE *pObject, SOLDIERTYPE *pSoldier
 				/*if ( gGameExternalOptions.fAdvRepairSystem && gGameExternalOptions.fDirtSystem && ( sThreshold < 100 || bDirt > 0 ) )
 				{
 					#ifdef CHINESE
-						//swprintf( pStr, L"%s [%d%£¥(%d%£¥)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
-						swprintf( pStr, L"%s [%d%£¥(%d%£¥)]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
+						//swprintf( pStr, L"%s [%d%ï¿½ï¿½(%d%ï¿½ï¿½)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
+						swprintf( pStr, L"%s [%d%ï¿½ï¿½(%d%ï¿½ï¿½)]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
 					#else
 						//swprintf( pStr, L"%s [%d%%(%d%%)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n%s %.2f%%",
 						swprintf(pStr, L"%s [%d%%(%d%%)]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n%s %.2f%%",
@@ -12715,8 +12717,8 @@ void GetHelpTextForItem( STR16 pzStr, OBJECTTYPE *pObject, SOLDIERTYPE *pSoldier
 				else */if ( gGameExternalOptions.fAdvRepairSystem && sThreshold < 100 )
 				{
 					#ifdef CHINESE
-						//swprintf( pStr, L"%s [%d%£¥(%d%£¥)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
-						swprintf(pStr, L"%s [%d%£¥(%d%£¥)]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
+						//swprintf( pStr, L"%s [%d%ï¿½ï¿½(%d%ï¿½ï¿½)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
+						swprintf(pStr, L"%s [%d%ï¿½ï¿½(%d%ï¿½ï¿½)]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
 					#else
 						//swprintf( pStr, L"%s [%d%%(%d%%)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
 						swprintf(pStr, L"%s [%d%%(%d%%)]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
@@ -12743,8 +12745,8 @@ void GetHelpTextForItem( STR16 pzStr, OBJECTTYPE *pObject, SOLDIERTYPE *pSoldier
 				/*else if ( gGameExternalOptions.fDirtSystem && bDirt > 0 )
 				{
 					#ifdef CHINESE
-						//swprintf( pStr, L"%s [%d%£¥]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
-						swprintf(pStr, L"%s [%d%£¥]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
+						//swprintf( pStr, L"%s [%d%ï¿½ï¿½]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
+						swprintf(pStr, L"%s [%d%ï¿½ï¿½]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n %s %.2f%%",
 					#else
 						//swprintf( pStr, L"%s [%d%%]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n%s %.2f%%",
 						swprintf(pStr, L"%s [%d%%]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n%s %.2f%%",
@@ -12772,8 +12774,8 @@ void GetHelpTextForItem( STR16 pzStr, OBJECTTYPE *pObject, SOLDIERTYPE *pSoldier
 				else
 				{
 					#ifdef CHINESE
-						//swprintf( pStr, L"%s [%d%£¥]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
-						swprintf(pStr, L"%s [%d%£¥]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
+						//swprintf( pStr, L"%s [%d%ï¿½ï¿½]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
+						swprintf(pStr, L"%s [%d%ï¿½ï¿½]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
 					#else
 						//swprintf( pStr, L"%s [%d%%]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
 						swprintf(pStr, L"%s [%d%%]\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s",
@@ -13942,6 +13944,13 @@ void ItemDescTransformRegionCallback( MOUSE_REGION *pRegion, INT32 reason )
 			}
 		}
 		
+		// MVP: craft recipes viewer (text output)
+		{
+			POPUP_OPTION *pOption = new POPUP_OPTION(&std::wstring(gzCraftInfoMessage[CRAFTINFO_MENU_ITEM]), new popupCallbackFunction<void, UINT16>(TransformationMenuPopup_CraftInfo, gpItemDescObject->usItem));
+			gItemDescTransformPopup->addOption(*pOption);
+			fFoundTransformations = true;
+		}
+
 		if (!fFoundTransformations)
 		{
 			POPUP_OPTION * pOption = new POPUP_OPTION(&std::wstring(gzTransformationMessage[MSG_TRANSFORMATION_NO_ADJUSTMENTS]), new popupCallbackFunction<void, TransformInfoStruct*>(&TransformationMenuPopup_Transform, NULL));
@@ -14032,6 +14041,14 @@ void TransformationMenuPopup_Hide(void)
 	// Signal the renderer to stop drawing this menu.
 	gfItemDescTransformPopupVisible = FALSE;
 	fMapPanelDirty = TRUE;
+}
+
+// MVP: callback for the "View crafts (Text)" menu option - prints craft recipes as text messages
+void TransformationMenuPopup_CraftInfo(UINT16 usItemIndex)
+{
+	gItemDescTransformPopup->hide();
+
+	PrintItemCraftInfo(usItemIndex);
 }
 
 // This function handles callback when one of the options on the Transformation menu is clicked.

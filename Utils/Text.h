@@ -2656,6 +2656,21 @@ enum
 	MSG_TRANSFORMATION_MAX,
 };
 
+// MVP: craft recipes viewer (text output)
+extern STR16 gzCraftInfoMessage[];
+
+enum
+{
+	CRAFTINFO_HEADER = 0,
+	CRAFTINFO_USED_FOR,
+	CRAFTINFO_CREATED_FROM,
+	CRAFTINFO_CAN_BE_CRAFTED_FROM,
+	CRAFTINFO_NONE,
+	CRAFTINFO_MENU_ITEM,
+
+	CRAFTINFO_MAX,
+};
+
 
 //CHRISL: NewInv messages
 extern STR16 NewInvMessage[];

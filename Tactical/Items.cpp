@@ -1992,6 +1992,147 @@ BOOLEAN ValidMerge( UINT16 usMerge, UINT16 usItem )
 	return(EvaluateValidMerge(usMerge, usItem, &usIgnoreResult, &usIgnoreResult2, &ubIgnoreType, &ubIgnoreAPCost, &usPointsUsed, &usPointsAdded, &usExtraItem, &usExtraItemPointsUsed, &usSkillCheck, &usSkillDifficulty));
 }
 
+// MVP: print all craft recipes (merge + transformation) for the given item as text messages
+void PrintItemCraftInfo( UINT16 usItemIndex )
+{
+	ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_HEADER], ItemNames[usItemIndex], usItemIndex );
+
+	BOOLEAN fFound = FALSE;
+
+	// recipes where this item is the result (Merge[][2] or Merge[][3]) - "can be crafted from A + B"
+	for ( UINT16 i = 0; i <= MAXITEMS; i++ )
+	{
+		UINT16 usMergeItem = Merge[i][0];
+		UINT16 usTarget = Merge[i][1];
+		UINT16 usResult1 = Merge[i][2];
+		UINT16 usResult2 = Merge[i][3];
+
+		if ( usResult1 != usItemIndex && usResult2 != usItemIndex )
+		{
+			continue;
+		}
+		if ( !ItemIsLegal( usMergeItem, TRUE ) || !ItemIsLegal( usTarget, TRUE ) )
+		{
+			continue;
+		}
+
+		fFound = TRUE;
+		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CAN_BE_CRAFTED_FROM], ItemNames[usMergeItem], ItemNames[usTarget], ItemNames[usItemIndex] );
+	}
+
+	// recipes where this item is the reactant (Merge[][0]) - "this item + target = result"
+	for ( UINT16 i = 0; i <= MAXITEMS; i++ )
+	{
+		if ( Merge[i][0] != usItemIndex )
+		{
+			continue;
+		}
+
+		UINT16 usTarget = Merge[i][1];
+		UINT16 usResult1 = Merge[i][2];
+		UINT16 usResult2 = Merge[i][3];
+
+		if ( !ItemIsLegal( usTarget, TRUE ) )
+		{
+			continue;
+		}
+
+		BOOLEAN fResult1 = ItemIsLegal( usResult1, TRUE );
+		BOOLEAN fResult2 = ItemIsLegal( usResult2, TRUE );
+		if ( !fResult1 && !fResult2 )
+		{
+			continue;
+		}
+
+		fFound = TRUE;
+		if ( fResult1 )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_USED_FOR], ItemNames[usItemIndex], ItemNames[usTarget], ItemNames[usResult1] );
+		}
+		if ( fResult2 )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_USED_FOR], ItemNames[usItemIndex], ItemNames[usTarget], ItemNames[usResult2] );
+		}
+	}
+
+	// recipes where this item is the target (Merge[][1]) - "this item + reactant = result"
+	// (entries where this item is also the reactant are skipped to avoid duplicates)
+	for ( UINT16 i = 0; i <= MAXITEMS; i++ )
+	{
+		if ( Merge[i][0] == usItemIndex )
+		{
+			continue;
+		}
+		if ( Merge[i][1] != usItemIndex )
+		{
+			continue;
+		}
+
+		UINT16 usMergeItem = Merge[i][0];
+		UINT16 usResult1 = Merge[i][2];
+		UINT16 usResult2 = Merge[i][3];
+
+		if ( !ItemIsLegal( usMergeItem, TRUE ) )
+		{
+			continue;
+		}
+
+		BOOLEAN fResult1 = ItemIsLegal( usResult1, TRUE );
+		BOOLEAN fResult2 = ItemIsLegal( usResult2, TRUE );
+		if ( !fResult1 && !fResult2 )
+		{
+			continue;
+		}
+
+		fFound = TRUE;
+		if ( fResult1 )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_USED_FOR], ItemNames[usItemIndex], ItemNames[usMergeItem], ItemNames[usResult1] );
+		}
+		if ( fResult2 )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_USED_FOR], ItemNames[usItemIndex], ItemNames[usMergeItem], ItemNames[usResult2] );
+		}
+	}
+
+	// self-transformations of this item
+	for ( INT32 x = 0; x <= MAXITEMS; x++ )
+	{
+		if ( Transform[x].usItem == (UINT16)-1 )
+		{
+			break;
+		}
+		if ( Transform[x].usItem != usItemIndex )
+		{
+			continue;
+		}
+
+		fFound = TRUE;
+
+		CHAR16 zResults[300] = L"";
+		for ( INT32 r = 0; r < MAX_NUM_TRANSFORMATION_RESULTS; r++ )
+		{
+			if ( Transform[x].usResult[r] == 0 || !ItemIsLegal( Transform[x].usResult[r], TRUE ) )
+			{
+				continue;
+			}
+			CHAR16 zTmp[100];
+			swprintf( zTmp, L"%s%s", ( r > 0 && wcslen( zResults ) > 0 ) ? L", " : L"", ItemNames[Transform[x].usResult[r]] );
+			wcscat( zResults, zTmp );
+		}
+
+		if ( wcslen( zResults ) > 0 )
+		{
+			ScreenMsg( FONT_ORANGE, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_CREATED_FROM], ItemNames[usItemIndex], zResults );
+		}
+	}
+
+	if ( !fFound )
+	{
+		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzCraftInfoMessage[CRAFTINFO_NONE] );
+	}
+}
+
 int GetPocketSizeByDimensions(int sizeX, int sizeY)
 {
 	static const UINT8 cisPocketSize[6][4] =

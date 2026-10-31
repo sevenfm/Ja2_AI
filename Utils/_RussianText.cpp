@@ -7126,6 +7126,23 @@ STR16 gzTransformationMessage[] =
 	L"Чистить оружие (%d ОД)",
 };
 
+// MVP: craft recipes viewer (text output)
+STR16 gzCraftInfoMessage[] =
+{
+	// 0
+	L"===== %s (%d): КРАФТ =====",
+	// 1
+	L"Используется для: %s + %s = %s",
+	// 2
+	L"Создается из: %s => %s",
+	// 3
+	L"Можно скрафтить из: %s + %s = %s",
+	// 4
+	L"Рецептов крафта для этого предмета не найдено.",
+	// 5
+	L"Просмотр крафтов (Текст)",
+};
+
 // WANNE: This hardcoded text should not be used anymore in the game, because we now have those texts externalized in the "TableData\Email\EmailMercLevelUp.xml" file!
 // WANNE: This are the email texts, when one of the 4 new 1.13 MERC mercs have levelled up, that Speck sends
 // INFO: Do not replace the ± characters. They indicate the <B2> (-> Newline) from the edt files
