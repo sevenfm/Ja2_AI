@@ -19847,10 +19847,10 @@ STR16	SOLDIERTYPE::PrintSkillDesc( INT8 iSkill )
 			swprintf(atStr, pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_X_TXT], New113Message[MSG113_WORKING_RADIO_SET]);
 			wcscat(skilldescarray, atStr);
 
-			swprintf(atStr, pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_X_TXT], pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_DEAFENED]);
+			swprintf(atStr, pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_DEAFENED]);
 			wcscat(skilldescarray, atStr);
 
-			swprintf(atStr, pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_X_TXT], pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_WALKMAN]);
+			swprintf(atStr, pTraitSkillsDenialStrings[TEXT_SKILL_DENIAL_WALKMAN]);
 			wcscat(skilldescarray, atStr);
 			break;
 

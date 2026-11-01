@@ -6626,7 +6626,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 				}
 
 				// sevenfm: watching modifiers depending on watched spot and enemy
-				bHighestWatchLoc = GetHighestVisibleWatchedLoc( pSoldier->ubID );				
+				bHighestWatchLoc = GetHighestVisibleWatchedLoc( pSoldier->ubID );
 				if (bHighestWatchLoc != -1)
 				{
 					INT32 sWatchSpot = gsWatchedLoc[pSoldier->ubID][bHighestWatchLoc];
@@ -10911,42 +10911,112 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 
 	DebugAI( AI_MSG_TOPIC, pSoldier, String("[Black watch]"));
 
+	// prepare highest visible watch spot data
+	INT8 bHighestWatchLoc = GetHighestVisibleWatchedLoc(pSoldier->ubID);
+	INT32 sWatchSpot = 0;
+	INT8 bWatchLevel = 0;
+	UINT8 ubWatchPts = 0;
+
+	if (bHighestWatchLoc >= 0)
+	{
+		sWatchSpot = gsWatchedLoc[pSoldier->ubID][bHighestWatchLoc];
+		bWatchLevel = gbWatchedLocLevel[pSoldier->ubID][bHighestWatchLoc];
+		ubWatchPts = gubWatchedLocPoints[pSoldier->ubID][bHighestWatchLoc];
+	}
+
+	// possibly try to ambush hiding opponent even if we can see and attack enemy
 	if(	gfTurnBasedAI &&
 		!pSoldier->RushAttackAdvance() &&
-		!fOvercrowded &&
-		!pSoldier->aiData.bUnderFire &&
-		fAnyCover &&
-		pSoldier->bActionPoints == pSoldier->bInitialActionPoints &&
+		!pSoldier->HighShockLevel() &&
+		!pSoldier->HighWoundShock() &&
+		ubWatchPts > 0 &&
+		!TileIsOutOfBounds(sWatchSpot) &&
+		AIGunRange(pSoldier) > PythSpacesAway(pSoldier->sGridNo, sWatchSpot) &&													// check that enemy is in gun range
+		pSoldier->bActionPoints > MinAPsToAttack(pSoldier, sWatchSpot, ADDTURNCOST, 0) + APBPConstants[MAX_AP_CARRIED] &&		// check we have enough AP to turn, raise weapon and shoot
+		Chance(ubWatchPts * 10) &&			// 10% - 40% chance to ambush depending on how many times we saw enemy at watched location
+
+		// only go watch if we have low cth chance or we cannot shoot enemy or enemy is no threat to us
+		(ubBestAttackAction == AI_ACTION_NONE ||
 		ubBestAttackAction == AI_ACTION_FIRE_GUN &&
 		MercPtrs[BestAttack.ubOpponent] &&
-		pSoldier->bActionPoints > BestAttack.ubAPCost + APBPConstants[MAX_AP_CARRIED] &&
-		(BestAttack.ubChanceToReallyHit == 1 || MercPtrs[BestAttack.ubOpponent]->IsCowering() || MercPtrs[BestAttack.ubOpponent]->stats.bLife < OKLIFE) &&
-		!gfHiddenInterrupt &&
-		!gTacticalStatus.fInterruptOccurred &&
-		!gGameOptions.fImprovedInterruptSystem &&
-		PythSpacesAway( pSoldier->sGridNo, BestAttack.sTarget ) > DAY_VISION_RANGE / 2 &&
-		gAnimControl[ pSoldier->usAnimState ].ubEndHeight <= ANIM_CROUCH &&
-		pSoldier->aiData.bOppCnt < CountSeenEnemiesLastTurn(pSoldier) &&
-		// check that we are already looking at the right direction
-		pSoldier->ubDirection == AIDirection(pSoldier->sGridNo, BestAttack.sTarget) &&
-		CountNearbyFriends(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE/4) > CountSeenEnemiesLastTurn(pSoldier) &&
-		Chance(100 / (1 + CountNearbyFriends(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE/4))) )
+		//pSoldier->bActionPoints > BestAttack.ubAPCost + APBPConstants[MAX_AP_CARRIED] &&
+		(BestAttack.ubChanceToReallyHit == 1 || 
+		Chance((100 - BestAttack.ubChanceToReallyHit) * (100 - BestAttack.ubChanceToReallyHit) / 100) ||
+		MercPtrs[BestAttack.ubOpponent]->IsEmptyVehicle() ||
+		MercPtrs[BestAttack.ubOpponent]->IsCowering() || 
+		MercPtrs[BestAttack.ubOpponent]->IsDying() || 
+		MercPtrs[BestAttack.ubOpponent]->IsUnconscious() || 
+		MercPtrs[BestAttack.ubOpponent]->HighShockLevel() ||
+		MercPtrs[BestAttack.ubOpponent]->HighWoundShock()) &&
+		PythSpacesAway(pSoldier->sGridNo, BestAttack.sTarget) > TACTICAL_RANGE / 2) &&
+
+		// make sure we are not outnumbered
+		CountNearbyFriends(pSoldier, pSoldier->sGridNo, TACTICAL_RANGE / 2) > CountSeenEnemiesLastTurn(pSoldier) &&
+
+		// make sure position is safe
+		(fAnyCover || fSafeSpot || !pSoldier->aiData.bUnderFire || AICheckSuccessfulAttack(pSoldier, TRUE)) &&		
+		!InLightAtNight(pSoldier->sGridNo, pSoldier->pathing.bLevel) &&
+		!InWaterOrGas(pSoldier, pSoldier->sGridNo) &&
+		!AICheckUnderAttack(pSoldier, pSoldier->sGridNo, TRUE) &&
+
+		// use black watch more often with friends around
+		Chance(CountNearbyFriends(pSoldier, pSoldier->sGridNo, TACTICAL_RANGE / 2) * 20))
+
+			/*!fOvercrowded &&
+			!pSoldier->aiData.bUnderFire &&
+			fAnyCover &&
+			pSoldier->bActionPoints == pSoldier->bInitialActionPoints &&
+
+			ubBestAttackAction == AI_ACTION_FIRE_GUN &&
+			MercPtrs[BestAttack.ubOpponent] &&
+			pSoldier->bActionPoints > BestAttack.ubAPCost + APBPConstants[MAX_AP_CARRIED] &&
+			(BestAttack.ubChanceToReallyHit == 1 || MercPtrs[BestAttack.ubOpponent]->IsCowering() || MercPtrs[BestAttack.ubOpponent]->stats.bLife < OKLIFE) &&
+
+			!gfHiddenInterrupt &&
+			!gTacticalStatus.fInterruptOccurred &&
+			!gGameOptions.fImprovedInterruptSystem &&
+			PythSpacesAway( pSoldier->sGridNo, BestAttack.sTarget ) > DAY_VISION_RANGE / 2 &&
+			gAnimControl[ pSoldier->usAnimState ].ubEndHeight <= ANIM_CROUCH &&
+			pSoldier->aiData.bOppCnt < CountSeenEnemiesLastTurn(pSoldier) &&
+			// check that we are already looking at the right direction
+			pSoldier->ubDirection == AIDirection(pSoldier->sGridNo, BestAttack.sTarget) &&
+			CountNearbyFriends(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE/4) > CountSeenEnemiesLastTurn(pSoldier) &&
+			Chance(100 / (1 + CountNearbyFriends(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE/4))) )*/
 	{
-		// turn to face opponent
-		/*ubOpponentDir = AIDirection(pSoldier->sGridNo, BestAttack.sTarget);
-		if( pSoldier->ubDirection != ubOpponentDir &&
-			pSoldier->InternalIsValidStance( ubOpponentDir, gAnimControl[ pSoldier->usAnimState ].ubEndHeight ) &&
-			pSoldier->bActionPoints >= GetAPsToLook(pSoldier)  )
+		// possibly turn to watched location
+		UINT8 ubWatchDir = AIDirection(pSoldier->sGridNo, sWatchSpot);
+		if (pSoldier->AnimEndHeight() > ANIM_PRONE &&
+			pSoldier->ubDirection != ubWatchDir &&
+			pSoldier->InternalIsValidStance(ubWatchDir, pSoldier->AnimEndHeight()) &&
+			pSoldier->bActionPoints >= GetAPsToLook(pSoldier) &&
+			Chance (50))
 		{
-			pSoldier->aiData.usActionData = ubOpponentDir;
+			pSoldier->aiData.usActionData = ubWatchDir;
+			pSoldier->aiData.bNextAction = AI_ACTION_END_TURN;
+
+			DebugAI(AI_MSG_INFO, pSoldier, String("black watch (turn to watched location)"));
 			return(AI_ACTION_CHANGE_FACING);
-		}*/
+		}
+
+		// possibly crouch
+		if (pSoldier->AnimEndHeight() == ANIM_STAND &&
+			IsValidStance(pSoldier, ANIM_CROUCH) &&
+			pSoldier->bActionPoints >= GetAPsCrouch(pSoldier, TRUE) &&
+			Chance(SoldierDifficultyLevel(pSoldier) * 20))
+		{
+			pSoldier->aiData.usActionData = ANIM_CROUCH;
+			pSoldier->aiData.bNextAction = AI_ACTION_END_TURN;
+
+			DebugAI(AI_MSG_INFO, pSoldier, String("black watch (crouch from standing)"));
+			return(AI_ACTION_CHANGE_STANCE);
+		}
 
 		// raise gun
-		if( PickSoldierReadyAnimation( pSoldier, FALSE, FALSE ) != INVALID_ANIMATION &&
+		if (PickSoldierReadyAnimation(pSoldier, FALSE, FALSE) != INVALID_ANIMATION &&
 			!WeaponReady(pSoldier) &&
 			(pSoldier->bBreath > OKBREATH * 2 || GetBPCostPer10APsForGunHolding(pSoldier, TRUE) < 30) &&
-			pSoldier->bActionPoints >= GetAPsToReadyWeapon( pSoldier, PickSoldierReadyAnimation( pSoldier, FALSE, FALSE ) ) )
+			pSoldier->bActionPoints >= GetAPsToReadyWeapon(pSoldier, PickSoldierReadyAnimation(pSoldier, FALSE, FALSE)) &&
+			Chance(SoldierDifficultyLevel(pSoldier) * 20))
 		{
 			DebugAI( AI_MSG_INFO, pSoldier, String("black watch (raise gun)"));
 			pSoldier->aiData.bNextAction = AI_ACTION_END_TURN;
