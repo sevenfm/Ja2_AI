@@ -3074,11 +3074,11 @@ INT16 GetAPsToAutoReload(SOLDIERTYPE * pSoldier)
 	return(bAPCost);
 }
 
-UINT16 GetAPsToReloadRobot(SOLDIERTYPE *pSoldier, SOLDIERTYPE *pRobot)
+UINT16 GetAPsToReloadRobot(SOLDIERTYPE *pSoldier, SOLDIERTYPE *pRobot, OBJECTTYPE *pAmmo, BOOLEAN fAddStanceChange)
 {
-	UINT16						sAPCost = 0;
+	UINT16 sAPCost = 0;
 	INT32 sActionGridNo;
-	UINT8			 ubDirection;
+	UINT8 ubDirection;
 	INT32 sAdjustedGridNo;
 
 	sActionGridNo = FindAdjacentGridEx(pSoldier, pRobot->sGridNo, &ubDirection, &sAdjustedGridNo, TRUE, FALSE);
@@ -3088,8 +3088,26 @@ UINT16 GetAPsToReloadRobot(SOLDIERTYPE *pSoldier, SOLDIERTYPE *pRobot)
 	// If point cost is zero, return 0
 	if (sAPCost != 0 || sActionGridNo == pSoldier->sGridNo)
 	{
+		OBJECTTYPE *pGun = pRobot->GetUsedWeapon(&(pSoldier->inv[HANDPOS]));
+
+		// sevenfm: get actual reload cost
+		if (pAmmo && pGun)
+		{
+			sAPCost += GetAPsToReloadGunWithAmmo(pSoldier, pGun, pAmmo, FALSE);
+		}
+
+		if (fAddStanceChange && !PTR_CROUCHED)
+		{
+			sAPCost += GetAPsToChangeStance(pSoldier, ANIM_CROUCH);
+		}
+
+		/*if (sActionGridNo == pSoldier->sGridNo && pSoldier->ubDirection != AIDirection(pSoldier->sGridNo, pRobot->sGridNo))
+		{
+			sAPCost += GetAPsToLook(pSoldier);
+		}*/
+
 		// ADD APS TO RELOAD
-		sAPCost += 4;
+		//sAPCost += 4;
 	}
 
 	return(sAPCost);

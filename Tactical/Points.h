@@ -368,7 +368,7 @@ INT16 GetAPsToJumpOver( SOLDIERTYPE *pSoldier );
 
 void GetAPChargeForShootOrStabWRTGunRaises( SOLDIERTYPE *pSoldier, INT32 sGridNo, UINT8 ubAddTurningCost, BOOLEAN *pfChargeTurning, BOOLEAN *pfChargeRaise, INT16 bAimTime );
 
-UINT16 GetAPsToReloadRobot( SOLDIERTYPE *pSoldier, SOLDIERTYPE *pRobot );
+UINT16 GetAPsToReloadRobot(SOLDIERTYPE *pSoldier, SOLDIERTYPE *pRobot, OBJECTTYPE *pAmmo, BOOLEAN fAddStanceChange);
 INT16 GetAPsToReloadGunWithAmmo( SOLDIERTYPE *pSoldier, OBJECTTYPE * pGun, OBJECTTYPE * pAmmo, BOOLEAN usAllAPs = TRUE );
 INT16 GetAPsToAutoReload( SOLDIERTYPE * pSoldier );
 

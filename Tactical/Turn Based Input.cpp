@@ -3348,7 +3348,14 @@ void GetKeyboardInput( UINT32 *puiNewEvent )
 				break;
 
 			case '0':
-				if( fAlt )
+				if (fCtrl && fAlt)
+				{
+					if (CHEATER_CHEAT_LEVEL())
+					{
+						ChangeSoldiersBodyType(ROBOTNOWEAPON, TRUE);
+					}
+				}
+				else if( fAlt )
 				{
 					// used for calculating item chance to get through in cheat mode
 					HandleTacticalTakeInvItem( gGameExternalOptions.iQuickItem0 );
@@ -5555,39 +5562,35 @@ void ChangeSoldiersBodyType( UINT8 ubBodyType, BOOLEAN fCreateNewPalette )
 		{
 			pSoldier->ubBodyType = ubBodyType;
 			pSoldier->EVENT_InitNewSoldierAnim( STANDING, 0 , TRUE );
-			//SetSoldierAnimationSurface( pSoldier, pSoldier->usAnimState );
+
 			if( fCreateNewPalette )
 			{
 				pSoldier->CreateSoldierPalettes( );
+			}
 
-				switch( ubBodyType )
-				{
-				case ADULTFEMALEMONSTER:
-				case AM_MONSTER:
-				case YAF_MONSTER:
-				case YAM_MONSTER:
-				case LARVAE_MONSTER:
-				case INFANT_MONSTER:
-				case QUEENMONSTER:
-
-					pSoldier->flags.uiStatusFlags |= SOLDIER_MONSTER;
-					AssignCreatureInventory( pSoldier );
-					CreateItem( CREATURE_YOUNG_MALE_SPIT,		100, &(pSoldier->inv[HANDPOS]) );
-
-					break;
-
-				case TANK_NW:
-				case TANK_NE:
-
-					pSoldier->flags.uiStatusFlags |= SOLDIER_VEHICLE;
-					//pSoldier->inv[ HANDPOS ].usItem = TANK_CANNON;
-
-					pSoldier->inv[ HANDPOS ].usItem = MINIMI;
-					pSoldier->bVehicleID = (INT8)AddVehicleToList( pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bSectorZ, HUMMER );
-
-					break;
-				}
-
+			switch (ubBodyType)
+			{
+			case ADULTFEMALEMONSTER:
+			case AM_MONSTER:
+			case YAF_MONSTER:
+			case YAM_MONSTER:
+			case LARVAE_MONSTER:
+			case INFANT_MONSTER:
+			case QUEENMONSTER:
+				pSoldier->flags.uiStatusFlags |= SOLDIER_MONSTER;
+				AssignCreatureInventory(pSoldier);
+				CreateItem(CREATURE_YOUNG_MALE_SPIT, 100, &(pSoldier->inv[HANDPOS]));
+				break;
+			case TANK_NW:
+			case TANK_NE:
+				pSoldier->flags.uiStatusFlags |= SOLDIER_VEHICLE;
+				//pSoldier->inv[ HANDPOS ].usItem = TANK_CANNON;
+				pSoldier->inv[HANDPOS].usItem = MINIMI;
+				pSoldier->bVehicleID = (INT8)AddVehicleToList(pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bSectorZ, HUMMER);
+				break;
+			case ROBOTNOWEAPON:
+				pSoldier->flags.uiStatusFlags |= SOLDIER_ROBOT;
+				break;
 			}
 		}
 	}

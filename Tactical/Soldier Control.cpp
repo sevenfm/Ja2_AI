@@ -22958,9 +22958,15 @@ void SOLDIERTYPE::EVENT_SoldierBeginReloadRobot( INT32 sGridNo, UINT8 ubDirectio
 
 	if ( ubPerson != NOBODY && MercPtrs[ ubPerson ]->flags.uiStatusFlags & SOLDIER_ROBOT )
 	{
+		// sevenfm: charge AP to reload robot here
+		INT16 sAPCost = GetAPsToReloadRobot(this, MercPtrs[ubPerson], this->pTempObject, FALSE);
+		DeductPoints(this, sAPCost, 0);
+
 		// CHANGE DIRECTION AND GOTO ANIMATION NOW
 		if (this->ubDirection != ubDirection)
 		{
+			this->flags.fDontChargeTurningAPs = TRUE;
+			//this->flags.fDontChargeAPsForStanceChange = TRUE;
 			this->flags.uiStatusFlags |= SOLDIER_LOOK_NEXT_TURNSOLDIER;//shadooow: fix for vision not updating
 			this->EVENT_SetSoldierDesiredDirection(ubDirection);
 			this->EVENT_SetSoldierDirection(ubDirection);
@@ -22968,7 +22974,6 @@ void SOLDIERTYPE::EVENT_SoldierBeginReloadRobot( INT32 sGridNo, UINT8 ubDirectio
 
 		// CHANGE TO ANIMATION
 		this->EVENT_InitNewSoldierAnim( RELOAD_ROBOT, 0 , FALSE );
-
 	}
 }
 
