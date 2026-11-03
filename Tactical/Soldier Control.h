@@ -1039,11 +1039,11 @@ public:
 class STRUCT_Drugs//last edited at version 102
 {
 public:
-	INT8			bFutureDrugEffect[DRUG_TYPE_MAX];						// value to represent effect of a needle
-	INT8			bDrugEffectRate[DRUG_TYPE_MAX];							// represents rate of increase and decrease of effect	
-	INT8			bDrugEffect[DRUG_TYPE_MAX];								// value that affects AP & morale calc ( -ve is poorly )
+	INT8			bFutureDrugEffect[DRUG_TYPE_MAX];					// value to represent effect of a needle
+	INT8			bDrugEffectRate[DRUG_TYPE_MAX];						// represents rate of increase and decrease of effect	
+	INT8			bDrugEffect[DRUG_TYPE_MAX];							// value that affects AP & morale calc ( -ve is poorly )
 	INT8			bDrugSideEffectRate[DRUG_TYPE_MAX];					// duration of negative AP and morale effect
-	INT8			bDrugSideEffect[DRUG_TYPE_MAX];							// duration of negative AP and morale effect
+	INT8			bDrugSideEffect[DRUG_TYPE_MAX];						// duration of negative AP and morale effect
 	INT8			bTimesDrugUsedSinceSleep[DRUG_TYPE_MAX];			
 };
 
@@ -2091,7 +2091,7 @@ public:
 
 	INT8		GetTraitCTHModifier( UINT16 usItem, INT16 ubAimTime, UINT8 ubTargetProfile );
 
-	void		AddDrugValues(UINT8 uDrugType, UINT8 usEffect, UINT8 usTravelRate, UINT8 usSideEffect );
+	void		AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravelRate, UINT8 ubSideEffect );
 
 	void		HandleFlashLights();
 	bool		AddBestFlashLight();

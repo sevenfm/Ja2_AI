@@ -102,9 +102,9 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 	pSoldier->StopInspire();
 		
 	// Flugente: we have to check for every single type of drug ( a drug applied may consist of several 'pure' drug types)	
-	for (UINT8 i = DRUG_TYPE_ADRENALINE; i < DRUG_TYPE_MAX; ++i)
+	for (UINT8 ubDrugType = DRUG_TYPE_ADRENALINE; ubDrugType < DRUG_TYPE_MAX; ++ubDrugType)
 	{
-		UINT32 drugtestflag = (1 << i);			// comparing with this flag will determine the drug
+		UINT32 drugtestflag = (1 << ubDrugType);			// comparing with this flag will determine the drug
 
 		// we do not actually test for DRUG_REGENERATION, because that is checked afterwards separately
 		if ( (drugtestflag & DRUG_REGENERATION ) != 0 )
@@ -113,29 +113,29 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 		if ( (ubDrugType & drugtestflag) != 0 )
 		{
 			// Add effects
-			pSoldier->AddDrugValues( i, Drug[i].ubDrugEffect, Drug[i].ubDrugTravelRate, Drug[i].ubDrugSideEffect );
+			pSoldier->AddDrugValues( ubDrugType, Drug[ubDrugType].ubDrugEffect, Drug[ubDrugType].ubDrugTravelRate, Drug[ubDrugType].ubDrugSideEffect );
 
 			// sevenfm: increase effect...
-			if ( pSoldier->drugs.bDrugEffectRate[ i ] > 0 )
+			if ( pSoldier->drugs.bDrugEffectRate[ ubDrugType ] > 0 )
 			{
 				// Seap some in....
-				pSoldier->drugs.bFutureDrugEffect[ i ] -= pSoldier->drugs.bDrugEffectRate[ i ];
-				pSoldier->drugs.bDrugEffect[ i ]	 += pSoldier->drugs.bDrugEffectRate[ i ];
+				pSoldier->drugs.bFutureDrugEffect[ ubDrugType ] -= pSoldier->drugs.bDrugEffectRate[ ubDrugType ];
+				pSoldier->drugs.bDrugEffect[ ubDrugType ]	 += pSoldier->drugs.bDrugEffectRate[ ubDrugType ];
 
 				// Refresh morale w/ new drug value...
 				RefreshSoldierMorale( pSoldier );
 
 				// Check if we need to stop 'adding'
-				if ( pSoldier->drugs.bFutureDrugEffect[ i ] <= 0 )
+				if ( pSoldier->drugs.bFutureDrugEffect[ ubDrugType ] <= 0 )
 				{
-					pSoldier->drugs.bFutureDrugEffect[ i ] = 0;
+					pSoldier->drugs.bFutureDrugEffect[ ubDrugType ] = 0;
 					// Change rate to -ve..
-					pSoldier->drugs.bDrugEffectRate[ i ] = -Drug[ i ].ubDrugWearoffRate;
+					pSoldier->drugs.bDrugEffectRate[ ubDrugType ] = -Drug[ ubDrugType ].ubDrugWearoffRate;
 				}
 			}
 
 			// ATE: Make guy collapse from heart attack if too much stuff taken....
-			if (pSoldier->drugs.bDrugSideEffectRate[i] > (Drug[i].ubDrugSideEffect * 3) ||
+			if (pSoldier->drugs.bDrugSideEffectRate[ubDrugType] > (Drug[ubDrugType].ubDrugSideEffect * 3) ||
 				(drugtestflag & DRUG_ALCOHOL) && pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] && Chance(pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE]) ||
 				(drugtestflag & DRUG_ALCOHOL) && pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] && Chance(pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE]) ||
 				(drugtestflag & DRUG_ADRENALINE) && pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL] && Chance(pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL]) ||
@@ -315,30 +315,28 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 	}	
 
 	// sevenfm: special effects
-	if( ubDrugType & DRUG_ALCOHOL )
+	if (pSoldier->bBreath > 0 &&
+		!pSoldier->bCollapsed &&
+		!pSoldier->bBreathCollapsed &&
+		pSoldier->stats.bLife >= OKLIFE)
 	{
-		if( pSoldier->bBreath > 0 &&
-			!pSoldier->bCollapsed &&
-			!pSoldier->bBreathCollapsed &&
-			pSoldier->stats.bLife >= OKLIFE )
+		if (ubDrugType & DRUG_ALCOHOL)
 		{
 			// alcohol reduces actual shock
-			if( usItem == ALCOHOL )
+			if (usItem == ALCOHOL)
 				pSoldier->aiData.bShock = 2 * pSoldier->aiData.bShock / 3;
-			else if ( usItem == WINE )
+			else if (usItem == WINE)
 				pSoldier->aiData.bShock = 4 * pSoldier->aiData.bShock / 5;
-			else if ( usItem == BEER )
+			else if (usItem == BEER)
 				pSoldier->aiData.bShock = 9 * pSoldier->aiData.bShock / 10;
 			else
 				pSoldier->aiData.bShock = 9 * pSoldier->aiData.bShock / 10;
-
-			INT8 bDrunkLevel = GetDrunkLevel(pSoldier);
 
 			// add chance to be inspired
 			if (pSoldier->ubProfile != NO_PROFILE &&
 				HasBackgroundFlag(pSoldier->ubProfile, BACKGROUND_RUSSIAN_VODKA) &&
 				!pSoldier->IsInspired() &&
-				bDrunkLevel != HUNGOVER &&
+				GetDrunkLevel(pSoldier) != HUNGOVER &&
 				Chance(50))
 			{
 				if (InTurnbasedCombat())
@@ -346,6 +344,20 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 				else
 					pSoldier->Inspire(10, TRUE);
 			}
+		}
+		
+		if (ubDrugType & DRUG_ADRENALINE)
+		{
+			if (pSoldier->IsCowering())
+			{
+				if (pSoldier->IsSoldierPC())
+					StopCoweringAnimation(pSoldier);
+			}
+
+			if (fUseAPs && consumeitem)
+				DeductPoints(pSoldier, -APBPConstants[AP_DRINK] * 2, 0);
+			else
+				DeductPoints(pSoldier, -APBPConstants[AP_DRINK], 0);
 		}
 	}
 
@@ -792,6 +804,8 @@ INT32 EffectStatForBeingDrunk( SOLDIERTYPE *pSoldier, INT32 iStat )
 {
 	if (pSoldier->HasBackgroundFlag(BACKGROUND_RUSSIAN_VODKA) && GetDrunkLevel(pSoldier) < HUNGOVER)
 		return iStat * (100 + 5 * GetDrunkLevel(pSoldier)) / 100;
+	else if (pSoldier->HasBackgroundFlag(BACKGROUND_RUSSIAN_VODKA) && GetDrunkLevel(pSoldier) == HUNGOVER)
+		return iStat * giDrunkModifier[GetDrunkLevel(pSoldier)] * giDrunkModifier[GetDrunkLevel(pSoldier)] / (100 * 100);
 	else
 		return iStat * giDrunkModifier[GetDrunkLevel(pSoldier)] / 100;
 }

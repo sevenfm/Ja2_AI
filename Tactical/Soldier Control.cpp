@@ -18368,33 +18368,49 @@ INT8 SOLDIERTYPE::GetTraitCTHModifier( UINT16 usItem, INT16 ubAimTime, UINT8 ubT
 	return modifier;
 }
 
-void SOLDIERTYPE::AddDrugValues(UINT8 uDrugType, UINT8 usEffect, UINT8 usTravelRate, UINT8 usSideEffect )
+void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravelRate, UINT8 ubSideEffect )
 {
 	// in case of wrong input, stay safe
-	if ( uDrugType >= DRUG_TYPE_MAX )
+	if ( ubDrugType >= DRUG_TYPE_MAX )
 		return;
 
 	// Flugente: backgrounds
-	if ( this->ubProfile != NOBODY && uDrugType == DRUG_TYPE_ALCOHOL )
+	if (this->ubProfile != NO_PROFILE && ubDrugType == DRUG_TYPE_ALCOHOL)
 	{
-		usEffect		= usEffect		* ((100 - this->GetBackgroundValue(BG_RESI_ALCOHOL)) / 100);
-		usSideEffect	= usSideEffect	* ((100 - this->GetBackgroundValue(BG_RESI_ALCOHOL)) / 100);
+		ubEffect		= ubEffect		* ((100 - this->GetBackgroundValue(BG_RESI_ALCOHOL)) / 100);
+		ubSideEffect	= ubSideEffect	* ((100 - this->GetBackgroundValue(BG_RESI_ALCOHOL)) / 100);
+	}
+
+	// sevenfm: increase side effect for merc with Russian Vodka background
+	if (this->ubProfile != NO_PROFILE &&
+		ubDrugType == DRUG_TYPE_ALCOHOL &&
+		this->HasBackgroundFlag(BACKGROUND_RUSSIAN_VODKA))
+	{
+		ubSideEffect = min(255, ubSideEffect * 4);
+	}
+
+	// sevenfm: double side effect when using alcohol in hungover
+	if (this->ubProfile != NO_PROFILE &&
+		ubDrugType == DRUG_TYPE_ALCOHOL &&
+		GetDrunkLevel(this) == HUNGOVER)
+	{
+		ubSideEffect = min(255, ubSideEffect * 2);
 	}
 
 	// Add effects
-	if ( ( this->drugs.bFutureDrugEffect[ uDrugType ] + usEffect ) < 127 )
+	if ( ( this->drugs.bFutureDrugEffect[ ubDrugType ] + ubEffect ) < 127 )
 	{
-		this->drugs.bFutureDrugEffect[ uDrugType ] += usEffect;
+		this->drugs.bFutureDrugEffect[ ubDrugType ] += ubEffect;
 	}
-	this->drugs.bDrugEffectRate[ uDrugType ]		= usTravelRate;
+	this->drugs.bDrugEffectRate[ ubDrugType ] = ubTravelRate;
 
 	// Reset once we sleep...
-	this->drugs.bTimesDrugUsedSinceSleep[ uDrugType ]++;
+	this->drugs.bTimesDrugUsedSinceSleep[ ubDrugType ]++;
 
 	// Increment side effects..
-	this->drugs.bDrugSideEffect[uDrugType] = min(127, this->drugs.bDrugSideEffect[uDrugType] + usSideEffect);
+	this->drugs.bDrugSideEffect[ubDrugType] = min(127, this->drugs.bDrugSideEffect[ubDrugType] + ubSideEffect);
 	// Stop side effects until were done....
-	this->drugs.bDrugSideEffectRate[ uDrugType ]	= 0;
+	this->drugs.bDrugSideEffectRate[ ubDrugType ]	= 0;
 
 	// set flag: we are on drugs
 	this->usSoldierFlagMask |= SOLDIER_DRUGGED;
@@ -26424,7 +26440,7 @@ void SOLDIERTYPE::Rally(void)
 			!this->IsPOW() &&
 			this->ubProfile != NO_PROFILE)
 		{
-			// FLO may loose consciousness when rallied
+			// FLO may lose consciousness when rallied
 			if (this->ubProfile == FLO)	// gMercProfiles[this->ubProfile].bDisability == NERVOUS
 			{
 				this->AddDrugValues(DRUG_TYPE_KNOCKOUT, 1, 1, 1 + Random(3));

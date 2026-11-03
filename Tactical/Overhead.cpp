@@ -9559,7 +9559,7 @@ void HandleSuppressionFire( UINT8 ubTargetedMerc, UINT8 ubCausedAttacker )
 				pSoldier->IsMercBodyType() &&
 				(pSoldier->AnimEndHeight() == ANIM_PRONE || pSoldier->AnimEndHeight() == ANIM_CROUCH && !IsValidStance(pSoldier, ANIM_PRONE)) &&
 				!pSoldier->IsUnconscious() &&
-				//!(pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE]) &&
+				!(pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE]) &&
 				!Water(pSoldier->sGridNo, pSoldier->pathing.bLevel))
 			{ 
 				fCower = true; 
