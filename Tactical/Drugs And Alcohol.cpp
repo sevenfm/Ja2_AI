@@ -316,8 +316,8 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 
 	// sevenfm: special effects
 	if (pSoldier->bBreath > 0 &&
-		!pSoldier->bCollapsed &&
-		!pSoldier->bBreathCollapsed &&
+		//!pSoldier->bCollapsed &&
+		//!pSoldier->bBreathCollapsed &&
 		pSoldier->stats.bLife >= OKLIFE)
 	{
 		if (ubDrugType & DRUG_ALCOHOL)
@@ -348,16 +348,18 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 		
 		if (ubDrugType & DRUG_ADRENALINE)
 		{
-			if (pSoldier->IsCowering())
+			if (pSoldier->IsCowering() && pSoldier->IsSoldierPC())
 			{
-				if (pSoldier->IsSoldierPC())
-					StopCoweringAnimation(pSoldier);
+				StopCoweringAnimation(pSoldier);
 			}
 
-			if (fUseAPs && consumeitem)
-				DeductPoints(pSoldier, -APBPConstants[AP_DRINK] * 2, 0);
-			else
-				DeductPoints(pSoldier, -APBPConstants[AP_DRINK], 0);
+			if (pSoldier->bActionPoints >= 0 && !pSoldier->bBreathCollapsed)
+			{
+				if (fUseAPs && consumeitem)
+					DeductPoints(pSoldier, -APBPConstants[AP_DRINK] * 2, 0);
+				else
+					DeductPoints(pSoldier, -APBPConstants[AP_DRINK], 0);
+			}
 		}
 	}
 
