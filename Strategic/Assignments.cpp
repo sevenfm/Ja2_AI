@@ -2772,8 +2772,8 @@ UINT8 CalculateRepairPointsForRepairman(SOLDIERTYPE *pSoldier, UINT16 *pusMaxPts
 	// calculate normal repair rate - what it would be if his stats were "normal" (ignoring drugs, fatigue, equipment condition)
 	// and equipment was not a hindrance
 	// r8050
-	INT16 mechanical = (pSoldier->stats.bMechanical * (100 + pSoldier->GetBackgroundValue( BG_MECHANICAL ))) / 100;
-	INT16 dexterity  = (pSoldier->stats.bDexterity * (100 + pSoldier->GetBackgroundValue( BG_DEXTERITY ))) / 100;
+	INT16 mechanical = pSoldier->stats.bMechanical * (100 + pSoldier->GetBackgroundValue( BG_MECHANICAL )) / 100;
+	INT16 dexterity  = pSoldier->stats.bDexterity * (100 + pSoldier->GetBackgroundValue( BG_DEXTERITY )) / 100;
 	*pusMaxPts = (mechanical * dexterity * (100 + (5 * pSoldier->stats.bExpLevel))) / (gGameExternalOptions.ubRepairRateDivisor * gGameExternalOptions.ubAssignmentUnitsPerDay);
 	//*pusMaxPts = ( pSoldier->stats.bMechanical * pSoldier->stats.bDexterity * (100 + ( 5 * pSoldier->stats.bExpLevel) ) ) / ( gGameExternalOptions.ubRepairRateDivisor * gGameExternalOptions.ubAssignmentUnitsPerDay );
 
@@ -2877,11 +2877,11 @@ UINT32 CalculateInterrogationValue(SOLDIERTYPE *pSoldier, UINT16 *pusMaxPts )
 	// adjust for threatening value
 	INT32 threatenvalue = CalcThreateningEffectiveness( pSoldier->ubProfile ) * gMercProfiles[pSoldier->ubProfile].usApproachFactor[2] ;
 	
-	threatenvalue = (threatenvalue * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_THREATEN))) / 100;
+	threatenvalue = threatenvalue * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_THREATEN)) / 100;
 		
 	usInterrogationPoints *= threatenvalue;
 	
-	usInterrogationPoints = (usInterrogationPoints * (100 + pSoldier->GetBackgroundValue(BG_PERC_INTERROGATION))) / 100;
+	usInterrogationPoints = usInterrogationPoints * (100 + pSoldier->GetBackgroundValue(BG_PERC_INTERROGATION)) / 100;
 	
 	UINT16 performancemodifier = 100;
 	for (UINT16 cnt = 0; cnt < NUM_FACILITY_TYPES; ++cnt)
@@ -2936,7 +2936,7 @@ UINT32 CalculatePrisonGuardValue(SOLDIERTYPE *pSoldier )
 		usValue += 25 * NUM_SKILL_TRAITS( pSoldier, MARTIALARTS_OT ) + 25 * NUM_SKILL_TRAITS( pSoldier, HANDTOHAND_OT ) + 10 * HAS_SKILL_TRAIT( pSoldier, KNIFING_OT );
 	}
 	
-	usValue = (usValue * (100 + max(0, pSoldier->GetBackgroundValue(BG_PERC_GUARD)))) / 100;
+	usValue = usValue * (100 + max(0, pSoldier->GetBackgroundValue(BG_PERC_GUARD))) / 100;
 	
 	// adjust for fatigue
 	ReducePointsForFatigue( pSoldier, &usValue );
@@ -3103,7 +3103,7 @@ UINT32 CalculateSnitchInterrogationValue(SOLDIERTYPE *pSoldier, UINT16 *pusMaxPt
 			friendlyvalue += 30;
 	}
 
-	friendlyvalue = (friendlyvalue * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_FRIENDLY))) / 100;
+	friendlyvalue = friendlyvalue * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_FRIENDLY)) / 100;
 
 	usInterrogationPoints *= friendlyvalue;
 
@@ -7136,8 +7136,8 @@ INT16 GetTownTrainPtsForCharacter( SOLDIERTYPE *pTrainer, UINT16 *pusMaxPts )
 
 	// calculate normal training pts - what it would be if his stats were "normal" (ignoring drugs, fatigue)
 	// r8050
-	INT16 wisdom	 = (pTrainer->stats.bWisdom * (100 + pTrainer->GetBackgroundValue( BG_WISDOM ))) / 100;
-	INT16 leadership = (pTrainer->stats.bLeadership * (100 + pTrainer->GetBackgroundValue( BG_LEADERSHIP ))) / 100;
+	INT16 wisdom	 = pTrainer->stats.bWisdom * (100 + pTrainer->GetBackgroundValue( BG_WISDOM )) / 100;
+	INT16 leadership = pTrainer->stats.bLeadership * (100 + pTrainer->GetBackgroundValue( BG_LEADERSHIP )) / 100;
 
 	*pusMaxPts = (wisdom + leadership + (10 * pTrainer->stats.bExpLevel)) * gGameExternalOptions.ubTownMilitiaTrainingRate;
 	//*pusMaxPts = ( pTrainer->stats.bWisdom + pTrainer->stats.bLeadership + ( 10 * pTrainer->stats.bExpLevel ) ) * gGameExternalOptions.ubTownMilitiaTrainingRate;

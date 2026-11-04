@@ -2063,7 +2063,14 @@ void HandleRenderFaceAdjustments(FACETYPE *pFace, BOOLEAN fDisplayBuffer, BOOLEA
 				bNumRightIcons++;
 			}
 
-			if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) != SOBER)
+			if (gGameSettings.fOptions[TOPTION_SHOW_EXTRA_ICONS] &&
+				gfAssignmentIconsX &&
+				GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) == HUNGOVER)
+			{
+				DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 55);
+				bNumRightIcons++;
+			}
+			else if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) != SOBER)
 			{
 				DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 8);
 				bNumRightIcons++;

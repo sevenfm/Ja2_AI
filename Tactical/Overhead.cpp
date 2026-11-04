@@ -11555,7 +11555,7 @@ void CalculateSurrenderStrength(SOLDIERTYPE *pAskingSoldier, UINT32 &playersides
 	// if the merc asking for surrender is experienced in capitulation negotiations, we get a bonus to our strength
 	if (pAskingSoldier)
 	{
-		playersidestrength = (playersidestrength * (100 + pSoldier->GetBackgroundValue(BG_PERC_CAPITULATION))) / 100;
+		playersidestrength = playersidestrength * (100 + pSoldier->GetBackgroundValue(BG_PERC_CAPITULATION)) / 100;
 
 		// sevenfm: bonus for having squadleader trait		
 		if (gGameOptions.fNewTraitSystem)

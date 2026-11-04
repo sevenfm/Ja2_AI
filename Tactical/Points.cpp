@@ -393,7 +393,7 @@ INT16 TerrainBreathPoints(SOLDIERTYPE * pSoldier, INT32 sGridNo, INT8 bDir, UINT
 
 	// Flugente: backgrounds
 	if (TERRAIN_IS_HIGH_WATER(ubTerrainID))
-		iPoints = (iPoints * (100 + pSoldier->GetBackgroundValue(BG_SWIMMING))) / 100;
+		iPoints = iPoints * (100 + pSoldier->GetBackgroundValue(BG_SWIMMING)) / 100;
 
 	// ATE: Adjust these by realtime movement
 	if (!(gTacticalStatus.uiFlags & TURNBASED) || !(gTacticalStatus.uiFlags & INCOMBAT))
@@ -580,7 +580,7 @@ INT16 ActionPointCost(SOLDIERTYPE *pSoldier, INT32 sGridNo, INT8 bDir, UINT16 us
 		// Flugente: swimming background
 		if (TERRAIN_IS_HIGH_WATER(ubTerrainID))
 		{
-			sPoints = (sPoints * (100 + pSoldier->GetBackgroundValue(BG_SWIMMING))) / 100;
+			sPoints = sPoints * (100 + pSoldier->GetBackgroundValue(BG_SWIMMING)) / 100;
 		}
 
 		// Check for stealth mode
@@ -3935,7 +3935,7 @@ INT16 GetAPsForMultiTurnAction(SOLDIERTYPE *pSoldier, UINT8 usActionType)
 
 	if (usActionType == MTA_FORTIFY || usActionType == MTA_REMOVE_FORTIFY || usActionType == MTA_FILL_SANDBAG)
 	{
-		sAPCost = (sAPCost * (100 + pSoldier->GetBackgroundValue(BG_FORTIFY))) / 100;
+		sAPCost = sAPCost * (100 + pSoldier->GetBackgroundValue(BG_FORTIFY)) / 100;
 	}
 
 	return sAPCost;

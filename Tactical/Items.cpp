@@ -2339,7 +2339,7 @@ UINT32 CalculateCarriedWeight(SOLDIERTYPE * pSoldier, BOOLEAN fConsiderDragging)
 		ubStrengthForCarrying = (ubStrengthForCarrying * (100 + gSkillTraitValues.ubBBCarryWeightBonus) / 100); // plus one third
 	}
 
-	ubStrengthForCarrying = (ubStrengthForCarrying * (100 + pSoldier->GetBackgroundValue(BG_PERC_CARRYSTRENGTH)) / 100);
+	ubStrengthForCarrying = ubStrengthForCarrying * (100 + pSoldier->GetBackgroundValue(BG_PERC_CARRYSTRENGTH)) / 100;
 
 	// for now, assume soldiers can carry 1/2 their strength in KGs without penalty.
 	// instead of multiplying by 100 for percent, and then dividing by 10 to account

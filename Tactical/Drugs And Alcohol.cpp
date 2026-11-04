@@ -48,6 +48,18 @@ INT32	giDrunkModifier[] =
 #define HANGOVER_AP_REDUCE			10
 #define HANGOVER_BP_REDUCE			200
 
+void PrintDrugEffects(SOLDIERTYPE *pSoldier, UINT8 ubEffect)
+{
+	/*ScreenMsg(FONT_ORANGE, MSG_INTERFACE, L"%s Effect %d Effect Rate %d Side Effect %d Side Effect Rate %d Future Effect %d Times Since Sleep %d", 
+		pSoldier->GetName(), 
+		pSoldier->drugs.bDrugEffect[ubEffect],
+		pSoldier->drugs.bDrugEffectRate[ubEffect], 
+		pSoldier->drugs.bDrugSideEffect[ubEffect], 
+		pSoldier->drugs.bDrugSideEffectRate[ubEffect], 
+		pSoldier->drugs.bFutureDrugEffect[ubEffect], 
+		pSoldier->drugs.bTimesDrugUsedSinceSleep[ubEffect]);*/
+}
+
 BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs )
 {
 	UINT32  ubDrugType;
@@ -314,6 +326,11 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 		}
 	}	
 
+	if (ubDrugType & DRUG_ALCOHOL)
+	{
+		PrintDrugEffects(pSoldier, DRUG_TYPE_ALCOHOL);
+	}
+
 	// sevenfm: special effects
 	if (pSoldier->bBreath > 0 &&
 		//!pSoldier->bCollapsed &&
@@ -474,6 +491,11 @@ void HandleEndTurnDrugAdjustments( SOLDIERTYPE *pSoldier )
 				pSoldier->drugs.bFutureDrugEffect[ cnt ] = 0;
 				// Change rate to -ve..
 				pSoldier->drugs.bDrugEffectRate[ cnt ] = -Drug[cnt].ubDrugWearoffRate;
+			}
+
+			if (cnt == DRUG_TYPE_ALCOHOL)
+			{
+				PrintDrugEffects(pSoldier, DRUG_TYPE_ALCOHOL);
 			}
 		}
 	}
@@ -877,14 +899,10 @@ void HourlyDrugUpdate( )
 		// If side effect rate is non-zero....
 		if ( pSoldier->drugs.bDrugSideEffectRate[ DRUG_TYPE_ALCOHOL ] > 0 )
 		{
-			// Subtract some...			
+			// Subtract some...
 			// sevenfm: double rate when sleeping
 			if ( pSoldier->flags.fMercAsleep )
 				pSoldier->drugs.bDrugSideEffect[ DRUG_TYPE_ALCOHOL ] -= 2 * pSoldier->drugs.bDrugSideEffectRate[ DRUG_TYPE_ALCOHOL ];
-			// sevenfm: slower rate for vodka background
-			else if (pSoldier->HasBackgroundFlag(BACKGROUND_RUSSIAN_VODKA))
-				//pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ALCOHOL] -= pSoldier->drugs.bDrugSideEffectRate[DRUG_TYPE_ALCOHOL];
-				pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ALCOHOL] -= max(1, pSoldier->drugs.bDrugSideEffectRate[DRUG_TYPE_ALCOHOL] / 2);
 			else
 				pSoldier->drugs.bDrugSideEffect[ DRUG_TYPE_ALCOHOL ] -= pSoldier->drugs.bDrugSideEffectRate[ DRUG_TYPE_ALCOHOL ];
 
@@ -903,9 +921,6 @@ void HourlyDrugUpdate( )
 			// sevenfm: double rate when sleeping
 			if (pSoldier->flags.fMercAsleep)
 				pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL] -= (-2 * pSoldier->drugs.bDrugEffectRate[DRUG_TYPE_ALCOHOL]);
-			// sevenfm: increase rate for vodka background
-			else if (pSoldier->HasBackgroundFlag(BACKGROUND_RUSSIAN_VODKA))
-				pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL] -= (-4 * pSoldier->drugs.bDrugEffectRate[DRUG_TYPE_ALCOHOL]);
 			else
 				pSoldier->drugs.bDrugEffect[ DRUG_TYPE_ALCOHOL ] -= ( -1 * pSoldier->drugs.bDrugEffectRate[ DRUG_TYPE_ALCOHOL ] );
 
@@ -933,6 +948,11 @@ void HourlyDrugUpdate( )
 					}
 				}
 			}
+		}
+
+		if (pSoldier->drugs.bDrugSideEffectRate[DRUG_TYPE_ALCOHOL] != 0 || pSoldier->drugs.bDrugEffectRate[DRUG_TYPE_ALCOHOL] != 0 || pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL] != 0 || pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ALCOHOL] != 0)
+		{
+			PrintDrugEffects(pSoldier, DRUG_TYPE_ALCOHOL);
 		}
 
 		// Add increase in effect....

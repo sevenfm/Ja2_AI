@@ -2762,7 +2762,7 @@ void INVRenderINVPanelItem( SOLDIERTYPE *pSoldier, INT16 sPocket, UINT8 fDirtyLe
 					//Jenilee: determine the cost of moving this item around in our inventory
 					UINT16 usCostToMoveItem = GetInvMovementCost(gpItemPointer, iLastHandPos, sPocket);
 					// Flugente: backgrounds
-					usCostToMoveItem = (usCostToMoveItem * (100 + pSoldier->GetBackgroundValue(BG_INVENTORY))) / 100;
+					usCostToMoveItem = usCostToMoveItem * (100 + pSoldier->GetBackgroundValue(BG_INVENTORY)) / 100;
 
 					//we dont have enough APs to move it to this slot
 					if (usCostToMoveItem > 0 && pSoldier->bActionPoints < usCostToMoveItem && pSoldier->inv[iLastHandPos].usItem == NULL)

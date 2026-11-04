@@ -4251,7 +4251,7 @@ void SMInvClickCallback( MOUSE_REGION * pRegion, INT32 iReason )
 					//Jenilee: determine the cost of moving this item around in our inventory
 					usCostToMoveItem = GetInvMovementCost(gpItemPointer, iLastHandPos, uiHandPos);
 					// Flugente: backgrounds
-					usCostToMoveItem = (usCostToMoveItem * (100 + gpSMCurrentMerc->GetBackgroundValue(BG_INVENTORY))) / 100;
+					usCostToMoveItem = usCostToMoveItem * (100 + gpSMCurrentMerc->GetBackgroundValue(BG_INVENTORY)) / 100;
 				}
 				
 				// sevenfm: less restrictions, allow to put item into inventory if resulting AP >= -MAX_AP_CARRIED
@@ -4355,7 +4355,7 @@ void SMInvClickCallback( MOUSE_REGION * pRegion, INT32 iReason )
 									// silversurfer: This didn't cost any AP. Why? CTRL + LeftClick should deduct the same AP as manual attachment in the EDB.
 									usCostToMoveItem = AttachmentAPCost(gpItemPointer->usItem, gpSMCurrentMerc->inv[uiHandPos].usItem, gpSMCurrentMerc);
 									// Flugente: backgrounds
-									usCostToMoveItem = (usCostToMoveItem * (100 + gpSMCurrentMerc->GetBackgroundValue(BG_INVENTORY))) / 100;
+									usCostToMoveItem = usCostToMoveItem * (100 + gpSMCurrentMerc->GetBackgroundValue(BG_INVENTORY)) / 100;
 									// do we have enough AP?
 									if (!EnoughPoints(gpSMCurrentMerc, usCostToMoveItem, 0, TRUE))
 										return;

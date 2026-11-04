@@ -8757,7 +8757,7 @@ UINT32 CalcChanceHTH( SOLDIERTYPE * pAttacker,SOLDIERTYPE *pDefender, INT16 ubAi
 	// Flugente: backgrounds
 	if (ubMode == HTH_MODE_STAB)
 	{
-		iAttRating = (iAttRating * (100 + pAttacker->GetBackgroundValue(BG_PERC_CTH_BLADE))) / 100;
+		iAttRating = iAttRating * (100 + pAttacker->GetBackgroundValue(BG_PERC_CTH_BLADE)) / 100;
 	}
 	////////////////////////////////////////////////////////////////////////////////////
 

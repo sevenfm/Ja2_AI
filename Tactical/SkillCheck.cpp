@@ -52,7 +52,7 @@ INT8 EffectiveStrength( SOLDIERTYPE *pSoldier, BOOLEAN fTrainer )
 		iEffStrength = 0;
 	}
 
-	iEffStrength = (iEffStrength * (100 + pSoldier->GetBackgroundValue(BG_STRENGTH))) / 100;
+	iEffStrength = iEffStrength * (100 + pSoldier->GetBackgroundValue(BG_STRENGTH)) / 100;
 
 	// ATE: Make sure at least 2...
 	iEffStrength = max( iEffStrength, 2 );
@@ -71,7 +71,7 @@ INT8 EffectiveWisdom( SOLDIERTYPE * pSoldier)
 	iEffWisdom = pSoldier->stats.bWisdom;
 	iEffWisdom += pSoldier->bExtraWisdom;
 	iEffWisdom = EffectStatForBeingDrunk( pSoldier, iEffWisdom );
-	iEffWisdom = (iEffWisdom * (100 + pSoldier->GetBackgroundValue(BG_WISDOM))) / 100;
+	iEffWisdom = iEffWisdom * (100 + pSoldier->GetBackgroundValue(BG_WISDOM)) / 100;
 
 	if (pSoldier->IsInspired())
 		iEffWisdom += 20;
@@ -98,7 +98,7 @@ INT8 EffectiveAgility( SOLDIERTYPE * pSoldier, BOOLEAN fTrainer )
 		iEffAgility = (iEffAgility * 100) / pSoldier->sWeightCarriedAtTurnStart;
 	}
 
-	iEffAgility = (iEffAgility * (100 + pSoldier->GetBackgroundValue(BG_AGILITY))) / 100;
+	iEffAgility = iEffAgility * (100 + pSoldier->GetBackgroundValue(BG_AGILITY)) / 100;
 
 	// sevenfm: limit to 100
 	iEffAgility = min( 100, iEffAgility );
@@ -115,7 +115,7 @@ INT8 EffectiveMechanical( SOLDIERTYPE * pSoldier )
 
 	iEffMechanical = EffectStatForBeingDrunk( pSoldier, iEffMechanical );
 
-	iEffMechanical = (iEffMechanical * (100 + pSoldier->GetBackgroundValue(BG_MECHANICAL))) / 100;
+	iEffMechanical = iEffMechanical * (100 + pSoldier->GetBackgroundValue(BG_MECHANICAL)) / 100;
 
 	// sevenfm: limit to 100
 	iEffMechanical = min( 100, iEffMechanical );
@@ -132,7 +132,7 @@ INT8 EffectiveExplosive( SOLDIERTYPE * pSoldier )
 
 	iEffExplosive = EffectStatForBeingDrunk( pSoldier, iEffExplosive );
 
-	iEffExplosive = (iEffExplosive * (100 + pSoldier->GetBackgroundValue(BG_EXPLOSIVE_ASSIGN))) / 100;
+	iEffExplosive = iEffExplosive * (100 + pSoldier->GetBackgroundValue(BG_EXPLOSIVE_ASSIGN)) / 100;
 
 	// sevenfm: limit to 100
 	iEffExplosive = min( 100, iEffExplosive );
@@ -149,7 +149,7 @@ INT8 EffectiveMedical( SOLDIERTYPE * pSoldier )
 
 	iEffMedical = EffectStatForBeingDrunk( pSoldier, iEffMedical );
 
-	iEffMedical = (iEffMedical * (100 + pSoldier->GetBackgroundValue(BG_MEDICAL))) / 100;
+	iEffMedical = iEffMedical * (100 + pSoldier->GetBackgroundValue(BG_MEDICAL)) / 100;
 
 	// sevenfm: limit to 100
 	iEffMedical = min( 100, iEffMedical );
@@ -172,7 +172,7 @@ INT8 EffectiveLeadership( SOLDIERTYPE * pSoldier )
 		iEffLeadership = ( iEffLeadership * 120 / 100 );
 	}
 
-	iEffLeadership = (iEffLeadership * (100 + pSoldier->GetBackgroundValue(BG_LEADERSHIP))) / 100;
+	iEffLeadership = iEffLeadership * (100 + pSoldier->GetBackgroundValue(BG_LEADERSHIP)) / 100;
 
 	// sevenfm: limit to 100
 	iEffLeadership = min( 100, iEffLeadership );
@@ -253,7 +253,7 @@ INT8 EffectiveMarksmanship( SOLDIERTYPE * pSoldier )
 
 	iEffMarksmanship = pSoldier->stats.bMarksmanship;
 	iEffMarksmanship = EffectStatForBeingDrunk( pSoldier, iEffMarksmanship );
-	iEffMarksmanship = (iEffMarksmanship * (100 + pSoldier->GetBackgroundValue(BG_MARKSMANSHIP))) / 100;
+	iEffMarksmanship = iEffMarksmanship * (100 + pSoldier->GetBackgroundValue(BG_MARKSMANSHIP)) / 100;
 
 	// sevenfm: reduce from shock
 	if (pSoldier->InShock())
@@ -291,7 +291,7 @@ INT16 EffectiveDexterity( SOLDIERTYPE * pSoldier, BOOLEAN fTrainer )
 		iEffDexterity += pSoldier->bExtraDexterity;
 
 	iEffDexterity = EffectStatForBeingDrunk( pSoldier, iEffDexterity );
-	iEffDexterity = (iEffDexterity * (100 + pSoldier->GetBackgroundValue(BG_DEXTERITY))) / 100;
+	iEffDexterity = iEffDexterity * (100 + pSoldier->GetBackgroundValue(BG_DEXTERITY)) / 100;
 
 	// sevenfm: reduce from shock
 	if ( pSoldier->InShock() )

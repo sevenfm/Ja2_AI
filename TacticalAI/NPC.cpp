@@ -981,7 +981,7 @@ UINT8 CalcDesireToTalk( UINT8 ubNPC, UINT8 ubMerc, INT8 bApproach )
 		if ( pSoldier )
 		{
 			if ( bApproach == APPROACH_THREATEN )
-				iEffectiveLeadership = (iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_THREATEN))) / 100;
+				iEffectiveLeadership = iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_THREATEN)) / 100;
 		}
 
 		iApproachVal = pNPCProfile->ubApproachVal[bApproach - 1] * iEffectiveLeadership / 50;
@@ -996,11 +996,11 @@ UINT8 CalcDesireToTalk( UINT8 ubNPC, UINT8 ubMerc, INT8 bApproach )
 		if ( pSoldier )
 		{
 			if ( bApproach == APPROACH_FRIENDLY )
-				iEffectiveLeadership = (iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_FRIENDLY))) / 100;
+				iEffectiveLeadership = iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_FRIENDLY)) / 100;
 			else if ( bApproach == APPROACH_DIRECT )
-				iEffectiveLeadership = (iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_DIRECT))) / 100;
+				iEffectiveLeadership = iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_DIRECT)) / 100;
 			else if ( bApproach == APPROACH_RECRUIT )
-				iEffectiveLeadership = (iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_RECRUIT))) / 100;
+				iEffectiveLeadership = iEffectiveLeadership * (100 + pSoldier->GetBackgroundValue(BG_PERC_APPROACH_RECRUIT)) / 100;
 		}
 
 		iApproachVal = pNPCProfile->ubApproachVal[bApproach - 1] * iEffectiveLeadership / 50;
