@@ -102,9 +102,9 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 	pSoldier->StopInspire();
 		
 	// Flugente: we have to check for every single type of drug ( a drug applied may consist of several 'pure' drug types)	
-	for (UINT8 ubDrugType = DRUG_TYPE_ADRENALINE; ubDrugType < DRUG_TYPE_MAX; ++ubDrugType)
+	for (UINT8 ubLoop = DRUG_TYPE_ADRENALINE; ubLoop < DRUG_TYPE_MAX; ++ubLoop)
 	{
-		UINT32 drugtestflag = (1 << ubDrugType);			// comparing with this flag will determine the drug
+		UINT32 drugtestflag = (1 << ubLoop);			// comparing with this flag will determine the drug
 
 		// we do not actually test for DRUG_REGENERATION, because that is checked afterwards separately
 		if ( (drugtestflag & DRUG_REGENERATION ) != 0 )
@@ -113,29 +113,29 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 		if ( (ubDrugType & drugtestflag) != 0 )
 		{
 			// Add effects
-			pSoldier->AddDrugValues( ubDrugType, Drug[ubDrugType].ubDrugEffect, Drug[ubDrugType].ubDrugTravelRate, Drug[ubDrugType].ubDrugSideEffect );
+			pSoldier->AddDrugValues(ubLoop, Drug[ubLoop].ubDrugEffect, Drug[ubLoop].ubDrugTravelRate, Drug[ubLoop].ubDrugSideEffect);
 
 			// sevenfm: increase effect...
-			if ( pSoldier->drugs.bDrugEffectRate[ ubDrugType ] > 0 )
+			if (pSoldier->drugs.bDrugEffectRate[ubLoop] > 0)
 			{
 				// Seap some in....
-				pSoldier->drugs.bFutureDrugEffect[ ubDrugType ] -= pSoldier->drugs.bDrugEffectRate[ ubDrugType ];
-				pSoldier->drugs.bDrugEffect[ ubDrugType ]	 += pSoldier->drugs.bDrugEffectRate[ ubDrugType ];
+				pSoldier->drugs.bFutureDrugEffect[ubLoop] -= pSoldier->drugs.bDrugEffectRate[ubLoop];
+				pSoldier->drugs.bDrugEffect[ubLoop] += pSoldier->drugs.bDrugEffectRate[ubLoop];
 
 				// Refresh morale w/ new drug value...
 				RefreshSoldierMorale( pSoldier );
 
 				// Check if we need to stop 'adding'
-				if ( pSoldier->drugs.bFutureDrugEffect[ ubDrugType ] <= 0 )
+				if (pSoldier->drugs.bFutureDrugEffect[ubLoop] <= 0)
 				{
-					pSoldier->drugs.bFutureDrugEffect[ ubDrugType ] = 0;
+					pSoldier->drugs.bFutureDrugEffect[ubLoop] = 0;
 					// Change rate to -ve..
-					pSoldier->drugs.bDrugEffectRate[ ubDrugType ] = -Drug[ ubDrugType ].ubDrugWearoffRate;
+					pSoldier->drugs.bDrugEffectRate[ubLoop] = -Drug[ubLoop].ubDrugWearoffRate;
 				}
 			}
 
 			// ATE: Make guy collapse from heart attack if too much stuff taken....
-			if (pSoldier->drugs.bDrugSideEffectRate[ubDrugType] > (Drug[ubDrugType].ubDrugSideEffect * 3) ||
+			if (pSoldier->drugs.bDrugSideEffectRate[ubLoop] > (Drug[ubLoop].ubDrugSideEffect * 3) ||
 				(drugtestflag & DRUG_ALCOHOL) && pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] && Chance(pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE]) ||
 				(drugtestflag & DRUG_ALCOHOL) && pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] && Chance(pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE]) ||
 				(drugtestflag & DRUG_ADRENALINE) && pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL] && Chance(pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL]) ||
