@@ -18385,12 +18385,12 @@ void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravel
 
 	//ScreenMsg(FONT_LTBLUE, MSG_INTERFACE, L"background modified %s type %d effect %d travel rate %d side effect %d", this->GetName(), ubDrugType, ubEffect, ubTravelRate, ubSideEffect);
 
-	// sevenfm: increase side effect for merc with Russian Vodka background
+	// sevenfm: double side effect for merc with Russian Vodka background
 	if (this->ubProfile != NO_PROFILE &&
 		ubDrugType == DRUG_TYPE_ALCOHOL &&
 		this->HasBackgroundFlag(BACKGROUND_RUSSIAN_VODKA))
 	{
-		ubSideEffect = min(255, ubSideEffect * 4);
+		ubSideEffect = min(255, ubSideEffect * 2);
 
 		//ScreenMsg(FONT_LTBLUE, MSG_INTERFACE, L"russian vodka modified %s type %d effect %d travel rate %d side effect %d", this->GetName(), ubDrugType, ubEffect, ubTravelRate, ubSideEffect);
 	}	

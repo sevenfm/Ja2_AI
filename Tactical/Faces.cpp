@@ -2057,10 +2057,38 @@ void HandleRenderFaceAdjustments(FACETYPE *pFace, BOOLEAN fDisplayBuffer, BOOLEA
 				bNumRightIcons++;
 			}
 			else */
-			if (MercDruggedButNotDrunk(MercPtrs[pFace->ubSoldierID]))
+
+			if (gGameSettings.fOptions[TOPTION_SHOW_EXTRA_ICONS] &&
+				gfAssignmentIconsX)
 			{
-				DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 7);
-				bNumRightIcons++;
+				// sevenfm: use different icon for regen
+				if (pSoldier->bRegenerationCounter > 0)
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 57);
+					bNumRightIcons++;
+				}
+
+				// show side effect when no positive effects active
+				if (!MercDruggedButNotDrunk(MercPtrs[pFace->ubSoldierID], TRUE, FALSE) &&	// check we have no positive drug effect
+					MercDruggedButNotDrunk(MercPtrs[pFace->ubSoldierID], FALSE, TRUE))		// check we have drug side effect
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 56);
+					bNumRightIcons++;
+				}
+				// show icon when positive effect active except regen
+				else if (MercDruggedButNotDrunk(MercPtrs[pFace->ubSoldierID], TRUE, FALSE))		// check we have positive drug effect except for regen
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 7);
+					bNumRightIcons++;
+				}
+			}
+			else
+			{
+				if (MercDruggedButNotDrunk(MercPtrs[pFace->ubSoldierID]))				// default code
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 7);
+					bNumRightIcons++;
+				}
 			}
 
 			if (gGameSettings.fOptions[TOPTION_SHOW_EXTRA_ICONS] &&

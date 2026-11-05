@@ -9487,7 +9487,7 @@ void HandleSuppressionFire( UINT8 ubTargetedMerc, UINT8 ubCausedAttacker )
 				ubMinPointsToSuppress = ubMinPointsToSuppress / 2;
 			}
 			// alcohol lowers reaction
-			else if (MercUnderTheInfluence(pSoldier, DRUG_TYPE_ALCOHOL) || pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE])
+			else if (MercUnderTheInfluence(pSoldier, DRUG_TYPE_ALCOHOL) || pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE])
 			{
 				ubMinPointsToSuppress += APBPConstants[AP_CROUCH];
 			}

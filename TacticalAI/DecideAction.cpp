@@ -5860,9 +5860,9 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 			//(!SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_STAND, TRUE) && !SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_PRONE, TRUE) || pSoldier->TakenHit() || pSoldier->bBlindedCounter) &&
 			!InARoom(pSoldier->sGridNo, NULL) &&
 			pSoldier->aiData.bOrders != STATIONARY &&
-			pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] == 0 &&
+			pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] == 0 &&
 			!AICheckSuccessfulAttack(pSoldier, FALSE) &&
-			Chance(1 + (pSoldier->ShockLevelPercent() + pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] + 5 * CountTeamUnderAttack(pSoldier->bTeam, pSoldier->sGridNo, TACTICAL_RANGE / 2) + 5 * CountCorpses(pSoldier, pSoldier->sGridNo, TACTICAL_RANGE / 4, FALSE)) * 100 * 10 * 5 /
+			Chance(1 + (pSoldier->ShockLevelPercent() + pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] + 5 * CountTeamUnderAttack(pSoldier->bTeam, pSoldier->sGridNo, TACTICAL_RANGE / 2) + 5 * CountCorpses(pSoldier, pSoldier->sGridNo, TACTICAL_RANGE / 4, FALSE)) * 100 * 10 * 5 /
 				(10 * (100 + pSoldier->aiData.bMorale) * (10 + pSoldier->stats.bExpLevel) * (5 + RangeChangeDesire(pSoldier))) + 10 * pSoldier->bBlindedCounter)
 			)
 		{
@@ -5884,7 +5884,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 			(pSoldier->aiData.bWoundShock > 0 || pSoldier->InShock()) &&
 			!InARoom(pSoldier->sGridNo, NULL) &&
 			pSoldier->aiData.bOrders != STATIONARY &&
-			pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] == 0 &&
+			pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] == 0 &&
 			!AICheckSuccessfulAttack(pSoldier, FALSE) &&
 			(Chance(pSoldier->aiData.bWoundShock) || Chance(pSoldier->aiData.bShock / 10)) &&
 			!Chance(SoldierDifficultyLevel(pSoldier) * 10))
@@ -5906,7 +5906,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 			!fSafeSpot &&
 			!InARoom(pSoldier->sGridNo, NULL) &&
 			pSoldier->aiData.bOrders != STATIONARY &&
-			pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] == 0 &&
+			pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] == 0 &&
 			!AICheckSuccessfulAttack(pSoldier, FALSE) &&
 			(!AICheckSuccessfulAttack(pSoldier, TRUE) || pSoldier->stats.bLife < pSoldier->stats.bLifeMax / 2) &&
 			pSoldier->bBleeding > MIN_BLEEDING_THRESHOLD &&
@@ -9364,9 +9364,9 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 		//(!SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_STAND, TRUE) && !SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_PRONE, TRUE) || pSoldier->TakenHit()) &&
 		!InARoom(pSoldier->sGridNo, NULL) &&
 		pSoldier->aiData.bOrders != STATIONARY &&
-		pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] == 0 &&
+		pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] == 0 &&
 		!AICheckSuccessfulAttack(pSoldier, FALSE) &&
-		Chance(1 + (pSoldier->ShockLevelPercent() + pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] + 5 * CountTeamUnderAttack(pSoldier->bTeam, pSoldier->sGridNo, DAY_VISION_RANGE / 2) + 5 * CountCorpses(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE / 4, FALSE)) * 100 * 10 * 5 /
+		Chance(1 + (pSoldier->ShockLevelPercent() + pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] + 5 * CountTeamUnderAttack(pSoldier->bTeam, pSoldier->sGridNo, DAY_VISION_RANGE / 2) + 5 * CountCorpses(pSoldier, pSoldier->sGridNo, DAY_VISION_RANGE / 4, FALSE)) * 100 * 10 * 5 /
 		(10 * (100 + pSoldier->aiData.bMorale) * (10 + pSoldier->stats.bExpLevel) * (5 + RangeChangeDesire(pSoldier))))
 		)
 	{
@@ -9388,7 +9388,7 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 		(pSoldier->aiData.bWoundShock > 0 || pSoldier->InShock()) &&
 		!InARoom(pSoldier->sGridNo, NULL) &&
 		pSoldier->aiData.bOrders != STATIONARY &&
-		pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] == 0 &&
+		pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] == 0 &&
 		!AICheckSuccessfulAttack(pSoldier, FALSE) &&
 		(Chance(pSoldier->aiData.bWoundShock) || Chance(pSoldier->aiData.bShock / 10)) &&
 		!Chance(SoldierDifficultyLevel(pSoldier) * 10))
@@ -9410,7 +9410,7 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 		!fSafeSpot &&
 		!InARoom(pSoldier->sGridNo, NULL) &&
 		pSoldier->aiData.bOrders != STATIONARY &&
-		pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ADRENALINE] == 0 &&
+		pSoldier->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] == 0 &&
 		!AICheckSuccessfulAttack(pSoldier, FALSE) &&
 		(!AICheckSuccessfulAttack(pSoldier, TRUE) || pSoldier->stats.bLife < pSoldier->stats.bLifeMax / 2) &&
 		pSoldier->bBleeding > MIN_BLEEDING_THRESHOLD &&
