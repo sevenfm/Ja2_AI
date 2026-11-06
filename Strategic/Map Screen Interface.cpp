@@ -57,6 +57,7 @@
 	#include "Personnel.h"
 	#include "mapscreen.h"
 	#include "english.h"
+	#include "Drugs And Alcohol.h"
 #endif
 
 #include "connect.h"
@@ -1996,7 +1997,7 @@ void RemoveMapStatusBarsRegion( void )
 
 void UpdateCharRegionHelpText( void )
 {
-	CHAR16 sString[ 128 ], sTemp[ 20 ];
+	CHAR16 sString[ 256 ], sTemp[ 20 ];
 	CHAR16 pMoraleStr[ 128 ];
 	SOLDIERTYPE *pSoldier = NULL;
 
@@ -2069,6 +2070,13 @@ void UpdateCharRegionHelpText( void )
 															pMapScreenStatusStrings[ 1 ], pSoldier->bBreath, pSoldier->bBreathMax,
 															pMapScreenStatusStrings[ 2 ], pMoraleStr );
 						}
+					}
+
+					// sevenfm: print drunk level
+					if (GetDrunkLevel(pSoldier) != SOBER)
+					{
+						//swprintf(sString, L"%s, %s", sString, pDrunkStrings[GetDrunkLevel(pSoldier)]);
+						swprintf(sString, L"%s, %s: %s", sString, pDrugStrings[DRUG_TYPE_ALCOHOL], pDrunkStrings[GetDrunkLevel(pSoldier)]);
 					}
 				}
 			}

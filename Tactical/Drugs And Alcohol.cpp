@@ -122,6 +122,20 @@ void PrintDrugEffects(SOLDIERTYPE *pSoldier)
 	}
 }
 
+void PrintDrugEffectsStr(SOLDIERTYPE *pSoldier, CHAR16 str[])
+{
+	for (UINT8 ubEffect = DRUG_TYPE_ADRENALINE; ubEffect <= DRUG_TYPE_STUNANDKILL; ++ubEffect)
+	{
+		if (ubEffect == DRUG_TYPE_ALCOHOL)
+			continue;
+
+		if (pSoldier->drugs.bDrugEffect[ubEffect])
+			swprintf(str, L"%s\n%s", str, pDrugStrings[ubEffect]);
+		else if (pSoldier->drugs.bDrugSideEffect[ubEffect])
+			swprintf(str, L"%s\n%s*", str, pDrugStrings[ubEffect]);
+	}
+}
+
 BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs )
 {
 	UINT32  ubDrugType;
@@ -444,7 +458,7 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 		ApplyFood( pSoldier, pObject, TRUE, TRUE );
 
 	// sevenfm: play sound depending on drug type
-	if (pSoldier->IsSoldierPC())
+	if (pSoldier->IsSoldierPC() && !pSoldier->IsDying() && !pSoldier->IsUnconscious())
 	{
 		if ((ubDrugType & DRUG_ALCOHOL))
 			pSoldier->DoMercBattleSound(BATTLE_SOUND_HUMM);

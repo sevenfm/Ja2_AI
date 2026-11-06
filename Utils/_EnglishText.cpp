@@ -4190,6 +4190,43 @@ STR16 pMoralStrings[] =
 	L"Bad",
 };
 
+// merc drunk state
+STR16 pDrunkStrings[] =
+{
+	L"Sober", 
+	L"Feeling good",
+	L"Borderline",
+	L"Drunk",
+	L"Hungover",
+};
+
+// merc drug state
+STR16 pDrugStrings[] = 
+{
+	L"Adrenaline",
+	L"Alcohol",
+	L"Regeneration",
+	L"Resistance",
+	L"Strength",
+	L"Agility",
+	L"Dexterity",
+	L"Wisdom",
+	L"Perception",
+	L"Psycho",
+	L"Nervous",
+	L"Claustrophobic",
+	L"Heat intolerant",
+	L"Fear of insects",
+	L"Forgetful",
+	L"Blind",
+	L"Knockout",
+	L"Vision",
+	L"Tunnel vision",
+	L"Life damage",
+	L"Cure poison",
+	L"Stun and kill",
+};
+
 // Mercs equipment has now arrived and is now available in Omerta or Drassen.
 
 STR16 pLeftEquipmentString[] =

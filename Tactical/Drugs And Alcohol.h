@@ -107,4 +107,6 @@ BOOLEAN MercDruggedButNotDrunk(SOLDIERTYPE *pSoldier, BOOLEAN fMainOnly = FALSE,
 
 void HourlyDrugUpdate();
 
+void PrintDrugEffectsStr(SOLDIERTYPE *pSoldier, CHAR16 str[]);
+
 #endif

@@ -3304,6 +3304,19 @@ void RenderSMPanel( BOOLEAN *pfDirty )
 					swprintf(pStr, L"%s\n%s: %d%%", pStr, TacticalStr[MERC_VITAL_STATS_SHOCK], gpSMCurrentMerc->ShockLevelPercent());
 				}
 
+				// sevenfm: print drunk level
+				if (GetDrunkLevel(gpSMCurrentMerc) != SOBER)
+				{
+					swprintf(pStr, L"%s\n%s: %s", pStr, pDrugStrings[DRUG_TYPE_ALCOHOL], pDrunkStrings[GetDrunkLevel(gpSMCurrentMerc)]);
+					//swprintf(pStr, L"%s\n%s", pStr, pDrunkStrings[GetDrunkLevel(gpSMCurrentMerc)]);
+				}
+
+				// sevenfm: print drugs
+				if (MercUnderTheInfluence(gpSMCurrentMerc))
+				{
+					PrintDrugEffectsStr(gpSMCurrentMerc, pStr);
+				}
+
 				SetRegionFastHelpText( &(gSM_SELMERCBarsRegion), pStr );
 
 				// Buggler: skills/traits tooltip on merc portrait
@@ -6297,6 +6310,19 @@ void RenderTEAMPanel( BOOLEAN fDirty )
 							if (pSoldier->ShockLevelPercent() > 0)
 							{
 								swprintf(pStr, L"%s\n%s: %d%%", pStr, TacticalStr[MERC_VITAL_STATS_SHOCK], pSoldier->ShockLevelPercent());
+							}
+
+							// sevenfm: print drunk level
+							if (GetDrunkLevel(pSoldier) != SOBER)
+							{
+								swprintf(pStr, L"%s\n%s: %s", pStr, pDrugStrings[DRUG_TYPE_ALCOHOL], pDrunkStrings[GetDrunkLevel(pSoldier)]);
+								//swprintf(pStr, L"%s\n%s", pStr, pDrunkStrings[GetDrunkLevel(pSoldier)]);
+							}
+
+							// sevenfm: print drugs
+							if (MercUnderTheInfluence(pSoldier))
+							{
+								PrintDrugEffectsStr(pSoldier, pStr);
 							}
 
 							SetRegionFastHelpText( &(gTEAM_BarsRegions[ cnt ]), pStr );
