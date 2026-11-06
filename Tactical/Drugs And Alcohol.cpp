@@ -164,13 +164,9 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 
 	// do switch for Larry!!
 	if ( pSoldier->ubProfile == LARRY_NORMAL )
-	{
 		pSoldier = SwapLarrysProfiles( pSoldier );
-	}
 	else if ( pSoldier->ubProfile == LARRY_DRUNK )
-	{
 		gMercProfiles[ LARRY_DRUNK ].bNPCData = 0;
-	}
 
 	// sevenfm: stop inspiration when we consume any drugs
 	pSoldier->StopInspire();
@@ -446,6 +442,15 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 	// sevenfm: apply food only for player mercs
 	if (!consumeitem  && pSoldier->IsSoldierPC())
 		ApplyFood( pSoldier, pObject, TRUE, TRUE );
+
+	// sevenfm: play sound depending on drug type
+	if (pSoldier->IsSoldierPC())
+	{
+		if ((ubDrugType & DRUG_ALCOHOL))
+			pSoldier->DoMercBattleSound(BATTLE_SOUND_HUMM);
+		else
+			pSoldier->DoMercBattleSound(BATTLE_SOUND_COOL1);
+	}
 
 	return TRUE;
 }

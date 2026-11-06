@@ -3788,7 +3788,8 @@ void SMInvClickCamoCallback( MOUSE_REGION * pRegion, INT32 iReason )
 
 
 						// Say OK acknowledge....
-						gpSMCurrentMerc->DoMercBattleSound( BATTLE_SOUND_COOL1 );
+						// sevenfm: moved sound to ApplyDrugs()
+						//gpSMCurrentMerc->DoMercBattleSound( BATTLE_SOUND_COOL1 );
 
 					}
 					else if ( gGameOptions.fFoodSystem && ApplyFood( gpSMCurrentMerc, gpItemPointer, FALSE, FALSE ) )

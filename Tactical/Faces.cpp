@@ -2091,12 +2091,30 @@ void HandleRenderFaceAdjustments(FACETYPE *pFace, BOOLEAN fDisplayBuffer, BOOLEA
 				}
 			}
 
+			// sevenfm: new icon for each drunk level
 			if (gGameSettings.fOptions[TOPTION_SHOW_EXTRA_ICONS] &&
-				gfAssignmentIconsX &&
-				GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) == HUNGOVER)
+				gfAssignmentIconsX)
 			{
-				DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 55);
-				bNumRightIcons++;
+				if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) == HUNGOVER)
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 55);
+					bNumRightIcons++;
+				}
+				else if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) == FEELING_GOOD)
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 8);
+					bNumRightIcons++;
+				}
+				else if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) == BORDERLINE)
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 58);
+					bNumRightIcons++;
+				}
+				else if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) == DRUNK)
+				{
+					DoRightIcon(uiRenderBuffer, pFace, sFaceX, sFaceY, bNumRightIcons, 59);
+					bNumRightIcons++;
+				}
 			}
 			else if (GetDrunkLevel(MercPtrs[pFace->ubSoldierID]) != SOBER)
 			{
