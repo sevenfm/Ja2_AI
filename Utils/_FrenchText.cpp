@@ -2397,6 +2397,25 @@ STR16 pSkillMenuStrings[] =	// TODO.Translate
 	L"Napalm shell ($%d)",
 };
 
+STR16 pRadioMenuStrings[] =
+{
+	L"Radio Scan",
+	L"Call Militia",
+	L"Cancel",
+};
+
+STR16 pRadioNumberMenuStrings[] =
+{
+	L"5",
+	L"10",
+	L"15",
+	L"20",
+	L"30",
+	L"40",
+	L"All",
+	L"Cancel",
+};
+
 STR16 pSnitchMenuStrings[] =
 {
 	// snitch

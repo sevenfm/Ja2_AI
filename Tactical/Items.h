@@ -611,6 +611,9 @@ UINT16 CalcTotalVolatility(OBJECTTYPE * pObj);
 
 BOOLEAN GetFirstGrenadeOfType( UINT16 &usItem, UINT8 ubGrenadeType );
 
+BOOLEAN ItemIsCanteen(UINT16 usItem);
+BOOLEAN ItemIsTwoHanded(UINT16 usItem);
+
 #endif
 
 

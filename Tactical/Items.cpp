@@ -1992,6 +1992,7 @@ BOOLEAN ValidMerge( UINT16 usMerge, UINT16 usItem )
 	return(EvaluateValidMerge(usMerge, usItem, &usIgnoreResult, &usIgnoreResult2, &ubIgnoreType, &ubIgnoreAPCost, &usPointsUsed, &usPointsAdded, &usExtraItem, &usExtraItemPointsUsed, &usSkillCheck, &usSkillDifficulty));
 }
 
+
 int GetPocketSizeByDimensions(int sizeX, int sizeY)
 {
 	static const UINT8 cisPocketSize[6][4] =
@@ -17827,4 +17828,13 @@ BOOLEAN FindAttachmentRange(UINT16 usAttachment, UINT32* pStartIndex, UINT32* pE
 	}
 
 	return result;
+}
+
+BOOLEAN ItemIsCanteen(UINT16 usItem)
+{
+	return Item[usItem].canteen;
+}
+BOOLEAN ItemIsTwoHanded(UINT16 usItem)
+{
+	return Item[usItem].twohanded;
 }

@@ -1915,6 +1915,36 @@ BOOLEAN CallMilitiaReinforcements( INT16 sTargetMapX, INT16 sTargetMapY, INT16 s
 	return TRUE;
 }
 
+// Moves up to sNumber militia from the source sector to an adjacent target sector on the strategic layer only (no tactical map is touched)
+BOOLEAN CallMilitiaReinforcementsNoTactical( INT16 sTargetMapX, INT16 sTargetMapY, INT16 sSrcMapX, INT16 sSrcMapY, UINT16 sNumber )
+{
+	SECTORINFO *pSectorInfo = &( SectorInfo[ SECTOR( sTargetMapX, sTargetMapY ) ] );
+	UINT8 movetype = THROUGH_STRATEGIC_MOVE;
+
+	if ( sTargetMapX == sSrcMapX + 1 && sTargetMapY == sSrcMapY )
+		movetype = EAST_STRATEGIC_MOVE;
+	else if ( sTargetMapX == sSrcMapX - 1 && sTargetMapY == sSrcMapY )
+		movetype = WEST_STRATEGIC_MOVE;
+	else if ( sTargetMapX == sSrcMapX && sTargetMapY == sSrcMapY + 1 )
+		movetype = SOUTH_STRATEGIC_MOVE;
+	else if ( sTargetMapX == sSrcMapX && sTargetMapY == sSrcMapY - 1 )
+		movetype = NORTH_STRATEGIC_MOVE;
+	else
+		return FALSE;
+
+	if ( SectorInfo[ SECTOR(sSrcMapX,sSrcMapY) ].ubTraversability[ movetype ] == GROUNDBARRIER || SectorInfo[ SECTOR(sSrcMapX,sSrcMapY) ].ubTraversability[ movetype ] == EDGEOFWORLD )
+	{
+		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, L"Militia cannot traverse to this sector due to the terrain." );
+		return FALSE;
+	}
+
+	UINT16 sMilitiaMoved = 0;
+	while ( sMilitiaMoved < sNumber && CountMilitia( pSectorInfo ) < gGameExternalOptions.iMaxMilitiaPerSector && MoveOneBestMilitiaMan( sSrcMapX, sSrcMapY, sTargetMapX, sTargetMapY ) )
+		++sMilitiaMoved;
+
+	return ( sMilitiaMoved > 0 );
+}
+
 void MSCallBack( UINT8 ubResult )
 {
 	if( ubResult == MSG_BOX_RETURN_YES )

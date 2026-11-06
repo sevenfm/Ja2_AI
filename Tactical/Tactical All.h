@@ -58,6 +58,7 @@
 #include "messageboxscreen.h"
 #include "Handle UI.h"
 #include "items.h"
+#include "CraftInfo.h"
 #include "MercTextBox.h"
 #include "renderworld.h"
 #include "strategic turns.h"
