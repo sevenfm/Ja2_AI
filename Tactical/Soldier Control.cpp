@@ -21088,6 +21088,18 @@ BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 	return FALSE;
 }
 
+void SOLDIERTYPE::StopSpotting(void)
+{
+	this->usSkillCounter[SOLDIER_COUNTER_SPOTTER] = 0;
+	this->sFocusGridNo = NOWHERE;
+	this->bFocusLevel = 0;
+
+	// sevenfm: update vision
+	//HandleSight(this, SIGHT_LOOK);
+	if(this->bTeam == gbPlayerNum)
+		DirtyMercPanelInterface(this, DIRTYLEVEL1);
+}
+
 UINT8 SOLDIERTYPE::GetSpottingRadius(void)
 {
 	UINT8 ubRadius = 1;
@@ -21102,18 +21114,6 @@ UINT8 SOLDIERTYPE::GetSpottingRadius(void)
 	}
 
 	return ubRadius;
-}
-
-void SOLDIERTYPE::StopSpotting(void)
-{
-	this->usSkillCounter[SOLDIER_COUNTER_SPOTTER] = 0;
-	this->sFocusGridNo = NOWHERE;
-	this->bFocusLevel = 0;
-
-	// sevenfm: update vision
-	//HandleSight(this, SIGHT_LOOK);
-	if(this->bTeam == gbPlayerNum)
-		DirtyMercPanelInterface(this, DIRTYLEVEL1);
 }
 
 BOOLEAN SOLDIERTYPE::CanFocus(INT32 sTargetGridNo, INT8 bTargetLevel)
