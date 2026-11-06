@@ -1970,6 +1970,8 @@ public:
 	BOOLEAN HighSnowCamo(void);
 	BOOLEAN HighWornStealth(void);
 
+	BOOLEAN HasAdrenalineEffect(void);
+
 	BOOLEAN InShock(void);
 	BOOLEAN InHelicopter(void);	
 	BOOLEAN IsEmptyVehicle( void );
@@ -2152,7 +2154,6 @@ public:
 	BOOLEAN CanSpot(INT32 sTargetGridNo = -1, INT8 bTargetLevel = 0);
 	BOOLEAN BecomeSpotter(INT32 sTargetGridNo, INT8 bTargetLevel);
 	void StopSpotting(void);
-
 	// sevenfm:
 	UINT16	SpottingBonus();
 	INT16	MaxVisionBonus();

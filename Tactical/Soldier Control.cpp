@@ -21077,10 +21077,10 @@ BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 {
 	UINT8 ubActive = (gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT) ? 1 : 2;
 
-	if (this->IsSpotting() &&
-		this->usSkillCounter[SOLDIER_COUNTER_SPOTTER] >= ubActive &&
-		!TileIsOutOfBounds(sSpot) &&
-		!TileIsOutOfBounds(this->sFocusGridNo) &&
+	if (this->IsSpotting() && 
+		this->usSkillCounter[SOLDIER_COUNTER_SPOTTER] >= ubActive && 
+		!TileIsOutOfBounds(sSpot) && 
+		!TileIsOutOfBounds(this->sFocusGridNo) && 
 		this->bFocusLevel == bLevel &&
 		PythSpacesAway(sSpot, this->sFocusGridNo) <= this->GetSpottingRadius())
 		return TRUE;
@@ -21106,7 +21106,7 @@ UINT8 SOLDIERTYPE::GetSpottingRadius(void)
 
 	if (!TileIsOutOfBounds(this->sFocusGridNo) &&
 		PythSpacesAway(this->sGridNo, this->sFocusGridNo) > DAY_VISION_RANGE / 2 &&
-		gGameOptions.fNewTraitSystem &&
+		gGameOptions.fNewTraitSystem && 
 		gSkillTraitValues.fSCSpottingRadiusIncreased &&
 		HAS_SKILL_TRAIT(this, SCOUTING_NT))
 	{
@@ -26319,6 +26319,15 @@ BOOLEAN SOLDIERTYPE::TakenHit(void)
 BOOLEAN SOLDIERTYPE::SuppressedThisTurn(void)
 {
 	if (this->usSoldierFlagMask2 & SOLDIER_SUPRESSED_THIS_TURN)
+		return TRUE;
+
+	return FALSE;
+}
+
+// check for positive effect only, ignore side effect
+BOOLEAN SOLDIERTYPE::HasAdrenalineEffect(void)
+{
+	if (this->drugs.bDrugEffect[DRUG_TYPE_ADRENALINE] > 0)
 		return TRUE;
 
 	return FALSE;

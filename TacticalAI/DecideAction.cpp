@@ -7287,43 +7287,82 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 									{
 										DebugAI( AI_MSG_INFO, pSoldier, String("move to disturbance"));
 
-										BOOLEAN fSkipCautiousMove = TRUE;
-										BOOLEAN fSlowMovement = TRUE;
+										BOOLEAN fSkipCautiousMove = FALSE;
+										BOOLEAN fSlowMovement = FALSE;
+										BOOLEAN fApproachWatchedLocation = FALSE;
 
 										// reserve APs for a possible crouch plus a shot
 										INT8 bReserveAP = (INT8)(MinAPsToAttack(pSoldier, sClosestDisturbance, ADDTURNCOST, 0, TRUE) + GetAPsCrouch(pSoldier, TRUE));										
 
-										if (pSoldier->RushAttackAdvance() ||
-											pSoldier->aiData.bUnderFire && !GuySawEnemy(pSoldier) ||
-											CountFriendsBlack(pSoldier, sClosestDisturbance) > 0)
+										// slow movement forces soldier to use walking mode instead of running when approaching enemy
+										if (!pSoldier->RushAttackAdvance() &&
+											!(pSoldier->aiData.bUnderFire && !GuySawEnemy(pSoldier)) &&
+											CountFriendsBlack(pSoldier, sClosestDisturbance) == 0)
 										{
-											DebugAI(AI_MSG_INFO, pSoldier, String("use fast movement"));
-											fSlowMovement = FALSE;
+											DebugAI(AI_MSG_INFO, pSoldier, String("use slow movement"));
+											fSlowMovement = TRUE;
 										}
 
 										// determine cautious move spot
 										INT32 sCautiousMoveSpot = InternalGoAsFarAsPossibleTowards(pSoldier, pSoldier->aiData.usActionData, bReserveAP, AI_ACTION_SEEK_OPPONENT, fSlowMovement ? FLAG_CAUTIOUS : 0);
-										DebugAI(AI_MSG_INFO, pSoldier, String("found cautious move spot %d reserving %d AP moving to %d slow movement %d", sCautiousMoveSpot, bReserveAP, pSoldier->aiData.usActionData, fSlowMovement));
+										DebugAI(AI_MSG_INFO, pSoldier, String("found cautious move spot %d reserving %d AP moving to %d slow movement %d", sCautiousMoveSpot, bReserveAP, pSoldier->aiData.usActionData, fSlowMovement));										
 
+										// standard check for cautious move, only allow in safe place when not rushing and not advancing to cover spot
 										if (!TileIsOutOfBounds(sCautiousMoveSpot) &&
 											(pSoldier->RushAttackAdvance() ||
 											!TileIsOutOfBounds(sAdvanceSpot) ||
 											InLightAtNight(sCautiousMoveSpot, pSoldier->pathing.bLevel) ||
-											CountFriendsBlack(pSoldier, sClosestDisturbance) > 0 || 
+											CountFriendsBlack(pSoldier, sClosestDisturbance) > 0 ||
 											pSoldier->aiData.bUnderFire && !GuySawEnemy(pSoldier) ||
-											FindBombNearby(pSoldier, sCautiousMoveSpot, BOMB_DETECTION_RANGE) ||
-											CorpseWarning(pSoldier, sCautiousMoveSpot, pSoldier->pathing.bLevel) ||
-											EnemyCanAttackSpot(pSoldier, sCautiousMoveSpot, pSoldier->pathing.bLevel) ||
-											!SightCoverAtSpot(pSoldier, sCautiousMoveSpot, ANIM_STAND, FALSE)))
+											FindBombNearby(pSoldier, sCautiousMoveSpot, BOMB_DETECTION_RANGE)))
+											//CorpseWarning(pSoldier, sCautiousMoveSpot, pSoldier->pathing.bLevel) ||
+											//SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_STAND, FALSE) &&
+											//!SightCoverAtSpot(pSoldier, sCautiousMoveSpot, ANIM_STAND, FALSE) &&
+											//EnemyCanAttackSpot(pSoldier, sCautiousMoveSpot, pSoldier->pathing.bLevel)))
 										{
 											DebugAI(AI_MSG_INFO, pSoldier, String("moving to advance spot or new spot is dangerous - skip cautious move"));
 											fSkipCautiousMove = TRUE;
 										}
 
+										if (!TileIsOutOfBounds(sCautiousMoveSpot) &&
+											!fSkipCautiousMove &&
+											pSoldier->aiData.bAIMorale < MORALE_FEARLESS &&
+											!pSoldier->aiData.bUnderFire &&
+											!CorpseWarning(pSoldier, sCautiousMoveSpot, pSoldier->pathing.bLevel))
+										{
+											// check if we are approaching visible watched location
+											INT8 bHighestWatchLoc = GetHighestVisibleWatchedLoc(pSoldier->ubID);
+											INT32 sWatchSpot = NOWHERE;
+											INT8 bWatchLevel = 0;
+
+											if (bHighestWatchLoc >= 0)
+											{
+												sWatchSpot = gsWatchedLoc[pSoldier->ubID][bHighestWatchLoc];
+												bWatchLevel = gbWatchedLocLevel[pSoldier->ubID][bHighestWatchLoc];
+
+												// check if we are approaching visible watched spot
+												if (PythSpacesAway(pSoldier->sGridNo, sWatchSpot) < AIGunRange(pSoldier) &&
+													PythSpacesAway(sCautiousMoveSpot, sWatchSpot) < PythSpacesAway(pSoldier->sGridNo, sWatchSpot))
+												{
+													DebugAI(AI_MSG_INFO, pSoldier, String("moving closer to visible watched location"));
+													fApproachWatchedLocation = TRUE;
+												}
+											}
+										}
+
 										// let's be a bit cautious about going right up to a location without enough APs to shoot
 										if (!fSkipCautiousMove &&
 											!TileIsOutOfBounds(sCautiousMoveSpot) &&
-											(PythSpacesAway(pSoldier->aiData.usActionData, sClosestDisturbance) < 5 ||
+											(// moving very close to enemy, reserve AP for attack
+											PythSpacesAway(pSoldier->aiData.usActionData, sClosestDisturbance) < 5 ||
+											// approaching watched location, reserve AP to ambush enemy
+											fApproachWatchedLocation ||
+											// approaching enemy with raised weapon
+											pSoldier->AnimEndHeight() == ANIM_STAND &&
+											WeaponReady(pSoldier) &&
+											PythSpacesAway(pSoldier->aiData.usActionData, sClosestDisturbance) < AIGunRange(pSoldier) &&
+											PythSpacesAway(pSoldier->sGridNo, sClosestDisturbance) < TACTICAL_RANGE ||
+											// moving out of sight cover close to currently unseen enemy
 											SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_STAND, TRUE) &&
 											!SightCoverAtSpot(pSoldier, pSoldier->aiData.usActionData, ANIM_STAND, FALSE) &&
 											PythSpacesAway(pSoldier->aiData.usActionData, sClosestDisturbance) < TACTICAL_RANGE / 2) &&
@@ -7336,9 +7375,9 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 
 											// raise gun first
 											if( PickSoldierReadyAnimation( pSoldier, FALSE, FALSE ) != INVALID_ANIMATION &&
-												pSoldier->ubDirection == ubOpponentDir &&												
+												//pSoldier->ubDirection == ubOpponentDir &&												
 												(!gfTurnBasedAI || pSoldier->bActionPoints == pSoldier->bInitialActionPoints) &&
-												gAnimControl[ pSoldier->usAnimState ].ubEndHeight == ANIM_STAND &&
+												pSoldier->AnimEndHeight() == ANIM_STAND &&
 												pSoldier->aiData.bLastAction != AI_ACTION_RAISE_GUN &&
 												fSlowMovement &&
 												!WeaponReady(pSoldier) &&
