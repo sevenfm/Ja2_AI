@@ -21053,15 +21053,31 @@ BOOLEAN SOLDIERTYPE::IsSpotting(INT32 sSpot, INT8 bLevel)
 {
 	UINT8 ubActive = (gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT) ? 1 : 2;
 
-	if (this->IsSpotting() && 
-		this->usSkillCounter[SOLDIER_COUNTER_SPOTTER] >= ubActive && 
-		!TileIsOutOfBounds(sSpot) && 
-		!TileIsOutOfBounds(this->sFocusGridNo) && 
+	if (this->IsSpotting() &&
+		this->usSkillCounter[SOLDIER_COUNTER_SPOTTER] >= ubActive &&
+		!TileIsOutOfBounds(sSpot) &&
+		!TileIsOutOfBounds(this->sFocusGridNo) &&
 		this->bFocusLevel == bLevel &&
 		PythSpacesAway(sSpot, this->sFocusGridNo) <= this->GetSpottingRadius())
 		return TRUE;
 
 	return FALSE;
+}
+
+UINT8 SOLDIERTYPE::GetSpottingRadius(void)
+{
+	UINT8 ubRadius = 1;
+
+	if (!TileIsOutOfBounds(this->sFocusGridNo) &&
+		PythSpacesAway(this->sGridNo, this->sFocusGridNo) > DAY_VISION_RANGE / 2 &&
+		gGameOptions.fNewTraitSystem &&
+		gSkillTraitValues.fSCSpottingRadiusIncreased &&
+		HAS_SKILL_TRAIT(this, SCOUTING_NT))
+	{
+		ubRadius += 1;
+	}
+
+	return ubRadius;
 }
 
 void SOLDIERTYPE::StopSpotting(void)
@@ -21074,22 +21090,6 @@ void SOLDIERTYPE::StopSpotting(void)
 	//HandleSight(this, SIGHT_LOOK);
 	if(this->bTeam == gbPlayerNum)
 		DirtyMercPanelInterface(this, DIRTYLEVEL1);
-}
-
-UINT8 SOLDIERTYPE::GetSpottingRadius(void)
-{
-	UINT8 ubRadius = 1;
-
-	if (!TileIsOutOfBounds(this->sFocusGridNo) &&
-		PythSpacesAway(this->sGridNo, this->sFocusGridNo) > DAY_VISION_RANGE / 2 &&
-		gGameOptions.fNewTraitSystem && 
-		gSkillTraitValues.fSCSpottingRadiusIncreased &&
-		HAS_SKILL_TRAIT(this, SCOUTING_NT))
-	{
-		ubRadius += 1;
-	}
-
-	return ubRadius;
 }
 
 BOOLEAN SOLDIERTYPE::CanFocus(INT32 sTargetGridNo, INT8 bTargetLevel)

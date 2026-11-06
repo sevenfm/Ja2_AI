@@ -178,6 +178,8 @@ enum
 
 extern STR16 pSkillMenuStrings[];			//Flugente
 //extern STR16 pTalkToAllMenuStrings[];
+extern STR16 pRadioMenuStrings[];
+extern STR16 pRadioNumberMenuStrings[];
 extern STR16 pSnitchMenuStrings[];
 extern STR16 pSnitchMenuDescStrings[];
 extern STR16 pSnitchToggleMenuStrings[];
@@ -2654,6 +2656,21 @@ enum
 	MSG_TRANSFORMATION_MAX,
 };
 
+// MVP: craft recipes viewer (text output)
+extern STR16 gzCraftInfoMessage[];
+
+enum
+{
+	CRAFTINFO_HEADER = 0,
+	CRAFTINFO_USED_FOR,
+	CRAFTINFO_CREATED_FROM,
+	CRAFTINFO_CAN_BE_CRAFTED_FROM,
+	CRAFTINFO_NONE,
+	CRAFTINFO_MENU_ITEM,
+
+	CRAFTINFO_MAX,
+};
+
 
 //CHRISL: NewInv messages
 extern STR16 NewInvMessage[];
@@ -3046,4 +3063,6 @@ void this_is_the_Ja25FrenchText_public_symbol(void);
 void this_is_the_Ja25GermanText_public_symbol(void);
 void this_is_the_Ja25ItalianText_public_symbol(void);
 void this_is_the_Ja25PolishText_public_symbol(void);
+// Flugente: gear templates
+extern STR16 szGearTemplateText[];
 void this_is_the_Ja25RussianText_public_symbol(void);

@@ -33,6 +33,7 @@
     <ClInclude Include="Game Event Hook.h" />
     <ClInclude Include="Game Events.h" />
     <ClInclude Include="Game Init.h" />
+    <ClInclude Include="GearTemplate.h" />
     <ClInclude Include="Ja25 Strategic Ai.h" />
     <ClInclude Include="Luaglobal.h" />
     <ClInclude Include="LuaInitNPCs.h" />
@@ -70,6 +71,7 @@
     <ClInclude Include="Strategic Turns.h" />
     <ClInclude Include="strategic.h" />
     <ClInclude Include="strategicmap.h" />
+    <ClInclude Include="StrategicMilitiaCall\StrategicMilitiaCall.h" />
     <ClInclude Include="Town Militia.h" />
     <ClInclude Include="UndergroundInit.h" />
   </ItemGroup>
@@ -84,6 +86,7 @@
     <ClCompile Include="Game Event Hook.cpp" />
     <ClCompile Include="Game Events.cpp" />
     <ClCompile Include="Game Init.cpp" />
+    <ClCompile Include="GearTemplate.cpp" />
     <ClCompile Include="Hourly Update.cpp" />
     <ClCompile Include="Ja25 Strategic Ai.cpp" />
     <ClCompile Include="Luaglobal.cpp" />
@@ -122,6 +125,7 @@
     <ClCompile Include="Strategic Turns.cpp" />
     <ClCompile Include="strategic.cpp" />
     <ClCompile Include="strategicmap.cpp" />
+    <ClCompile Include="StrategicMilitiaCall\StrategicMilitiaCall.cpp" />
     <ClCompile Include="Town Militia.cpp" />
     <ClCompile Include="UndergroundInit.cpp" />
     <ClCompile Include="XML_Army.cpp" />
@@ -143,40 +147,41 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Strategic</RootNamespace>
     <ProjectName>Strategic</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MapEditorD|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MapEditor|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_WithDebugInfo|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

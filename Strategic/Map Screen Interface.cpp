@@ -348,6 +348,12 @@ SGPPoint SnitchTogglePosition={320,150};
 SGPRect SnitchToggleDimensions={0,0,80,80};
 SGPPoint SnitchSectorPosition={320,150};
 SGPRect SnitchSectorDimensions={0,0,80,80};
+SGPPoint RadioPosition={160,150};
+SGPRect RadioDimensions={0,0,80,80};
+SGPPoint RadioSectorPosition={320,150};
+SGPRect RadioSectorDimensions={0,0,80,80};
+SGPPoint RadioNumberPosition={480,150};
+SGPRect RadioNumberDimensions={0,0,80,80};
 
 //lal
 SGPPoint MilitiaControlPosition={120,150};
@@ -376,6 +382,9 @@ SGPPoint OrigFacilityAssignmentPosition = { 220,150 }; // HEADROCK HAM 3.6
 SGPPoint OrigSnitchPosition={160,150};
 SGPPoint OrigSnitchTogglePosition={320,150};
 SGPPoint OrigSnitchSectorPosition={320,150};
+SGPPoint OrigRadioPosition={160,150};
+SGPPoint OrigRadioSectorPosition={320,150};
+SGPPoint OrigRadioNumberPosition={480,150};
 
 SQUAD_NAMES	SquadNames[20];
 
@@ -937,6 +946,18 @@ void RestoreBackgroundForAssignmentGlowRegionList( void )
 			else if( fShowSnitchSectorMenu == TRUE )
 			{
 				ForceUpDateOfBox( ghSnitchSectorBox );
+			}
+		}
+		else if( fShowRadioMenu == TRUE )
+		{
+			ForceUpDateOfBox( ghRadioBox );
+			if( fShowRadioSectorMenu == TRUE )
+			{
+				ForceUpDateOfBox( ghRadioSectorBox );
+				if( fShowRadioNumberMenu == TRUE )
+				{
+					ForceUpDateOfBox( ghRadioNumberBox );
+				}
 			}
 		}
 	}

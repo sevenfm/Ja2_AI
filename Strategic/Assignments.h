@@ -195,6 +195,12 @@ INT8 CanCharacterSquad( SOLDIERTYPE *pCharacter, INT8 bSquadValue );
 // can character snitch
 BOOLEAN CanCharacterSnitch( SOLDIERTYPE *pCharacter );
 
+// can character use the radio submenu (call militia)
+BOOLEAN CanCharacterCallMilitia( SOLDIERTYPE *pCharacter );
+
+// strategic version of the radio operator's 'call militia' skill: pulls militia from usSector into the operator's sector
+BOOLEAN ExecuteStrategicMilitiaCall( SOLDIERTYPE *pSoldier, UINT32 usSector, UINT16 usNumber );
+
 // if merc could train militia here, do they have sufficient loyalty?
 BOOLEAN DoesSectorMercIsInHaveSufficientLoyaltyToTrainMilitia( SOLDIERTYPE *pSoldier );
 BOOLEAN DoesTownHaveRatingToTrainMilitia( INT8 bTownId );
@@ -283,6 +289,10 @@ extern INT32 ghFacilityAssignmentBox;
 extern INT32 ghSnitchBox;
 extern INT32 ghSnitchToggleBox;
 extern INT32 ghSnitchSectorBox;
+// radio menus
+extern INT32 ghRadioBox;
+extern INT32 ghRadioSectorBox;
+extern INT32 ghRadioNumberBox;
 
 
 extern MOUSE_REGION	gAssignmentScreenMaskRegion;
@@ -364,6 +374,15 @@ void SnitchToggleMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason );
 void CreateDestroyMouseRegionsForSnitchSectorMenu( void );
 void SnitchSectorMenuMvtCallBack(MOUSE_REGION * pRegion, INT32 iReason );
 void SnitchSectorMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason );
+void CreateDestroyMouseRegionsForRadioMenu( void );
+void RadioMenuMvtCallBack(MOUSE_REGION * pRegion, INT32 iReason );
+void RadioMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason );
+void CreateDestroyMouseRegionsForRadioSectorMenu( void );
+void RadioSectorMenuMvtCallBack(MOUSE_REGION * pRegion, INT32 iReason );
+void RadioSectorMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason );
+void CreateDestroyMouseRegionsForRadioNumberMenu( void );
+void RadioNumberMenuMvtCallBack(MOUSE_REGION * pRegion, INT32 iReason );
+void RadioNumberMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason );
 
 // contract menu
 void CreateDestroyMouseRegionsForContractMenu( void );

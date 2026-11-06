@@ -233,4 +233,16 @@ private:
  */
 void TraitsMenu( INT32 usMapPos );
 
+
+class EquipmentSelection : public SkillMenuItem
+{
+public:
+	EquipmentSelection() {}
+
+	void Setup(UINT32 aVal);
+	void Functions(UINT32 aVal);
+};
+
+void EquipmentListMenu();
+void EquipmentListMenuCancel();
 #endif

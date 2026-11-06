@@ -156,6 +156,8 @@
     <ClInclude Include="MapScreen Quotes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GearTemplate.h" />
+    <ClInclude Include="StrategicMilitiaCall\StrategicMilitiaCall.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AI Viewer.cpp">
@@ -347,5 +349,7 @@
     <ClCompile Include="XML_Creatures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GearTemplate.cpp" />
+    <ClCompile Include="StrategicMilitiaCall\StrategicMilitiaCall.cpp" />
   </ItemGroup>
 </Project>
