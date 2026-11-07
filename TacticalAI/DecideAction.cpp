@@ -7308,13 +7308,15 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 										DebugAI(AI_MSG_INFO, pSoldier, String("found cautious move spot %d reserving %d AP moving to %d slow movement %d", sCautiousMoveSpot, bReserveAP, pSoldier->aiData.usActionData, fSlowMovement));										
 
 										// standard check for cautious move, only allow in safe place when not rushing and not advancing to cover spot
-										if (!TileIsOutOfBounds(sCautiousMoveSpot) &&
-											(pSoldier->RushAttackAdvance() ||
+										if (TileIsOutOfBounds(sCautiousMoveSpot) ||
+											sCautiousMoveSpot == pSoldier->aiData.usActionData ||
+											PythSpacesAway(sCautiousMoveSpot, sClosestDisturbance) >= PythSpacesAway(pSoldier->sGridNo, sClosestDisturbance) ||
+											pSoldier->RushAttackAdvance() ||
 											!TileIsOutOfBounds(sAdvanceSpot) ||
 											InLightAtNight(sCautiousMoveSpot, pSoldier->pathing.bLevel) ||
 											CountFriendsBlack(pSoldier, sClosestDisturbance) > 0 ||
 											pSoldier->aiData.bUnderFire && !GuySawEnemy(pSoldier) ||
-											FindBombNearby(pSoldier, sCautiousMoveSpot, BOMB_DETECTION_RANGE)))
+											FindBombNearby(pSoldier, sCautiousMoveSpot, BOMB_DETECTION_RANGE))
 											//CorpseWarning(pSoldier, sCautiousMoveSpot, pSoldier->pathing.bLevel) ||
 											//SightCoverAtSpot(pSoldier, pSoldier->sGridNo, ANIM_STAND, FALSE) &&
 											//!SightCoverAtSpot(pSoldier, sCautiousMoveSpot, ANIM_STAND, FALSE) &&
@@ -7332,17 +7334,20 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 										{
 											// check if we are approaching visible watched location
 											INT8 bHighestWatchLoc = GetHighestVisibleWatchedLoc(pSoldier->ubID);
-											INT32 sWatchSpot = NOWHERE;
-											INT8 bWatchLevel = 0;
+											INT32 sVisibleWatchSpot = NOWHERE;
+											INT8 bVisibleWatchLevel = 0;
+											INT8 bVisibleWatchPts = 0;
 
 											if (bHighestWatchLoc >= 0)
 											{
-												sWatchSpot = gsWatchedLoc[pSoldier->ubID][bHighestWatchLoc];
-												bWatchLevel = gbWatchedLocLevel[pSoldier->ubID][bHighestWatchLoc];
+												sVisibleWatchSpot = gsWatchedLoc[pSoldier->ubID][bHighestWatchLoc];
+												bVisibleWatchLevel = gbWatchedLocLevel[pSoldier->ubID][bHighestWatchLoc];
+												bVisibleWatchPts = gubWatchedLocPoints[pSoldier->ubID][bHighestWatchLoc];
 
 												// check if we are approaching visible watched spot
-												if (PythSpacesAway(pSoldier->sGridNo, sWatchSpot) < AIGunRange(pSoldier) &&
-													PythSpacesAway(sCautiousMoveSpot, sWatchSpot) < PythSpacesAway(pSoldier->sGridNo, sWatchSpot))
+												if (Chance(bVisibleWatchPts * 10) &&
+													PythSpacesAway(pSoldier->sGridNo, sVisibleWatchSpot) < AIGunRange(pSoldier) &&
+													PythSpacesAway(sCautiousMoveSpot, sVisibleWatchSpot) < PythSpacesAway(pSoldier->sGridNo, sVisibleWatchSpot))
 												{
 													DebugAI(AI_MSG_INFO, pSoldier, String("moving closer to visible watched location"));
 													fApproachWatchedLocation = TRUE;
@@ -7360,6 +7365,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 											// approaching enemy with raised weapon
 											pSoldier->AnimEndHeight() == ANIM_STAND &&
 											WeaponReady(pSoldier) &&
+											!pSoldier->aiData.bUnderFire &&
 											PythSpacesAway(pSoldier->aiData.usActionData, sClosestDisturbance) < AIGunRange(pSoldier) &&
 											PythSpacesAway(pSoldier->sGridNo, sClosestDisturbance) < TACTICAL_RANGE ||
 											// moving out of sight cover close to currently unseen enemy

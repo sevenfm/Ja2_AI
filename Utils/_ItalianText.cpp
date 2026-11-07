@@ -4203,6 +4203,22 @@ STR16 pMoralStrings[] =
 	L"Cattivo",
 };
 
+// situational modifiers
+STR16 pSituationalStrings[] =
+{
+	L"Nervous alone",		// 0	//TODO.translate
+	L"Sociable alone",		// 1
+	L"Loner crowded",		// 2
+	L"Show off nearby",		// 3
+	L"Heat intolerant",		// 4
+	L"Claustrophobic",		// 5
+	L"Fear of insects",		// 6
+	L"Bloodlust",			// 7
+	L"Stunning looks",		// 8
+	L"Overweight",			// 9
+	L"Heavy overweight",		// 10
+};
+
 // Mercs equipment has now arrived and is now available in Omerta or Drassen.
 
 STR16 pLeftEquipmentString[] =
