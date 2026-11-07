@@ -7184,6 +7184,23 @@ STR16 gzTransformationMessage[] =
 	L"Clean gun (%d AP)",
 };
 
+// MVP: craft recipes viewer (text output)
+STR16 gzCraftInfoMessage[] =
+{
+	// 0
+	L"===== %s (%d): CRAFT INFO =====",	//TODO.Translate
+	// 1
+	L"Used for: %s + %s = %s",
+	// 2
+	L"Created from: %s => %s",
+	// 3
+	L"Can be crafted from: %s => %s",
+	// 4
+	L"No craft recipes found for this item.",
+	// 5
+	L"View crafts (Text)",
+};
+
 // WANNE: This are the email texts, when one of the 4 new 1.13 MERC mercs have levelled up, that Speck sends
 // INFO: Do not replace the ± characters. They indicate the <B2> (-> Newline) from the edt files
 STR16	New113MERCMercMailTexts[] =
@@ -9286,6 +9303,17 @@ STR16 TalkCursorStr[] =
 	L"Hated",
 	L"Normal",
 	L"Bad",
+};
+
+// Flugente: gear templates
+STR16 szGearTemplateText[] =
+{
+	L"Enter Template Name",		//TODO.Translate
+	L"Not possible during combat.",
+	L"Selected mercenary is not in this sector.",
+	L"%s is not in that sector.",
+	L"%s could not equip %s.",
+	L"We cannot attach %s (item %d) as that might damage items.",
 };
 
 #endif //FRENCH

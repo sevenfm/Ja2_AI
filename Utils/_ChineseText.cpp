@@ -7179,6 +7179,23 @@ STR16 gzTransformationMessage[] =
 	L"清洁枪支 (%d AP)",	//L"Clean gun (%d AP)",
 };
 
+// MVP: craft recipes viewer (text output)
+STR16 gzCraftInfoMessage[] =
+{
+	// 0
+	L"===== %s (%d): CRAFT INFO =====",	//TODO.Translate
+	// 1
+	L"Used for: %s + %s = %s",
+	// 2
+	L"Created from: %s => %s",
+	// 3
+	L"Can be crafted from: %s => %s",
+	// 4
+	L"No craft recipes found for this item.",
+	// 5
+	L"View crafts (Text)",
+};
+
 // WANNE: This hardcoded text should not be used anymore in the game, because we now have those texts externalized in the "TableData\Email\EmailMercLevelUp.xml" file!
 // WANNE: This are the email texts, when one of the 4 new 1.13 MERC mercs have levelled up, that Speck sends
 // INFO: Do not replace the ± characters. They indicate the <B2> (-> Newline) from the edt files
@@ -9299,5 +9316,17 @@ STR16 ChineseSpecString9 = L"%s [%d%％(%d%％)]\n%s %d\n%s %d\n%s %1.1f %s";			
 STR16 ChineseSpecString10 = L"%s [%d%％(%d%％)]\n%s %d%％ (%d/%d)\n%s %d%％\n%s %1.1f %s";						// added by Flugente
 STR16 ChineseSpecString11 = L"%s (%s) [%d%％(%d%％)]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s";	// added by Flugente
 STR16 ChineseSpecString12 = L"%s (%s) [%d%％]\n%s %d\n%s %d\n%s %d (%d)\n%s (%d) %s\n%s %1.1f %s\n%s %.2f%%";	// added by Flugente
+
+
+// Flugente: gear templates
+STR16 szGearTemplateText[] =
+{
+	L"Enter Template Name",		//TODO.Translate
+	L"Not possible during combat.",
+	L"Selected mercenary is not in this sector.",
+	L"%s is not in that sector.",
+	L"%s could not equip %s.",
+	L"We cannot attach %s (item %d) as that might damage items.",
+};
 
 #endif //CHINESE
