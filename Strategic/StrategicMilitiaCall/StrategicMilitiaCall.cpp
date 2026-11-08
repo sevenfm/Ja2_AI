@@ -307,9 +307,28 @@ void StrategicMilitiaCall::HandleShadingOfLinesForRadioNumberMenu() {
 }
 
 void StrategicMilitiaCall::CloseAllMenus() {
-	if (m_hRadioBox != -1) { HideBox(m_hRadioBox); }
-	if (m_hRadioSectorBox != -1) { HideBox(m_hRadioSectorBox); }
-	if (m_hRadioNumberBox != -1) { HideBox(m_hRadioNumberBox); }
+	// NOTE: must RemoveBox (free the slot in PopUpBoxList), not just HideBox -
+	// CreateRadioBox/CreateRadioSectorBox/CreateRadioNumberBox run on every
+	// CreateDestroyAssignmentPopUpBoxes create cycle; HideBox alone leaks the
+	// box slots until MAX_POPUP_BOX_COUNT is exhausted (assert in CreatePopUpBox).
+	if (m_hRadioBox != -1)
+	{
+		HideBox(m_hRadioBox);
+		RemoveBox(m_hRadioBox);
+	}
+	if (m_hRadioSectorBox != -1)
+	{
+		HideBox(m_hRadioSectorBox);
+		RemoveBox(m_hRadioSectorBox);
+	}
+	if (m_hRadioNumberBox != -1)
+	{
+		HideBox(m_hRadioNumberBox);
+		RemoveBox(m_hRadioNumberBox);
+	}
+	m_hRadioBox = -1;
+	m_hRadioSectorBox = -1;
+	m_hRadioNumberBox = -1;
 	ghRadioBox = -1;
 	ghRadioSectorBox = -1;
 	ghRadioNumberBox = -1;
