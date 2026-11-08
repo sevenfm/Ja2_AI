@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalLibraryDirectories>.\.;Standard Gaming Platform</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexpatMT.lib;mss32.lib;SMACKW32.LIB;binkw32.lib;fmodvc.lib;lua51.lib;VtuneApi.lib;ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexpatMT.lib;mss32.lib;SMACKW32.LIB;binkw32.lib;fmodvc.lib;VtuneApi.lib;ddraw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
