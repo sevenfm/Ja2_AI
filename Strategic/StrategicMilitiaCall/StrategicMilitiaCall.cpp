@@ -119,6 +119,13 @@ BOOLEAN StrategicMilitiaCall::ExecuteStrategicMilitiaCall(SOLDIERTYPE* pSoldier,
 
 void StrategicMilitiaCall::CreateRadioBox() {
 	UINT32 hStringHandle;
+	// safety: never leak a slot if the previous box was not removed
+	if (m_hRadioBox != -1)
+	{
+		HideBox(m_hRadioBox);
+		RemoveBox(m_hRadioBox);
+		m_hRadioBox = -1;
+	}
 	CreatePopUpBox(&m_hRadioBox, RadioDimensions, RadioPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioBox = m_hRadioBox;
 
@@ -135,6 +142,12 @@ void StrategicMilitiaCall::CreateRadioBox() {
 
 void StrategicMilitiaCall::CreateRadioSectorBox() {
 	UINT32 hStringHandle;
+	if (m_hRadioSectorBox != -1)
+	{
+		HideBox(m_hRadioSectorBox);
+		RemoveBox(m_hRadioSectorBox);
+		m_hRadioSectorBox = -1;
+	}
 	CreatePopUpBox(&m_hRadioSectorBox, RadioSectorDimensions, RadioSectorPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioSectorBox = m_hRadioSectorBox;
 
@@ -153,6 +166,10 @@ void StrategicMilitiaCall::CreateRadioSectorBox() {
 
 void StrategicMilitiaCall::CreateRadioNumberBox() {
 	UINT32 hStringHandle;
+	if (m_hRadioNumberBox != -1)
+	{
+		HideBox(m_hRadioNumberBox); RemoveBox(m_hRadioNumberBox); m_hRadioNumberBox = -1;
+	}
 	CreatePopUpBox(&m_hRadioNumberBox, RadioNumberDimensions, RadioNumberPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioNumberBox = m_hRadioNumberBox;
 
@@ -307,10 +324,6 @@ void StrategicMilitiaCall::HandleShadingOfLinesForRadioNumberMenu() {
 }
 
 void StrategicMilitiaCall::CloseAllMenus() {
-	// NOTE: must RemoveBox (free the slot in PopUpBoxList), not just HideBox -
-	// CreateRadioBox/CreateRadioSectorBox/CreateRadioNumberBox run on every
-	// CreateDestroyAssignmentPopUpBoxes create cycle; HideBox alone leaks the
-	// box slots until MAX_POPUP_BOX_COUNT is exhausted (assert in CreatePopUpBox).
 	if (m_hRadioBox != -1)
 	{
 		HideBox(m_hRadioBox);
