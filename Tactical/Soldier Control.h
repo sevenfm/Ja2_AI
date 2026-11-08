@@ -1972,6 +1972,19 @@ public:
 
 	BOOLEAN HasAdrenalineEffect(void);
 
+	BOOLEAN IsNervousAndAlone(void);
+	BOOLEAN IsSociableAndAlone(void);
+	BOOLEAN IsSociableAndNotEnoughFriends(void);
+	BOOLEAN IsLonerAndNotAlone(void);
+	BOOLEAN IsLonerAndCrowded(void);
+	BOOLEAN IsShowOffFriendNearBy(void);
+	BOOLEAN IsHeatIntolerantActive(void);
+	BOOLEAN IsClaustrophobicActive(void);
+	BOOLEAN IsFearOfInsectsActive(void);
+	BOOLEAN IsBloodlustActive(void);
+	BOOLEAN IsOverweight(void);
+	BOOLEAN IsOverweightHeavy(void);
+
 	BOOLEAN InShock(void);
 	BOOLEAN InHelicopter(void);	
 	BOOLEAN IsEmptyVehicle( void );

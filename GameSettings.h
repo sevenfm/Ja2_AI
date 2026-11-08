@@ -1331,7 +1331,7 @@ typedef struct
 	UINT8	usSpotterPreparationTurns;
 	UINT16	usSpotterRange;
 	UINT16	usSpotterMaxCTHBoost;
-
+	
 	// Flugente: External Feeding
 	UINT8	ubExternalFeeding;						// allow external feeding of guns (0 = no, 1 = only for others, 2 = we can also fed ourselves)
 
@@ -1534,6 +1534,8 @@ typedef struct
 	// shade level tweaks
 	BOOLEAN fWhiteNights;
 	BOOLEAN fAlwaysCloudy;
+
+	BOOLEAN fShowItemCraftInfo;
 
 	// drivable vehicles
 	UINT8 ubAPSharedAmongPassengersAndVehicleMode;
