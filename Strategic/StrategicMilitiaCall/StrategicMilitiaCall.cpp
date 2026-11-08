@@ -118,6 +118,10 @@ BOOLEAN StrategicMilitiaCall::ExecuteStrategicMilitiaCall(SOLDIERTYPE* pSoldier,
 }
 
 void StrategicMilitiaCall::CreateRadioBox() {
+	// sevenfm: qwen proposed fix for popup crash
+	// Защита от утечки: если окно уже существует (handle != -1), удаляем его перед созданием нового
+	if (m_hRadioBox != -1) { RemoveBox(m_hRadioBox); m_hRadioBox = -1; }
+
 	UINT32 hStringHandle;
 	CreatePopUpBox(&m_hRadioBox, RadioDimensions, RadioPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioBox = m_hRadioBox;
@@ -134,6 +138,10 @@ void StrategicMilitiaCall::CreateRadioBox() {
 }
 
 void StrategicMilitiaCall::CreateRadioSectorBox() {
+	// sevenfm: qwen proposed fix for popup crash
+	// Защита от утечки: если окно уже существует (handle != -1), удаляем его перед созданием нового
+	if (m_hRadioSectorBox != -1) { RemoveBox(m_hRadioSectorBox); m_hRadioSectorBox = -1; }
+
 	UINT32 hStringHandle;
 	CreatePopUpBox(&m_hRadioSectorBox, RadioSectorDimensions, RadioSectorPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioSectorBox = m_hRadioSectorBox;
@@ -152,6 +160,10 @@ void StrategicMilitiaCall::CreateRadioSectorBox() {
 }
 
 void StrategicMilitiaCall::CreateRadioNumberBox() {
+	// sevenfm: qwen proposed fix for popup crash
+	// Защита от утечки: если окно уже существует (handle != -1), удаляем его перед созданием нового
+	if (m_hRadioNumberBox != -1) { RemoveBox(m_hRadioNumberBox); m_hRadioNumberBox = -1; }
+
 	UINT32 hStringHandle;
 	CreatePopUpBox(&m_hRadioNumberBox, RadioNumberDimensions, RadioNumberPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioNumberBox = m_hRadioNumberBox;
@@ -307,10 +319,19 @@ void StrategicMilitiaCall::HandleShadingOfLinesForRadioNumberMenu() {
 }
 
 void StrategicMilitiaCall::CloseAllMenus() {
-	if (m_hRadioBox != -1) { HideBox(m_hRadioBox); }
-	if (m_hRadioSectorBox != -1) { HideBox(m_hRadioSectorBox); }
-	if (m_hRadioNumberBox != -1) { HideBox(m_hRadioNumberBox); }
-	ghRadioBox = -1;
-	ghRadioSectorBox = -1;
-	ghRadioNumberBox = -1;
+	// sevenfm: qwen proposed fix for popup crash
+	if (m_hRadioBox != -1)       { RemoveBox(m_hRadioBox);       m_hRadioBox = -1; }
+	if (m_hRadioSectorBox != -1) { RemoveBox(m_hRadioSectorBox); m_hRadioSectorBox = -1; }
+	if (m_hRadioNumberBox != -1) { RemoveBox(m_hRadioNumberBox); m_hRadioNumberBox = -1; }
+
+	ghRadioBox = ghRadioSectorBox = ghRadioNumberBox = -1;
+	fShowRadioMenu = fShowRadioSectorMenu = fShowRadioNumberMenu = FALSE;
+
+	//if (m_hRadioBox != -1) { HideBox(m_hRadioBox); }
+	//if (m_hRadioSectorBox != -1) { HideBox(m_hRadioSectorBox); }
+	//if (m_hRadioNumberBox != -1) { HideBox(m_hRadioNumberBox); }
+
+	//ghRadioBox = -1;
+	//ghRadioSectorBox = -1;
+	//ghRadioNumberBox = -1;
 }
