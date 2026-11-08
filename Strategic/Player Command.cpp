@@ -31,6 +31,7 @@
 #endif
 
 #include "postalservice.h"
+#include "LuaInitNPCs.h"
 
 extern BOOLEAN fMapScreenBottomDirty;
 extern CPostalService gPostalService;
@@ -405,6 +406,9 @@ BOOLEAN SetThisSectorAsPlayerControlled( INT16 sMapX, INT16 sMapY, INT8 bMapZ, B
 	{
 		SectorInfo[ SECTOR( sMapX, sMapY ) ].fSurfaceWasEverPlayerControlled = TRUE;
 	}
+
+	// Lua 1.13 port: if we take the surface sector for the first time, script-defined actions might happen
+	LuaHandleSectorLiberation( sMapX, sMapY, bMapZ, !SectorInfo[ SECTOR( sMapX, sMapY ) ].fSurfaceWasEverPlayerControlled );
 
 	//KM : Aug 11, 1999 -- Patch fix:	Relocated this check so it gets called everytime a sector changes hands,
 	//	 even if the sector isn't a SAM site.	There is a bug _somewhere_ that fails to update the airspace,

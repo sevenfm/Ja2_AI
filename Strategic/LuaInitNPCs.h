@@ -83,4 +83,9 @@ extern BOOLEAN LuaIntro(UINT8 Init, UINT32 uiCurrentVideo, INT8 bIntroType, UINT
 extern BOOLEAN LuaIDScripts(UINT8 Init, UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum);
 
 extern BOOLEAN LetLuaMusicControl(UINT8 Init);
+
+//Lua 1.13 port: hooks
+extern void LuaHandleSectorTacticalEntry( INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ, BOOLEAN fHasEverBeenPlayerControlled );
+extern void LuaRecruitRPCAdditionalHandling( UINT8 usProfile );
+extern void LuaHandleSectorLiberation( INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ, BOOLEAN fFirstTime );
 #endif

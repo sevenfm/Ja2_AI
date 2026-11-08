@@ -1483,6 +1483,8 @@ BackupBRandEncyclopedia ( gBriefingRoomData, gBriefingRoomDataBackup, 0);
 		}
 		#endif
 	LuaState::INIT(lua::LUA_STATE_STRATEGIC_MINES_AND_UNDERGROUND, true);
+	LuaState::INIT(lua::LUA_STATE_STRATEGIC_MAP, true);
+	LuaState::INIT(lua::LUA_STATE_OVERHEAD, true);
 	g_luaUnderground.LoadScript(GetLanguagePrefix());
 	// load Lua for Strategic Mines initialization
 	g_luaMines.LoadScript();
