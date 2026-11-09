@@ -846,12 +846,35 @@ static int l_ResetBoxers(lua_State *L);
 // sevenfm
 static int l_SetScreenMsg(lua_State *L);
 
+//Lua 1.13 port (safe list)
+static int l_SECTORX(lua_State *L);
+static int l_SECTORY(lua_State *L);
+static int l_GetFact(lua_State *L);
+static int l_SetFact(lua_State *L);
+static int l_GetModderLUAFact(lua_State *L);
+static int l_SetModderLUAFact(lua_State *L);
+static int l_GetNumHostilesInSector(lua_State *L);
+static int l_NumNonPlayerTeamInSector(lua_State *L);
+static int l_GiveExp(lua_State *L);
+static int l_HealBoxers(lua_State *L);
+static int l_PlaySound(lua_State *L);
+static int l_HasItemInInventory(lua_State *L);
+static int l_DestroyOneItemInInventory(lua_State *L);
+static int l_CreateItemInvOrFloor(lua_State *L);
+static int l_SoldierSpendMoney(lua_State *L);
+static int l_SetStartingCashDifLevel(lua_State *L);
+static int l_GetUsedLanguage(lua_State *L);
+
 using namespace std;
 
 UINT16 idProfil;
 UINT32 uiHourLua;
 UINT32 uiDayLua;
 UINT32 uiMinLua;
+
+//Lua 1.13 port: modder-definable data array (NOT saved - scripts must re-init on load)
+#define MODDER_LUA_DATA_MAX 1000
+UINT32 gubModderLuaData[MODDER_LUA_DATA_MAX];
 
 UINT16 PROFILLUA_sSectorX;
 UINT16 PROFILLUA_sSectorY;
@@ -1698,6 +1721,25 @@ void IniFunction(lua_State *L, BOOLEAN bQuests)
 
 	// sevenfm
 	lua_register(L, "SetScreenMsg", l_SetScreenMsg);
+
+	//Lua 1.13 port (safe list)
+	lua_register(L, "SECTORX", l_SECTORX);
+	lua_register(L, "SECTORY", l_SECTORY);
+	lua_register(L, "GetFact", l_GetFact);
+	lua_register(L, "SetFact", l_SetFact);
+	lua_register(L, "GetModderLUAFact", l_GetModderLUAFact);
+	lua_register(L, "SetModderLUAFact", l_SetModderLUAFact);
+	lua_register(L, "GetNumHostilesInSector", l_GetNumHostilesInSector);
+	lua_register(L, "NumNonPlayerTeamInSector", l_NumNonPlayerTeamInSector);
+	lua_register(L, "GiveExp", l_GiveExp);
+	lua_register(L, "HealBoxers", l_HealBoxers);
+	lua_register(L, "PlaySound", l_PlaySound);
+	lua_register(L, "HasItemInInventory", l_HasItemInInventory);
+	lua_register(L, "DestroyOneItemInInventory", l_DestroyOneItemInInventory);
+	lua_register(L, "CreateItemInvOrFloor", l_CreateItemInvOrFloor);
+	lua_register(L, "SoldierSpendMoney", l_SoldierSpendMoney);
+	lua_register(L, "SetStartingCashDifLevel", l_SetStartingCashDifLevel);
+	lua_register(L, "GetUsedLanguage", l_GetUsedLanguage);
 }
 #ifdef NEWMUSIC
 BOOLEAN LetLuaMusicControl(UINT8 Init)
@@ -2596,6 +2638,65 @@ BOOLEAN LuaHandleQuestCodeOnSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ
 	}
 
 	return true;
+}
+
+//Lua 1.13 port: hooks
+// Persistent lua states (LUA_STATE_STRATEGIC_MAP / LUA_STATE_OVERHEAD, initialized in InitializeGame()) are used
+// instead of a fresh LuaScopeState per call: lua_open/openlibs is expensive and these hooks
+// fire on every tactical sector entry / sector liberation / RPC recruit.
+// The script itself is re-evaluated on each call (like the 1.13 fEvaluateLuaScriptsOnlyOnce=false mode),
+// so global ini/time values stay current.
+
+void LuaHandleSectorTacticalEntry( INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ, BOOLEAN fHasEverBeenPlayerControlled )
+{
+	LuaState _LS(LuaState::GET(lua::LUA_STATE_STRATEGIC_MAP));
+
+	lua_register(_LS(), "CheckFact", l_CheckFact);
+	lua_register(_LS(), "SECTORX", l_SECTORX);
+	lua_register(_LS(), "SECTORY", l_SECTORY);
+	lua_register(_LS(), "GetFact", l_GetFact);
+	lua_register(_LS(), "SetFact", l_SetFact);
+	IniFunction(_LS(), TRUE);
+	IniGlobalGameSetting(_LS());
+
+	const char* filename = "scripts\\strategicmap.lua";
+	SGP_THROW_IFFALSE(_LS.EvalFile(filename), _BS("Cannot open file: ") << filename << _BS::cget);
+
+	LuaFunction(_LS, "HandleSectorTacticalEntry").Param<int>(sSectorX).Param<int>(sSectorY).Param<int>(bSectorZ).Param<bool>(fHasEverBeenPlayerControlled ? true : false).Call(4);
+
+	lua_settop(_LS(), 0);
+}
+
+void LuaRecruitRPCAdditionalHandling( UINT8 usProfile )
+{
+	LuaState _LS(LuaState::GET(lua::LUA_STATE_STRATEGIC_MAP));
+
+	lua_register(_LS(), "CheckFact", l_CheckFact);
+	IniFunction(_LS(), TRUE);
+	IniGlobalGameSetting(_LS());
+
+	const char* filename = "scripts\\strategicmap.lua";
+	SGP_THROW_IFFALSE(_LS.EvalFile(filename), _BS("Cannot open file: ") << filename << _BS::cget);
+
+	LuaFunction(_LS, "RecruitRPCAdditionalHandling").Param<int>(usProfile).Call(1);
+
+	lua_settop(_LS(), 0);
+}
+
+void LuaHandleSectorLiberation( INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ, BOOLEAN fFirstTime )
+{
+	LuaState _LS(LuaState::GET(lua::LUA_STATE_STRATEGIC_MAP));
+
+	lua_register(_LS(), "CheckFact", l_CheckFact);
+	IniFunction(_LS(), TRUE);
+	IniGlobalGameSetting(_LS());
+
+	const char* filename = "scripts\\strategicmap.lua";
+	SGP_THROW_IFFALSE(_LS.EvalFile(filename), _BS("Cannot open file: ") << filename << _BS::cget);
+
+	LuaFunction(_LS, "HandleSectorLiberation").Param<int>(sSectorX).Param<int>(sSectorY).Param<int>(bSectorZ).Param<bool>(fFirstTime ? true : false).Call(4);
+
+	lua_settop(_LS(), 0);
 }
 
 BOOLEAN LetLuaGameInit(UINT8 Init)
@@ -12936,4 +13037,385 @@ static int l_SetScreenMsg(lua_State *L)
 	}
 
 	return 0;
+}
+
+//--------------------------------------------------------------
+//Lua 1.13 port (safe list): implementations
+//--------------------------------------------------------------
+
+static int l_SECTORX(lua_State* L)
+{
+	if (lua_gettop(L))
+	{
+		UINT8 sector = (UINT8)lua_tointeger(L, 1);
+		UINT8 val = SECTORX(sector);
+
+		lua_pushinteger(L, val);
+	}
+
+	return 1;
+}
+
+static int l_SECTORY(lua_State* L)
+{
+	if (lua_gettop(L))
+	{
+		UINT8 sector = (UINT8)lua_tointeger(L, 1);
+		UINT8 val = SECTORY(sector);
+
+		lua_pushinteger(L, val);
+	}
+
+	return 1;
+}
+
+static int l_GetFact(lua_State* L)
+{
+	if (lua_gettop(L))
+	{
+		UINT16 fact = (UINT16)lua_tointeger(L, 1);
+		UINT8 val = 0;
+
+		if (fact < NUM_FACTS)
+			val = gubFact[fact];
+
+		lua_pushinteger(L, val);
+	}
+
+	return 1;
+}
+
+static int l_SetFact(lua_State* L)
+{
+	if (lua_gettop(L) >= 2)
+	{
+		UINT16 fact = (UINT16)lua_tointeger(L, 1);
+		UINT8 val = (UINT8)lua_tointeger(L, 2);
+
+		if (fact < NUM_FACTS)
+			gubFact[fact] = val;
+	}
+
+	return 0;
+}
+
+static int l_GetModderLUAFact(lua_State* L)
+{
+	if (lua_gettop(L))
+	{
+		UINT16 num = (UINT16)lua_tointeger(L, 1);
+
+		if (num < MODDER_LUA_DATA_MAX)
+			lua_pushinteger(L, gubModderLuaData[num]);
+	}
+
+	return 1;
+}
+
+static int l_SetModderLUAFact(lua_State* L)
+{
+	if (lua_gettop(L) >= 2)
+	{
+		UINT16 num = (UINT16)lua_tointeger(L, 1);
+		INT32 val = (INT32)lua_tointeger(L, 2);
+
+		if (num < MODDER_LUA_DATA_MAX)
+			gubModderLuaData[num] = val;
+	}
+
+	return 0;
+}
+
+static int l_GetNumHostilesInSector(lua_State* L)
+{
+	if (lua_gettop(L) >= 3)
+	{
+		INT16 sSectorX = (INT16)lua_tointeger(L, 1);
+		INT16 sSectorY = (INT16)lua_tointeger(L, 2);
+		INT16 sSectorZ = (INT16)lua_tointeger(L, 3);
+
+		lua_pushinteger(L, NumHostilesInSector(sSectorX, sSectorY, sSectorZ));
+	}
+
+	return 1;
+}
+
+static int l_NumNonPlayerTeamInSector(lua_State* L)
+{
+	if (lua_gettop(L) >= 3)
+	{
+		INT16 sSectorX = (INT16)lua_tointeger(L, 1);
+		INT16 sSectorY = (INT16)lua_tointeger(L, 2);
+		UINT8 ubTeam = (UINT8)lua_tointeger(L, 3);
+
+		UINT16 numteam = NumNonPlayerTeamMembersInSector(sSectorX, sSectorY, ubTeam);
+
+		lua_pushinteger(L, numteam);
+	}
+
+	return 1;
+}
+
+static int l_GiveExp(lua_State* L)
+{
+	if (lua_gettop(L) >= 3)
+	{
+		UINT16 ubID = (UINT16)lua_tointeger(L, 1);
+		UINT8 ubStat = (UINT8)lua_tointeger(L, 2);
+		UINT16 usNumChances = (UINT16)lua_tointeger(L, 3);
+
+		if (ubID != NOBODY && ubID < TOTAL_SOLDIERS && ubStat >= FIRST_CHANGEABLE_STAT && ubStat <= LAST_CHANGEABLE_STAT)
+		{
+			StatChange(MercPtrs[ubID], ubStat, usNumChances, FROM_SUCCESS);
+		}
+	}
+
+	return 0;
+}
+
+static int l_HealBoxers(lua_State* L)
+{
+	for (UINT8 i = 0; i < NUM_BOXERS; ++i)
+	{
+		if (gubBoxerID[i] != NOBODY)
+		{
+			SOLDIERTYPE* pSoldier = MercPtrs[gubBoxerID[i]];
+
+			// Get breath back
+			pSoldier->bBreath = pSoldier->bBreathMax;
+			pSoldier->sBreathRed = 0;
+			// Get life back
+			pSoldier->stats.bLife = pSoldier->stats.bLifeMax;
+			pSoldier->bBleeding = 0;
+			// erase insta-healable injury
+			pSoldier->iHealableInjury = 0;
+		}
+	}
+
+	return 0;
+}
+
+static int l_PlaySound(lua_State* L)
+{
+	if (lua_gettop(L))
+	{
+		size_t len = 0;
+		const char* str = lua_tolstring(L, 1, &len);
+
+		UINT32 volume = min(lua_tointeger(L, 2), HIGHVOLUME);
+		if (!volume)
+			volume = MIDVOLUME;
+
+		PlayJA2SampleFromFile((STR8)str, RATE_11025, volume, 1, MIDDLEPAN);
+	}
+
+	return 0;
+}
+
+// helper: does this soldier carry the item? (ported from 1.13 SOLDIERTYPE::HasItemInInventory)
+static bool LuaPortHasItemInInventory(UINT8 ubID, UINT16 usItem)
+{
+	SOLDIERTYPE* pSoldier = MercPtrs[ubID];
+
+	if (!pSoldier)
+		return false;
+
+	for (INT8 bLoop = 0, invsize = (INT8)pSoldier->inv.size(); bLoop < invsize; ++bLoop)
+	{
+		if (pSoldier->inv[bLoop].exists())
+		{
+			OBJECTTYPE* pObj = &(pSoldier->inv[bLoop]);
+
+			if (pObj && pObj->usItem == usItem)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+// helper: remove one item of type from soldier inventory (ported from 1.13 SOLDIERTYPE::DestroyOneItemInInventory)
+static bool LuaPortDestroyOneItemInInventory(UINT8 ubID, UINT16 usItem)
+{
+	SOLDIERTYPE* pSoldier = MercPtrs[ubID];
+
+	if (!pSoldier)
+		return false;
+
+	for (INT8 bLoop = 0, invsize = (INT8)pSoldier->inv.size(); bLoop < invsize; ++bLoop)
+	{
+		if (pSoldier->inv[bLoop].exists())
+		{
+			OBJECTTYPE* pObj = &(pSoldier->inv[bLoop]);
+
+			if (pObj && pObj->usItem == usItem)
+			{
+				pObj->RemoveObjectsFromStack(1);
+
+				if (pObj->ubNumberOfObjects <= 0)
+				{
+					DeleteObj(pObj);
+				}
+
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+static int l_HasItemInInventory(lua_State* L)
+{
+	bool bHas = false;
+
+	if (lua_gettop(L) >= 2)
+	{
+		UINT8 ubID = (UINT8)lua_tointeger(L, 1);
+		UINT16 usItem = (UINT16)lua_tointeger(L, 2);
+
+		if (ubID != NOBODY && ubID < TOTAL_SOLDIERS)
+		{
+			bHas = LuaPortHasItemInInventory(ubID, usItem);
+		}
+	}
+
+	lua_pushboolean(L, bHas);
+
+	return 1;
+}
+
+static int l_DestroyOneItemInInventory(lua_State* L)
+{
+	if (lua_gettop(L) >= 2)
+	{
+		UINT8 ubID = (UINT8)lua_tointeger(L, 1);
+		UINT16 usItem = (UINT16)lua_tointeger(L, 2);
+
+		if (ubID != NOBODY && ubID < TOTAL_SOLDIERS)
+		{
+			LuaPortDestroyOneItemInInventory(ubID, usItem);
+		}
+	}
+
+	return 0;
+}
+
+static int l_CreateItemInvOrFloor(lua_State* L)
+{
+	if (lua_gettop(L) >= 2)
+	{
+		UINT8 ubID = (UINT8)lua_tointeger(L, 1);
+		UINT16 usItem = (UINT16)lua_tointeger(L, 2);
+
+		if (ubID != NOBODY && ubID < TOTAL_SOLDIERS)
+		{
+			SOLDIERTYPE* pSoldier = MercPtrs[ubID];
+
+			CreateItem(usItem, 100, &gTempObject);
+
+			if (!AutoPlaceObject(pSoldier, &gTempObject, TRUE))
+			{
+				AddItemToPool(pSoldier->sGridNo, &gTempObject, 1, pSoldier->pathing.bLevel, 0, -1);
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int l_SoldierSpendMoney(lua_State* L)
+{
+	if (lua_gettop(L) >= 2)
+	{
+		UINT16 usId = (UINT16)lua_tointeger(L, 1);
+		UINT32 amount = (UINT32)lua_tointeger(L, 2);
+
+		SOLDIERTYPE* pSoldier = MercPtrs[usId];
+
+		UINT32 spent = 0;
+
+		if (pSoldier)
+		{
+			// ported from 1.13 SpendMoney(): pay from pocket money first, then from player balance
+			UINT32 remaining = amount;
+
+			for (INT8 bLoop = 0, invsize = (INT8)pSoldier->inv.size(); bLoop < invsize && remaining > 0; ++bLoop)
+			{
+				if (pSoldier->inv[bLoop].exists() && pSoldier->inv[bLoop].usItem == MONEY)
+				{
+					OBJECTTYPE* pObj = &(pSoldier->inv[bLoop]);
+
+					UINT32 remove = min(remaining, (*pObj)[0]->data.money.uiMoneyAmount);
+					(*pObj)[0]->data.money.uiMoneyAmount -= remove;
+					remaining -= remove;
+
+					if ((*pObj)[0]->data.money.uiMoneyAmount <= 0)
+						DeleteObj(&(pSoldier->inv[bLoop]));
+				}
+			}
+
+			if (remaining > 0 && LaptopSaveInfo.iCurrentBalance >= (INT32)remaining)
+			{
+				AddTransactionToPlayersBook(TRANSFER_FUNDS_TO_MERC, pSoldier->ubProfile, GetWorldTotalMin(), -(INT32)remaining);
+				remaining = 0;
+			}
+
+			spent = amount - remaining;
+		}
+
+		lua_pushinteger(L, spent);
+	}
+
+	return 1;
+}
+
+static int l_SetStartingCashDifLevel(lua_State* L)
+{
+	if (lua_gettop(L))
+	{
+		INT32 DifficultyLevel = (INT32)lua_tointeger(L, 1);
+
+		INT32 startingCash = 0;
+
+		switch (DifficultyLevel)
+		{
+		case 0:	startingCash = gGameExternalOptions.iStartingCashNovice;		break;
+		case 1:	startingCash = gGameExternalOptions.iStartingCashExperienced;	break;
+		case 2:	startingCash = gGameExternalOptions.iStartingCashExpert;		break;
+		case 3:	startingCash = gGameExternalOptions.iStartingCashInsane;		break;
+		default: startingCash = gGameExternalOptions.iStartingCashExperienced;	break;
+		}
+
+		AddTransactionToPlayersBook(ANONYMOUS_DEPOSIT, 0, GetWorldTotalMin(), startingCash);
+	}
+
+	return 0;
+}
+
+static int l_GetUsedLanguage(lua_State* L)
+{
+	// the language is a compile-time constant in this codebase
+	INT32 val =
+#ifdef RUSSIAN
+		5;
+#elif defined(GERMAN)
+		2;
+#elif defined(POLISH)
+		6;
+#elif defined(DUTCH)
+		4;
+#elif defined(FRENCH)
+		3;
+#elif defined(ITALIAN)
+		7;
+#elif defined(TAIWAN) || defined(CHINESE)
+		8;
+#else
+		0; // ENGLISH
+#endif
+
+	lua_pushinteger(L, val);
+
+	return 1;
 }

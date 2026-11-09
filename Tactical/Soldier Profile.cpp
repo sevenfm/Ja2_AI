@@ -36,6 +36,7 @@
 	#include "squads.h"
 	#include "Tactical Save.h"
 	#include "Quests.h"
+#include "LuaInitNPCs.h"
 	#include "aim.h"
 	#include "Interface Dialogue.h"
 	#include "GameSettings.h"
@@ -2027,6 +2028,12 @@ BOOLEAN RecruitRPC( UINT8 ubCharNum )
 	// sevenfm: set merc balance to zero when hiring
 	gMercProfiles[pSoldier->ubProfile].iBalance = 0;
 	SetMoneyInSoldierProfile(pSoldier->ubProfile, 0);
+
+	// Lua 1.13 port: external scripts might have extra functionality on recruiting someone
+	if ( first_time_recruited )
+	{
+		LuaRecruitRPCAdditionalHandling( ubCharNum );
+	}
 
 	return( TRUE );
 }

@@ -31,6 +31,7 @@
 #endif
 
 #include "postalservice.h"
+#include "LuaInitNPCs.h"
 
 extern BOOLEAN fMapScreenBottomDirty;
 extern CPostalService gPostalService;
@@ -400,6 +401,10 @@ BOOLEAN SetThisSectorAsPlayerControlled( INT16 sMapX, INT16 sMapY, INT8 bMapZ, B
 			gCurrentIncident.usIncidentFlags |= INCIDENT_FIRST_LIBERATION;
 		}
 	}
+
+	// Lua 1.13 port: if we take the sector for the first time, script-defined actions might happen
+	// (must be called BEFORE fSurfaceWasEverPlayerControlled is set, so fFirstTime is correct)
+	LuaHandleSectorLiberation( sMapX, sMapY, bMapZ, !SectorInfo[ SECTOR( sMapX, sMapY ) ].fSurfaceWasEverPlayerControlled );
 
 	if ( bMapZ == 0 )
 	{
