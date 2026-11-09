@@ -864,6 +864,8 @@ static int l_CreateItemInvOrFloor(lua_State *L);
 static int l_SoldierSpendMoney(lua_State *L);
 static int l_SetStartingCashDifLevel(lua_State *L);
 static int l_GetUsedLanguage(lua_State *L);
+static int l_CreateArmedCivilain(lua_State *L);
+static int l_CreateCivilian(lua_State *L);
 
 using namespace std;
 
@@ -1740,6 +1742,8 @@ void IniFunction(lua_State *L, BOOLEAN bQuests)
 	lua_register(L, "SoldierSpendMoney", l_SoldierSpendMoney);
 	lua_register(L, "SetStartingCashDifLevel", l_SetStartingCashDifLevel);
 	lua_register(L, "GetUsedLanguage", l_GetUsedLanguage);
+	lua_register(L, "CreateArmedCivilain", l_CreateArmedCivilain);
+	lua_register(L, "CreateCivilian", l_CreateCivilian);
 }
 #ifdef NEWMUSIC
 BOOLEAN LetLuaMusicControl(UINT8 Init)
@@ -13418,4 +13422,79 @@ static int l_GetUsedLanguage(lua_State* L)
 	lua_pushinteger(L, val);
 
 	return 1;
+}
+
+// Lua 1.13 port: scripted civilians (lightweight version, no merchant support)
+
+static int l_CreateArmedCivilain(lua_State* L)
+{
+	if (lua_gettop(L) >= 4)
+	{
+		UINT8 usCivilianGroup = (UINT8)lua_tointeger(L, 1);
+		UINT8 usSoldierClass = (UINT8)lua_tointeger(L, 2);
+		INT32 sGridNo = (INT32)lua_tointeger(L, 3);
+		BOOLEAN fHostile = (BOOLEAN)lua_tointeger(L, 4);
+
+		if (gGameExternalOptions.bExtraCivilians)
+		{
+			SOLDIERTYPE* pSoldier = TacticalCreateArmedCivilian(usSoldierClass);
+
+			if (pSoldier)
+			{
+				if (sGridNo != NOWHERE)
+				{
+					pSoldier->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
+					pSoldier->sInsertionGridNo = sGridNo;
+				}
+
+				AddSoldierToSector(pSoldier->ubID);
+
+				// So we can see them!
+				AllTeamsLookForAll(NO_INTERRUPTS);
+
+				// set correct civ group
+				if (usCivilianGroup)
+				{
+					pSoldier->ubCivilianGroup = usCivilianGroup;
+
+					if (fHostile)
+						gTacticalStatus.fCivGroupHostile[pSoldier->ubCivilianGroup] = CIV_GROUP_WILL_BECOME_HOSTILE;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int l_CreateCivilian(lua_State* L)
+{
+	if (lua_gettop(L) >= 12)
+	{
+		INT32 sGridNo = (INT32)lua_tointeger(L, 1);
+		UINT8 usCivilianGroup = (UINT8)lua_tointeger(L, 2);
+		INT8 usTraderID = (INT8)lua_tointeger(L, 3);
+		INT8 sBodyType = (INT8)lua_tointeger(L, 4);
+		INT8 aVest = (INT8)lua_tointeger(L, 5);
+		INT8 aPants = (INT8)lua_tointeger(L, 6);
+		INT8 aHair = (INT8)lua_tointeger(L, 7);
+		INT8 aSkin = (INT8)lua_tointeger(L, 8);
+		INT16 item1 = (INT16)lua_tointeger(L, 9);
+		INT16 item2 = (INT16)lua_tointeger(L, 10);
+		INT16 item3 = (INT16)lua_tointeger(L, 11);
+		INT16 item4 = (INT16)lua_tointeger(L, 12);
+
+		if (gGameExternalOptions.bExtraCivilians)
+		{
+			SOLDIERTYPE* pSoldier = TacticalCreateCivilian(sGridNo, usCivilianGroup, usTraderID, sBodyType, aVest, aPants, aHair, aSkin, item1, item2, item3, item4);
+
+			if (pSoldier)
+			{
+				// So we can see them!
+				AllTeamsLookForAll(NO_INTERRUPTS);
+			}
+		}
+	}
+
+	return 0;
 }

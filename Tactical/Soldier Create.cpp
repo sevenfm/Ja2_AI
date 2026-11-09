@@ -1342,6 +1342,134 @@ SOLDIERTYPE* TacticalCreateSoldier( SOLDIERCREATE_STRUCT *pCreateStruct, UINT8 *
 	}
 }
 
+// Lua 1.13 port: scripted civilians (ported from 1.13 Soldier Create.cpp, lightweight version without sNonNPCTraderID)
+
+SOLDIERTYPE* TacticalCreateArmedCivilian( UINT8 usSoldierClass )
+{
+	BASIC_SOLDIERCREATE_STRUCT bp;
+	SOLDIERCREATE_STRUCT pp;
+	UINT8 ubID;
+	SOLDIERTYPE * pSoldier = NULL;
+
+	// not in autoresolve!
+	if ( guiCurrentScreen == AUTORESOLVE_SCREEN )
+		return NULL;
+
+	memset( &bp, 0, sizeof(BASIC_SOLDIERCREATE_STRUCT) );
+	RandomizeRelativeLevel( &(bp.bRelativeAttributeLevel), usSoldierClass );
+	RandomizeRelativeLevel( &(bp.bRelativeEquipmentLevel), usSoldierClass );
+	bp.bTeam = CIV_TEAM;
+	bp.bOrders = FARPATROL;
+	bp.bAttitude = (INT8)Random( MAXATTITUDES );
+	bp.bBodyType = Random( 4 );
+	bp.ubSoldierClass = usSoldierClass;
+	CreateDetailedPlacementGivenBasicPlacementInfo( &pp, &bp );
+
+	pSoldier = TacticalCreateSoldier( &pp, &ubID );
+
+	if ( pSoldier )
+	{
+		// send soldier to centre of map, roughly
+		pSoldier->aiData.sNoiseGridno = (CENTRAL_GRIDNO + (Random( CENTRAL_RADIUS * 2 + 1 ) - CENTRAL_RADIUS) + (Random( CENTRAL_RADIUS * 2 + 1 ) - CENTRAL_RADIUS) * WORLD_COLS);
+		pSoldier->aiData.ubNoiseVolume = MAX_MISC_NOISE_DURATION;
+	}
+
+	return pSoldier;
+}
+
+SOLDIERTYPE* TacticalCreateCivilian( INT32 sGridNo, UINT8 usCivilianGroup, INT8 usTraderID,
+									 INT8 sBodyType, INT8 aVest, INT8 aPants, INT8 aHair, INT8 aSkin,
+									 INT16 sItem1, INT16 sItem2, INT16 sItem3, INT16 sItem4 )
+{
+	// not in autoresolve!
+	if ( guiCurrentScreen == AUTORESOLVE_SCREEN )
+		return NULL;
+
+	UINT8	ubID = NOBODY;
+	SOLDIERTYPE* pSoldier = NULL;
+	SOLDIERCREATE_STRUCT MercCreateStruct;
+
+	MercCreateStruct.initialize( );
+	MercCreateStruct.bTeam = CIV_TEAM;
+	MercCreateStruct.ubProfile = NO_PROFILE;
+	MercCreateStruct.sSectorX = gWorldSectorX;
+	MercCreateStruct.sSectorY = gWorldSectorY;
+	MercCreateStruct.bSectorZ = gbWorldSectorZ;
+	MercCreateStruct.sInsertionGridNo = sGridNo;
+	MercCreateStruct.ubDirection = (UINT8)Random( NUM_WORLD_DIRECTIONS );
+
+	while ( sBodyType < 0 || sBodyType > CRIPPLECIV || (sBodyType >= ADULTFEMALEMONSTER && sBodyType <= QUEENMONSTER) )
+	{
+		sBodyType = Random( CRIPPLECIV + 1 );
+	}
+
+	MercCreateStruct.bBodyType = sBodyType;
+
+	RandomizeNewSoldierStats( &MercCreateStruct );
+
+	if ( sItem1 >= NOTHING )
+	{
+		CreateItems( (UINT16)(sItem1), (INT8)(80 + Random( 21 )), 1, &gTempObject );
+		PlaceObjectInSoldierCreateStruct( &MercCreateStruct, &gTempObject );
+	}
+
+	if ( sItem2 >= NOTHING )
+	{
+		CreateItems( (UINT16)(sItem2), (INT8)(80 + Random( 21 )), 1, &gTempObject );
+		PlaceObjectInSoldierCreateStruct( &MercCreateStruct, &gTempObject );
+	}
+
+	if ( sItem3 >= NOTHING )
+	{
+		CreateItems( (UINT16)(sItem3), (INT8)(80 + Random( 21 )), 1, &gTempObject );
+		PlaceObjectInSoldierCreateStruct( &MercCreateStruct, &gTempObject );
+	}
+
+	if ( sItem4 >= NOTHING )
+	{
+		CreateItems( (UINT16)(sItem4), (INT8)(80 + Random( 21 )), 1, &gTempObject );
+		PlaceObjectInSoldierCreateStruct( &MercCreateStruct, &gTempObject );
+	}
+
+	pSoldier = TacticalCreateSoldier( &MercCreateStruct, &ubID );
+
+	if ( pSoldier )
+	{
+		AddSoldierToSector( pSoldier->ubID );
+
+		// set correct civ group
+		pSoldier->ubCivilianGroup = usCivilianGroup;
+
+		// Lua 1.13 port lightweight version: no sNonNPCTraderID field in this codebase, usTraderID is ignored
+
+		if ( guiCurrentScreen != AUTORESOLVE_SCREEN )
+		{
+			// apply custom clothing
+			UINT16 usPaletteAnimSurface = LoadSoldierAnimationSurface( pSoldier, pSoldier->usAnimState );
+
+			if ( usPaletteAnimSurface != INVALID_ANIMATION_SURFACE )
+			{
+				SetClothes( pSoldier, aVest, aPants, aHair, aSkin );
+
+				// Use palette from HVOBJECT, then use substitution for pants, etc
+				memcpy( pSoldier->p8BPPPalette, gAnimSurfaceDatabase[usPaletteAnimSurface].hVideoObject->pPaletteEntry, sizeof( pSoldier->p8BPPPalette ) * 256 );
+
+				SetPaletteReplacement( pSoldier->p8BPPPalette, pSoldier->HeadPal );
+				SetPaletteReplacement( pSoldier->p8BPPPalette, pSoldier->VestPal );
+				SetPaletteReplacement( pSoldier->p8BPPPalette, pSoldier->PantsPal );
+				SetPaletteReplacement( pSoldier->p8BPPPalette, pSoldier->SkinPal );
+
+				pSoldier->CreateSoldierPalettes();
+
+				// Dirty
+				fInterfacePanelDirty = DIRTYLEVEL2;
+			}
+		}
+	}
+
+	return pSoldier;
+}
+
 BOOLEAN TacticalCopySoldierFromProfile( SOLDIERTYPE *pSoldier, SOLDIERCREATE_STRUCT *pCreateStruct )
 {
 	UINT8						ubProfileIndex;
@@ -1586,6 +1714,71 @@ INT32 ChooseHairColor( UINT8 usBodyType, INT32 skin )
 	}
 
 	return hair;
+}
+
+// Lua 1.13 port: set clothing palettes for scripted civilians (ported from 1.13 Soldier Create.cpp)
+void SetClothes( SOLDIERTYPE* pSoldier, INT8 aVest, INT8 aPants, INT8 aHair, INT8 aSkin )
+{
+	if ( !pSoldier )
+		return;
+
+	// Vest
+	if ( aVest >= 0 && aVest < NUMSHIRTS )
+	{
+		switch ( aVest )
+		{
+		case WHITEVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "WHITEVEST" );	break;
+		case GYELLOWSHIRT:	SET_PALETTEREP_ID( pSoldier->VestPal, "GYELLOWSHIRT" );	break;
+		case YELLOWVEST:	SET_PALETTEREP_ID( pSoldier->VestPal, "YELLOWVEST" );	break;
+		case GREYVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "greyVEST" );		break;
+		case BROWNVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "BROWNVEST" );	break;
+		case PURPLESHIRT:	SET_PALETTEREP_ID( pSoldier->VestPal, "PURPLESHIRT" );	break;
+		case BLUEVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "BLUEVEST" );		break;
+		case JEANVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "JEANVEST" );		break;
+		case GREENVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "GREENVEST" );	break;
+		case REDVEST:		SET_PALETTEREP_ID( pSoldier->VestPal, "REDVEST" );		break;
+		case BLACKSHIRT:	SET_PALETTEREP_ID( pSoldier->VestPal, "BLACKSHIRT" );	break;
+		}
+	}
+
+	// Pants
+	if ( aPants >= 0 && aPants < NUMPANTS )
+	{
+		switch ( aPants )
+		{
+		case BLUEPANTS:		SET_PALETTEREP_ID( pSoldier->PantsPal, "BLUEPANTS" );	break;
+		case BLACKPANTS:	SET_PALETTEREP_ID( pSoldier->PantsPal, "BLACKPANTS" );	break;
+		case JEANPANTS:		SET_PALETTEREP_ID( pSoldier->PantsPal, "JEANPANTS" );	break;
+		case TANPANTS:		SET_PALETTEREP_ID( pSoldier->PantsPal, "TANPANTS" );	break;
+		case BEIGEPANTS:	SET_PALETTEREP_ID( pSoldier->PantsPal, "BEIGEPANTS" );	break;
+		case GREENPANTS:	SET_PALETTEREP_ID( pSoldier->PantsPal, "GREENPANTS" );	break;
+		}
+	}
+
+	// Hair
+	if ( aHair >= 0 && aHair < NUMHEADS )
+	{
+		switch ( aHair )
+		{
+		case BROWNHEAD: SET_PALETTEREP_ID( pSoldier->HeadPal, "BROWNHEAD" );	break;
+		case BLACKHEAD: SET_PALETTEREP_ID( pSoldier->HeadPal, "BLACKHEAD" );	break;
+		case WHITEHEAD: SET_PALETTEREP_ID( pSoldier->HeadPal, "WHITEHEAD" );	break;
+		case BLONDEHEAD:SET_PALETTEREP_ID( pSoldier->HeadPal, "BLONDHEAD" );	break;
+		case REDHEAD:	SET_PALETTEREP_ID( pSoldier->HeadPal, "REDHEAD" );		break;
+		}
+	}
+
+	// Skin
+	if ( aSkin >= 0 && aSkin < NUMSKINS )
+	{
+		switch ( aSkin )
+		{
+		case PINKSKIN:	SET_PALETTEREP_ID( pSoldier->SkinPal, "PINKSKIN" );		break;
+		case TANSKIN:	SET_PALETTEREP_ID( pSoldier->SkinPal, "TANSKIN" );		break;
+		case DARKSKIN:	SET_PALETTEREP_ID( pSoldier->SkinPal, "DARKSKIN" );		break;
+		case BLACKSKIN:	SET_PALETTEREP_ID( pSoldier->SkinPal, "BLACKSKIN" );	break;
+		}
+	}
 }
 
 void GeneratePaletteForSoldier( SOLDIERTYPE *pSoldier, UINT8 ubSoldierClass, UINT8 ubTeam )

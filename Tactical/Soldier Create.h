@@ -49,6 +49,34 @@ enum
 	NUMHEADS
 };
 
+// Lua 1.13 port: clothing palettes for scripted civilians (SetClothes)
+enum
+{
+	WHITEVEST,
+	GYELLOWSHIRT,
+	YELLOWVEST,
+	GREYVEST,
+	BROWNVEST,
+	PURPLESHIRT,
+	BLUEVEST,
+	JEANVEST,
+	GREENVEST,
+	REDVEST,
+	BLACKSHIRT,
+	NUMSHIRTS
+};
+
+enum
+{
+	BLUEPANTS,
+	BLACKPANTS,
+	JEANPANTS,
+	TANPANTS,
+	BEIGEPANTS,
+	GREENPANTS,
+	NUMPANTS
+};
+
 //Kris:	SERIALIZING INFORMATION
 //All maps must have:
 //	-MAPCREATE_STRUCT
@@ -452,6 +480,13 @@ void CreatePrisonerOfWar();
 
 // randomly generates a relative level rating (attributes or equipment)
 void RandomizeRelativeLevel( INT8 *pbRelLevel, UINT8 ubSoldierClass );
+
+// Lua 1.13 port: scripted civilians
+SOLDIERTYPE* TacticalCreateArmedCivilian( UINT8 usSoldierClass );
+SOLDIERTYPE* TacticalCreateCivilian( INT32 sGridNo, UINT8 usCivilianGroup, INT8 usTraderID,
+									 INT8 sBodyType, INT8 aVest, INT8 aPants, INT8 aHair, INT8 aSkin,
+									 INT16 sItem1, INT16 sItem2, INT16 sItem3, INT16 sItem4 );
+void SetClothes( SOLDIERTYPE* pSoldier, INT8 aVest, INT8 aPants, INT8 aHair = -1, INT8 aSkin = -1 );
 
 // get the pythag. distance from the passed sector to the palace..
 UINT8 GetPythDistanceFromPalace( INT16 sSectorX, INT16 sSectorY );

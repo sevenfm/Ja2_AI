@@ -1546,7 +1546,10 @@ typedef struct
 	BOOLEAN fAllowCarsDrivingOverPeople;
 	BOOLEAN fAllowTanksDrivingOverPeople;
 	UINT8 ubCarsRammingMaxStructureArmour;
-	UINT8 ubTanksRammingMaxStructureArmour;	
+	UINT8 ubTanksRammingMaxStructureArmour;
+
+	// Lua 1.13 port: can extra civilians be created via LUA?
+	BOOLEAN bExtraCivilians;
 
 } GAME_EXTERNAL_OPTIONS;
 
