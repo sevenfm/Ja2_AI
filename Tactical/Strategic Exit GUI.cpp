@@ -34,6 +34,7 @@
 	#include "MessageBoxScreen.h"
 	#include "Quests.h"
 	#include "Creature Spreading.h"
+	#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 #endif
 
 #ifdef JA2UB
@@ -465,6 +466,35 @@ BOOLEAN InitSectorExitMenu( UINT8 ubDirection, INT32 sAdditionalData )//dnl ch56
 {
 	gubExitGUIDirection	 = ubDirection;
 	gsExitGUIAdditionalData = sAdditionalData;
+
+	// SQUAD_BIVOUAC: a squad with a NON-EMPTY bivouac needs enough live mercs to carry it.
+	// Block the tactical sector exit BEFORE the menu opens and BEFORE the mercs start
+	// walking off - the bivouac guard inside AddWaypointToPGroup() (AllMercsHaveWalkedOffSector)
+	// fires too late: its FALSE return is ignored there and the group is moved to the
+	// adjacent sector anyway, which teleports the merc to another insertion point.
+	if( gusSelectedSoldier != NOBODY && MercPtrs[ gusSelectedSoldier ] != NULL )
+	{
+		SOLDIERTYPE *pExitSoldier = MercPtrs[ gusSelectedSoldier ];
+
+		// SQUAD_BIVOUAC: defined in Squads.cpp, extern'd locally like other users do
+		extern INT8 SquadMovementGroups[ ];
+
+		if( pExitSoldier->bAssignment >= 0 && pExitSoldier->bAssignment < ON_DUTY &&
+			pExitSoldier->flags.fBetweenSectors == FALSE &&
+			SquadMovementGroups[ pExitSoldier->bAssignment ] != 0 &&
+			SQBM().CanSquadMoveWithBivouac( pExitSoldier->bAssignment ) == FALSE )
+		{
+			// SQUAD_BIVOUAC: message [80] contains a %d placeholder for the minimum merc
+			// count - format it BEFORE passing to DoMessageBox (DoMessageBox does not
+			// format, an unformatted %d reads garbage from the stack)
+			CHAR16 zBivouacMoveMsg[ 256 ];
+			swprintf( zBivouacMoveMsg, gzLateLocalizedString[ 80 ], (UINT16)__max( 1, gGameExternalOptions.usBivouacMoveMinMercs ) );
+
+			DoMessageBox( MSG_BOX_BASIC_STYLE, zBivouacMoveMsg, GAME_SCREEN,
+				( UINT8 )MSG_BOX_FLAG_OK, NULL, NULL );
+			return( TRUE );
+		}
+	}
 
 	if ( gbWorldSectorZ >= 2 && gubQuest[ QUEST_CREATURES ] == QUESTDONE )
 	{

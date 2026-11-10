@@ -18,6 +18,9 @@
 	#include "screenids.h"
 	#include "Soldier macros.h"
 	#include "GameSettings.h"
+	#include "SquadBivouacManager.h"
+	#include "SaveLoadGame.h"
+	#include "GameVersion.h"
 #endif
 #include <vector>
 
@@ -40,6 +43,41 @@ INT16 sDeadMercs[ NUMBER_OF_SQUADS ][ NUMBER_OF_SOLDIERS_PER_SQUAD ];
 INT8 SquadMovementGroups[ NUMBER_OF_SQUADS ];
 
 BOOLEAN fExitingVehicleToSquad = FALSE;
+
+// SQUAD_BIVOUAC: one-shot flag - set by the bivouac disband YES-callback after the
+// items were dumped to the floor, so the blocked removal can be retried without
+// showing the YES/NO box again. Cleared immediately after being consumed.
+BOOLEAN gBivouacAllowRemovalOnce = FALSE;
+
+// SQUAD_BIVOUAC: TRUE if removing pCharacter from his squad would empty it while the
+// squad's bivouac still holds items (i.e. the disband interception would trigger).
+// Used as a PRE-CHECK before any assignment change starts, so the merc's assignment
+// is never modified when the player later answers NO to the dump dialog.
+BOOLEAN WouldRemovalTriggerBivouacGuard( SOLDIERTYPE *pCharacter )
+{
+	if( pCharacter == NULL || !pCharacter->bActive || pCharacter->stats.bLife <= 0 )
+	{
+		return( FALSE );
+	}
+
+	if( gTacticalStatus.uiFlags & LOADING_SAVED_GAME )
+	{
+		return( FALSE );
+	}
+
+	INT8 bSquad = SquadCharacterIsIn( pCharacter );
+	if( bSquad == -1 )
+	{
+		return( FALSE );
+	}
+
+	if( NumberOfPeopleInSquad( bSquad ) != 1 )
+	{
+		return( FALSE );
+	}
+
+	return( !SQBM().IsEmpty( bSquad ) );
+}
 
 extern void CheckForAndAddMercToTeamPanel( SOLDIERTYPE *pSoldier );
 extern void RemoveAllPlayersFromSlot( );
@@ -85,6 +123,9 @@ void InitSquads( void )
 	}
 
 	memset( sDeadMercs, -1, sizeof( INT16 ) * NUMBER_OF_SQUADS * NUMBER_OF_SOLDIERS_PER_SQUAD );
+
+	// SQUAD_BIVOUAC: reset all squad bivouac inventories
+	SQBM().Initialize();
 
 	return;
 }
@@ -531,6 +572,25 @@ BOOLEAN RemoveCharacterFromSquads( SOLDIERTYPE *pCharacter )
 			// check if on current squad and current slot?
 			if( Squad[ iCounterA ][ iCounter ] == pCharacter )
 			{
+
+				// SQUAD_BIVOUAC: if this is the LAST live merc leaving a squad whose bivouac
+				// is not empty, ask the player what to do (dump items / abort removal).
+				// The removal call is aborted; after the player answers YES the items are dumped
+				// and the next removal attempt succeeds (bivouac is empty by then).
+				// NOTE: never intercept while a savegame is being loaded/unloaded - squad
+				// pointers and bivouac data are stale garbage at that point.
+				if ( gBivouacAllowRemovalOnce )
+				{
+					// one-shot bypass granted by the bivouac YES-callback: consume it and proceed
+					gBivouacAllowRemovalOnce = FALSE;
+				}
+				else if ( !( gTacticalStatus.uiFlags & LOADING_SAVED_GAME ) &&
+						pCharacter->stats.bLife > 0 &&
+						NumberOfPeopleInSquad( (INT8)iCounterA ) == 1 &&
+						!SQBM().HandleLastMercLeavingSquad( iCounterA, pCharacter ) )
+				{
+					return( FALSE );
+				}
 
 
 				// found and nulled
@@ -1211,7 +1271,11 @@ BOOLEAN SaveSquadInfoToSavedGameFile( HWFILE hFile )
 		return(FALSE);
 	}
 
-
+	// SQUAD_BIVOUAC: save all squad bivouac inventories
+	if( !SQBM().Save( hFile ) )
+	{
+		return( FALSE );
+	}
 
 	return( TRUE );
 }
@@ -1227,6 +1291,11 @@ BOOLEAN LoadSquadInfoFromSavedGameFile( HWFILE hFile )
 	//Reset the current squad info
 	INT32 iCounterB = 0;
 	INT32 iCounter =0;
+
+	// SQUAD_BIVOUAC: wipe bivouac data from the previous session before loading -
+	// InitSquads() only runs on a NEW game, so without this stale bivouac items from
+	// the previous game would linger and could trigger the disband dialog on load
+	SQBM().Initialize();
 
 	// null each list of ptrs.
 	for( iCounter = 0; iCounter <	NUMBER_OF_SQUADS; iCounter++ )
@@ -1268,6 +1337,17 @@ BOOLEAN LoadSquadInfoFromSavedGameFile( HWFILE hFile )
 	if( uiNumBytesRead != sizeof( INT8 ) * NUMBER_OF_SQUADS )
 	{
 		return(FALSE);
+	}
+
+	// SQUAD_BIVOUAC: load all squad bivouac inventories.
+	// Savegames older than SQUAD_BIVOUAC_SAVEGAME (152) have no bivouac block here:
+	// skip it and keep the (empty) bivouacs instead of desyncing the file read.
+	if( guiCurrentSaveGameVersion >= SQUAD_BIVOUAC_SAVEGAME )
+	{
+		if( !SQBM().Load( hFile ) )
+		{
+			return( FALSE );
+		}
 	}
 
 	return( TRUE );

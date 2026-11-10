@@ -2294,7 +2294,7 @@ BOOLEAN SOLDIERTYPE::Load(HWFILE hFile)
 			return(FALSE);
 		}
 
-		// WANNE - BMP: TODO! Struktur prüfen
+		// WANNE - BMP: TODO! Struktur prÑŒfen
 		//load some structs, atm just POD but could change
 		//Load STRUCT_AIData
 		numBytesRead = 0;
@@ -3088,6 +3088,14 @@ BOOLEAN SaveGame( int ubSaveGameID, STR16 pGameDesc )
 	{
 		PauseBeforeSaveGame();
 		fWePausedIt = TRUE;
+	}
+
+	// SQUAD_BIVOUAC: while the bivouac panel is open its edits live only in the local
+	// pBivouacPanelList stash - flush them into the manager (and cursor item back) so
+	// they are picked up by SaveSquadInfoToSavedGameFile() below
+	if( fShowBivouacPanel )
+	{
+		CloseBivouacPanel( TRUE );
 	}
 
 	#ifdef JA2BETAVERSION
@@ -4200,6 +4208,11 @@ BOOLEAN LoadSavedGame( int ubSavedGameID )
 #endif
 
 	uiRelStartPerc = uiRelEndPerc =0;
+
+	// sevenfm/orden: set this flag BEFORE TrashAllSoldiers() - soldier teardown calls
+	// RemoveCharacterFromSquads(), and SQUAD_BIVOUAC must never intercept squad removal
+	// on stale squad pointers / stale bivouac data while a savegame is loading
+	gTacticalStatus.uiFlags |= LOADING_SAVED_GAME;
 
 	TrashAllSoldiers( );
 

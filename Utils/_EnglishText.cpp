@@ -6945,6 +6945,27 @@ STR16 gzLateLocalizedString[] =
 	L"You need to close the item description box first!",
 		
 	L"Cannot compress time - hostile civilians and/or bloodcats are in this sector.", // 65
+
+	//66 (reserved)
+	L"",
+
+	//67-68 SQUAD_BIVOUAC
+	L"There are items left in the squad's bivouac. Drop them in the sector before disbanding the squad?",
+	L"The squad's bivouac has been emptied into the sector.",
+	L"Viewing the squad's bivouac.",	// 69
+	L"Item moved to the squad's bivouac.",	// 70
+	L"Item moved to the sector inventory.",	// 71
+	L"The squad's bivouac is full.",	// 72
+	L"Squad %d bivouac",	// 73 SQUAD_BIVOUAC panel header: squad title (squad number)
+	L"Weight current/max %d.%d/%d.%d",	// 74 SQUAD_BIVOUAC panel header: current/max weight (kg, one decimal)
+	L"Weight current/max ",	// 75 SQUAD_BIVOUAC panel header: weight line prefix (no formatting)
+	L"This bivouac slot is not configured.",	// 76 SQUAD_BIVOUAC: slot has no pocket template assigned
+	L"This bivouac slot does not accept this type of item.",	// 77 SQUAD_BIVOUAC: wrong item class (pocket restriction)
+	L"'%s': size %d, slot capacity %d.",	// 78 SQUAD_BIVOUAC: item does not fit slot capacity (name, item size, ItemCapacityPerSize)
+	L"'%s': stack does not fit (in slot %d, capacity %d).",	// 79 SQUAD_BIVOUAC: stack overflow (name, current stack count, capacity)
+	L"Items are left in the squad's bivouac: at least %d mercs are required to move it.",	// 80 SQUAD_BIVOUAC: squad with non-empty bivouac blocked from moving (min mercs)
+	L"Drop the entire bivouac contents into the sector.",	// 81 SQUAD_BIVOUAC: drop-all button tooltip
+	L"Open/close the squad's bivouac.",	// 82 SQUAD_BIVOUAC: sector inventory toolbar bivouac toggle tooltip
 };
 
 // HEADROCK HAM 3.5: Added sector name

@@ -111,6 +111,7 @@
     <ClInclude Include="soldier tile.h" />
     <ClInclude Include="Spread burst.h" />
     <ClInclude Include="Squads.h" />
+    <ClInclude Include="SquadBivouacManager.h" />
     <ClInclude Include="Strategic Exit GUI.h" />
     <ClInclude Include="Structure Wrap.h" />
     <ClInclude Include="Tactical All.h" />
@@ -207,6 +208,7 @@
     <ClCompile Include="SoldierTooltips.cpp" />
     <ClCompile Include="Spread Burst.cpp" />
     <ClCompile Include="Squads.cpp" />
+    <ClCompile Include="SquadBivouacManager.cpp" />
     <ClCompile Include="Strategic Exit GUI.cpp" />
     <ClCompile Include="Structure Wrap.cpp" />
     <ClCompile Include="Tactical Save.cpp" />
@@ -248,6 +250,7 @@
     <ClCompile Include="XML_IncompatibleAttachments.cpp" />
     <ClCompile Include="XML_ItemAdjustments.cpp" />
     <ClCompile Include="XML_Keys.cpp" />
+    <ClCompile Include="XML_BivouacSlots.cpp" />
     <ClCompile Include="XML_Launchable.cpp" />
     <ClCompile Include="XML_LBEPocket.cpp" />
     <ClCompile Include="XML_LBEPocketPopup.cpp" />

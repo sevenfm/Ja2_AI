@@ -63,6 +63,7 @@
 	#include "Assignments.h"
 	#include "points.h"
 	#include "Squads.h"
+	#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 	#include "Merc Contract.h"
 	#include "Sound Control.h"
 	#include "strategic turns.h"
@@ -4603,7 +4604,7 @@ UINT32 MapScreenHandle(void)
 				MAP_VIEW_START_X = (MAP_BORDER_X + MAP_BORDER_X_OFFSET + 9);	// 9: Constant, do not change it.
 				MAP_VIEW_START_Y = (MAP_BORDER_Y + MAP_BORDER_Y_OFFSET + 10);	// 10: Constant, do not change it.
 				
-				// Maus Area (Ist die reine Größe der Karte/2 (ohne dem schwarzen Rand (links und oben))
+				// Maus Area (Ist die reine GrÑ†Ð¯e der Karte/2 (ohne dem schwarzen Rand (links und oben))
 				MAP_VIEW_WIDTH = 336;			// Width of the map (without the black area on the left)
 				MAP_VIEW_HEIGHT	= 288 + 10;		// Height of the map (without the black area on the top) + constant value of 10
 
@@ -5112,6 +5113,9 @@ UINT32 MapScreenHandle(void)
 
 		fShowMapInventoryPool = FALSE;
 
+		// SQUAD_BIVOUAC: never enter the map screen with the bivouac panel open
+		CloseBivouacPanel( FALSE );
+
 		// init character list - set all values in the list to 0
 		InitalizeVehicleAndCharacterList( );
 
@@ -5323,6 +5327,9 @@ UINT32 MapScreenHandle(void)
 	// check if we are going to create or destroy map border graphics?
 	CreateDestroyMapInventoryPoolButtons( FALSE );
 
+	// SQUAD_BIVOUAC: create/destroy the compact bivouac panel + auto-close on lost access
+	CreateDestroyBivouacPanel( );
+
 
 	// don't process any input until we've been through here once
 	if( gfFirstMapscreenFrame == FALSE )
@@ -5503,7 +5510,8 @@ UINT32 MapScreenHandle(void)
 
 		if( fDrawCharacterList )
 		{
-			if ( !fShowInventoryFlag )
+			// SQUAD_BIVOUAC: bivouac panel covers the team list column
+			if( !fShowBivouacPanel && !fShowInventoryFlag )
 			{
 				// if we are not in inventory mode, show character list
 				HandleHighLightingOfLinesInTeamPanel( );
@@ -5749,7 +5757,7 @@ UINT32 MapScreenHandle(void)
 	}
 	else
 	{
-		if( fShowInventoryFlag == TRUE )
+		if( fShowInventoryFlag == TRUE && !fShowBivouacPanel )
 		{
 			MarkAButtonDirty( giMapInvDoneButton );
 			MarkAButtonDirty( giCharInfoButton[ 1 ] );
@@ -6960,6 +6968,14 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 						DeleteKeyRingPopup( );
 						fTeamPanelDirty = TRUE;
 					}
+					else if( fShowBivouacPanel == TRUE )
+					{
+						// SQUAD_BIVOUAC: close bivouac panel unless an item is on the cursor
+						if( gMPanelRegion.Cursor != EXTERN_CURSOR && !InSectorStackPopup() && !InItemStackPopup() )
+						{
+							CloseBivouacPanel( TRUE );
+						}
+					}
 					else if( fShowMapInventoryPool == TRUE )
 					{
 						// no item on cursor & not in either stack popup
@@ -7021,11 +7037,21 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 					break;
 
 				case LEFTARROW:
+					// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+					if( fShowBivouacPanel )
+					{
+						break;
+					}
 					// previous character
 					fResetMapCoords = TRUE;
 					GoToPrevCharacterInList( );
 					break;
 				case RIGHTARROW:
+					// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+					if( fShowBivouacPanel )
+					{
+						break;
+					}
 					// next character
 					fResetMapCoords = TRUE;
 					GoToNextCharacterInList( );
@@ -7042,11 +7068,21 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 
 				case PGUP:
 					// WANNE: Jump to first merc in list
+					// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+					if( fShowBivouacPanel )
+					{
+						break;
+					}
 					fResetMapCoords = TRUE;
 					GoToFirstCharacterInList( );
 					break;
 				case PGDN:
 					// WANNE: Jump to last merc in list
+					// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+					if( fShowBivouacPanel )
+					{
+						break;
+					}
 					fResetMapCoords = TRUE;
 					GoToLastCharacterInList( );
 					break;
@@ -7435,7 +7471,12 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 #endif
 					break;
 				case 'a':
-						if( fAlt )
+					// SQUAD_BIVOUAC: assignment menu is blocked while the bivouac panel is open
+					if( fAlt && fShowBivouacPanel )
+					{
+						break;
+					}
+					if( fAlt )
 						{
 							if( giHighLine != -1 )
 							{
@@ -7487,19 +7528,29 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 
 
 				case 'b':
-/*
-						// CTRL-B: make player's perception of all sectors correct!
-						if( ( fCtrl )&&( CHEATER_CHEAT_LEVEL( ) ) )
-						{
-							for ( sMapX = 1; sMapX <= 16; sMapX++ )
-							{
-								for ( sMapY = 1; sMapY <= 16; sMapY++ )
-								{
-									MakePlayerPerceptionOfSectorControlCorrect( sMapX, sMapY, 0 );
-								}
-							}
-						}
-*/
+					// SQUAD_BIVOUAC: ignore hotkey on the first frame after (re)entering the
+					// map screen - stale key events from the loading/exit screen could
+					// trigger the panel open message right after a savegame load
+					if( gfFirstMapscreenFrame )
+					{
+						break;
+					}
+
+					if( fShowBivouacPanel )
+					{
+						// SQUAD_BIVOUAC: close bivouac panel (stash stored back via CreateDestroyBivouacPanel)
+						CloseBivouacPanel( TRUE );
+					}
+					else if( IsBivouacPanelAllowedForSelectedChar( ) )
+					{
+						// SQUAD_BIVOUAC: open the compact left-panel bivouac for the selected character's squad
+						SQBM().SetBivouacUIMode( TRUE );
+						SQBM().SetActiveUISquadID( SQBM().GetBivouacUISquadID() );
+
+						fShowBivouacPanel = TRUE;
+
+						ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[69] );
+					}
 					break;
 
 				case 'c':
@@ -7563,7 +7614,8 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 					}
 					break;
 				case 'E':
-					if(bSelectedInfoChar != -1)
+					// SQUAD_BIVOUAC: merc inventory is hidden under the bivouac panel
+					if(bSelectedInfoChar != -1 && !fShowBivouacPanel)
 					{
 						SOLDIERTYPE *pSoldier = MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ];
 						pSoldier->bInSector = FALSE;
@@ -7772,7 +7824,8 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 					break;
 				case 'H':
 					// swap primary & secondary hand
-					if ( bSelectedInfoChar != -1 && fShowInventoryFlag && !AM_A_ROBOT( MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ] ))
+					// SQUAD_BIVOUAC: merc inventory is hidden under the bivouac panel
+					if ( bSelectedInfoChar != -1 && fShowInventoryFlag && !fShowBivouacPanel && !AM_A_ROBOT( MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ] ))
 					{
 						SOLDIERTYPE *pSoldier = MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ];
 						UINT16 usOldHandItem = pSoldier->inv[HANDPOS].usItem;
@@ -7909,7 +7962,8 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 					#endif
 					break;
 				case 'N':
-					if ( bSelectedInfoChar != -1 && fShowInventoryFlag )
+					// SQUAD_BIVOUAC: merc inventory is hidden under the bivouac panel
+					if ( bSelectedInfoChar != -1 && fShowInventoryFlag && !fShowBivouacPanel )
 					{
 						SOLDIERTYPE *pSoldier = MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ];
 						SwapGoggles(pSoldier);
@@ -8366,10 +8420,20 @@ void GetMapKeyboardInput( UINT32 *puiNewEvent )
 			switch( InputEvent.usParam )
 			{
 				case LEFTARROW:
+					// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+					if( fShowBivouacPanel )
+					{
+						break;
+					}
 					// previous character
 					GoToPrevCharacterInList( );
 					break;
 				case RIGHTARROW:
+					// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+					if( fShowBivouacPanel )
+					{
+						break;
+					}
 					// next character
 					GoToNextCharacterInList( );
 					break;
@@ -8697,6 +8761,9 @@ INT32 iCounter2 = 0;
 
 	CancelSectorInventoryDisplayIfOn( TRUE );
 
+	// SQUAD_BIVOUAC: leave bivouac panel mode when leaving the map screen
+	CloseBivouacPanel( TRUE );
+
 
 	SetAllAutoFacesInactive( );
 	if(fLapTop)
@@ -8879,6 +8946,13 @@ void PollWheelInMapView(UINT32 *puiNewEvent)
 
 	if (((xResOffset) < x && x < (xResOffset + MAP_BORDER_X)) && ((yResOffset + MAP_BORDER_Y) < y && y < (SCREEN_HEIGHT - 121 - yResOffset)))
 	{
+		// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+		if( fShowBivouacPanel )
+		{
+			_WheelValue = 0;
+			return;
+		}
+
 		const auto Wheelstate = _WheelValue * (gGameSettings.fOptions[TOPTION_INVERT_WHEEL] ? -1 : 1);
 		if (Wheelstate < 0)
 		{
@@ -11742,6 +11816,13 @@ void RenderMapRegionBackground( void )
 {
 	// renders to save buffer when dirty flag set
 
+	// SQUAD_BIVOUAC: the panel must be redrawn every frame, it covers the team list
+	// column which other subsystems constantly restore/overdraw
+	if( fShowBivouacPanel )
+	{
+		fMapPanelDirty = TRUE;
+	}
+
 	if( fMapPanelDirty == FALSE )
 	{
 		gfMapPanelWasRedrawn = FALSE;
@@ -11812,6 +11893,13 @@ void RenderTeamRegionBackground( void )
 	if( fTeamPanelDirty == FALSE )
 	{
 		// not dirty, leave
+		return;
+	}
+
+	// SQUAD_BIVOUAC: bivouac panel covers the team list column - suppress the list
+	if( fShowBivouacPanel )
+	{
+		fTeamPanelDirty = FALSE;
 		return;
 	}
 
@@ -12790,6 +12878,12 @@ void FaceRegionBtnCallback( MOUSE_REGION *pRegion, INT32 iReason )
 		return;
 	}
 
+	// SQUAD_BIVOUAC: merc inventory is hidden under the bivouac panel
+	if( fShowBivouacPanel == TRUE )
+	{
+		return;
+	}
+
 	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
 	{
 		if( IsMapScreenHelpTextUp() )
@@ -12842,6 +12936,12 @@ void FaceRegionMvtCallback( MOUSE_REGION *pRegion, INT32 iReason )
 
 void ItemRegionBtnCallback( MOUSE_REGION *pRegion, INT32 iReason )
 {
+	// SQUAD_BIVOUAC: merc inventory is hidden under the bivouac panel
+	if( fShowBivouacPanel == TRUE )
+	{
+		return;
+	}
+
 	// left AND right button are handled the same way
 	if (iReason & ( MSYS_CALLBACK_REASON_RBUTTON_UP | MSYS_CALLBACK_REASON_LBUTTON_UP ) )
 	{
@@ -13036,7 +13136,7 @@ void UpdateStatusOfMapSortButtons( void )
 	static BOOLEAN fShownLastTime = FALSE;
 
 
-	if( ( gfPreBattleInterfaceActive ) || fShowInventoryFlag )
+	if( ( gfPreBattleInterfaceActive ) || fShowInventoryFlag || fShowBivouacPanel )
 	{
 		if ( fShownLastTime )
 		{
@@ -13240,7 +13340,9 @@ void CreateDestroyTrashCanRegion( void )
 {
 	static BOOLEAN fCreated = FALSE;
 
-	if( fShowInventoryFlag && ( fCreated == FALSE ) )
+	// SQUAD_BIVOUAC: trash can + done button are rendered over the bivouac panel -
+	// suppress them while the panel is open
+	if( fShowInventoryFlag && ( fCreated == FALSE ) && !fShowBivouacPanel )
 	{
 
 		fCreated = TRUE;
@@ -13299,6 +13401,16 @@ void CreateDestroyTrashCanRegion( void )
 			DeleteItemDescriptionBox( );
 		}
 
+	}
+	// SQUAD_BIVOUAC: the panel opened while the trash can/done button exist - hide them,
+	// they are drawn over the bivouac panel; restore when the panel closes
+	else if( fCreated == TRUE && fShowBivouacPanel )
+	{
+		HideButton( giMapInvDoneButton );
+	}
+	else if( fCreated == TRUE && !fShowBivouacPanel )
+	{
+		ShowButton( giMapInvDoneButton );
 	}
 }
 
@@ -13603,6 +13715,14 @@ BOOLEAN CharacterIsInLoadedSectorAndWantsToMoveInventoryButIsNotAllowed( INT8 bC
 
 void UpdateTheStateOfTheNextPrevMapScreenCharacterButtons( void )
 {
+	// SQUAD_BIVOUAC: no character switching while the bivouac panel is open
+	if( fShowBivouacPanel )
+	{
+		DisableButton( giCharInfoButton[ 0 ] );
+		DisableButton( giCharInfoButton[ 1 ] );
+		return;
+	}
+
 	if( gfPreBattleInterfaceActive )
 	{
 		if( IsMapScreenHelpTextUp() )
@@ -14427,6 +14547,17 @@ BOOLEAN CanToggleSelectedCharInventory( void )
 {
 	SOLDIERTYPE *pSoldier = NULL;
 
+
+	// SQUAD_BIVOUAC: merc inventory is hidden under the bivouac panel
+	if( fShowBivouacPanel == TRUE )
+	{
+		// but an item description opened from the bivouac panel must persist -
+		// otherwise CheckForInventoryModeCancellation() deletes it every frame
+		if( !fShowDescriptionFlag )
+		{
+			return(FALSE);
+		}
+	}
 
 	if( gfPreBattleInterfaceActive == TRUE )
 	{
@@ -15493,6 +15624,45 @@ void HandleNewDestConfirmation( INT16 sMapX, INT16 sMapY )
 	}
 	else
 	{
+		// SQUAD_BIVOUAC: a squad with a non-empty bivouac may not have enough live mercs
+		// to move. The waypoint guard in AddWaypointToPGroup() will reject the route right
+		// after this, so replace the misleading "route confirmed" message with the real
+		// localized error - both in the map message log and as a map overlay.
+		BOOLEAN fBivouacMoveBlocked = FALSE;
+
+		if( bSelectedDestChar != -1 )
+		{
+			SOLDIERTYPE *pBivouacSoldier = MercPtrs[ gCharactersList[ bSelectedDestChar ].usSolID ];
+
+			if( pBivouacSoldier->bAssignment < ON_DUTY && !pBivouacSoldier->flags.fBetweenSectors )
+			{
+				// SQUAD_BIVOUAC: defined in Squads.cpp, extern'd locally like other users do
+				extern INT8 SquadMovementGroups[ ];
+
+				INT32 iBivouacSquad = pBivouacSoldier->bAssignment;
+
+				if( SquadMovementGroups[ iBivouacSquad ] != 0 &&
+					SQBM().CanSquadMoveWithBivouac( iBivouacSquad ) == FALSE )
+				{
+					fBivouacMoveBlocked = TRUE;
+				}
+			}
+		}
+
+		if( fBivouacMoveBlocked )
+		{
+			// persistent map message log entry (ScreenMsg -> MSG_INTERFACE writes into the
+			// scrolling log at the bottom of the map screen)
+			ScreenMsg( FONT_MCOLOR_LTRED, MSG_INTERFACE, gzLateLocalizedString[ 80 ],
+				gGameExternalOptions.usBivouacMoveMinMercs );
+
+			// transient overlay on the map itself (replaces "Travel route confirmed")
+			MapScreenMessage( FONT_MCOLOR_LTRED, MSG_MAP_UI_POSITION_MIDDLE, gzLateLocalizedString[ 80 ],
+				gGameExternalOptions.usBivouacMoveMinMercs );
+
+			return;
+		}
+
 		RandomAwakeSelectedMercConfirmsStrategicMove( );
 
 		// tell player the route was CONFIRMED
@@ -16300,6 +16470,12 @@ void RequestContractMenu( void )
 	{
 		// stop mapscreen text
 		StopMapScreenHelpText( );
+		return;
+	}
+
+	// SQUAD_BIVOUAC: contract menu is blocked while the bivouac panel is open
+	if( fShowBivouacPanel == TRUE )
+	{
 		return;
 	}
 

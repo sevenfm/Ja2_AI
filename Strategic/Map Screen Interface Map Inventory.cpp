@@ -5,6 +5,7 @@
 	#include "Map Screen Interface Map Inventory.h"
 	#include "Render Dirty.h"
 	#include "vobject.h"
+	#include "vobject_blitters.h"
 	#include "Utilities.h"
 	#include "WCheck.h"
 	#include "sysutil.h"
@@ -42,10 +43,14 @@
 #include "Map Information.h"//dnl ch51 091009
 #include "Interface Items.h"
 #include "Food.h"	// added by Flugente
+#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 #include "Campaign Types.h"	// added by Flugente
 
 // Flugente: gear templates
-#include "GearTemplate.h" // œÓ‰ÍÎ˛˜‡ÂÏ ÌÓ‚˚È ÍÎ‡ÒÒ ÏÂÌÂ‰ÊÂ‡ ¯‡·ÎÓÌÓ‚
+#include "GearTemplate.h" // –ü–æ–¥–∫–ª—é—á–∞–µ–º –Ω–æ–≤—ã–π –∫–ª–∞—Å—Å –º–µ–Ω–µ–¥–∂–µ—Ä–∞ —à–∞–±–ª–æ–Ω–æ–≤
+
+const STR8 INTERFACE_SECTOR_INV_BUTTONS_FILENAME = "INTERFACE\\sector_inventory_buttons.sti";
+
 extern void EquipmentListMenu();
 
 //forward declarations of common classes to eliminate includes
@@ -135,6 +140,12 @@ INT32 iCurrentlyHighLightedItem = -1;
 BOOLEAN fFlashHighLightInventoryItemOnradarMap = FALSE;
 
 INT32 iCurrentlyPickedUpItem = -1;
+
+// SQUAD_BIVOUAC: slot index the cursor item was picked from in the bivouac panel
+// (-1 = none). PlaceObjectInInventoryStash treats iCurrentlyPickedUpItem as an index
+// into pInventoryPoolList (sector stash) - a bivouac index (0..29) would collide with
+// real sector indices, so the bivouac source slot is tracked separately
+INT32 iCurrentlyPickedUpBivouacItem = -1;
 
 // whether we are showing the inventory pool graphic
 BOOLEAN fShowMapInventoryPool = FALSE;
@@ -226,6 +237,7 @@ BOOLEAN gfMapInventoryFilterPopupVisible = FALSE;
 BOOLEAN gfQueueRecreateMapInventoryFilterMenu = FALSE;
 
 extern int PLAYER_INFO_Y;
+extern int PLAYER_INFO_X;
 extern int INV_REGION_Y;
 
 extern BOOLEAN fShowInventoryFlag;
@@ -243,7 +255,144 @@ extern UINT16 gusExternVoSubIndex;
 
 extern	MOUSE_REGION    gMPanelRegion;
 
+// SQUAD_BIVOUAC: merc inventory supporting regions (defined in mapscreen.cpp)
+extern MOUSE_REGION gMapMercWeightRegion;
+extern MOUSE_REGION gMapMercCamoRegion;
+
 extern void InternalMAPBeginItemPointer( SOLDIERTYPE *pSoldier );
+
+// SQUAD_BIVOUAC: left-panel bivouac inventory state
+// Grid layout clones the vehicle trunk: 3 columns x 10 rows of BIG_INV_SLOT sized cells,
+// the grid is CENTERED within the panel. The panel covers the team list column BELOW the
+// portrait area (like the item description box) down to the bottom interface strip.
+// Geometry is self-contained (do NOT derive from MAP_INVEN_* - those are
+// resolution/zoom dependent, our cell size is fixed).
+#define BIVOUAC_PANEL_COLS						3
+#define BIVOUAC_PANEL_ROWS						(BIVOUAC_NUM_SLOTS / BIVOUAC_PANEL_COLS)
+#define BIVOUAC_PANEL_CELL_WIDTH				67
+#define BIVOUAC_PANEL_CELL_HEIGHT				24
+#define BIVOUAC_PANEL_COL_STEP					72
+#define BIVOUAC_PANEL_ROW_STEP					26
+#define BIVOUAC_PANEL_START_Y					(PLAYER_INFO_Y + 34)	// below the two-line header, portrait area untouched
+#define BIVOUAC_PANEL_END_Y						(INV_INTERFACE_START_Y - 4)
+#define BIVOUAC_PANEL_BTN_RESERVE				36		// bottom strip reserved for the Done/drop-all buttons
+#define BIVOUAC_PANEL_BTN_ROW_HEIGHT			28		// height of the button strip (largest button sprite)
+#define BIVOUAC_PANEL_DONE_BTN_WIDTH			35		// actual sprite size of itemdescdonebutton.sti
+#define BIVOUAC_PANEL_DONE_BTN_HEIGHT			27
+#define BIVOUAC_PANEL_DROPALL_BTN_WIDTH			28		// actual sprite size of sector_inventory_buttons.sti icon
+#define BIVOUAC_PANEL_DROPALL_BTN_HEIGHT		28
+#define BIVOUAC_PANEL_BTN_GAP					6		// gap between the drop-all and Done buttons
+#define BIVOUAC_PANEL_BTNS_TOTAL_WIDTH			( BIVOUAC_PANEL_DROPALL_BTN_WIDTH + BIVOUAC_PANEL_BTN_GAP + BIVOUAC_PANEL_DONE_BTN_WIDTH )
+#define BIVOUAC_PANEL_GRID_WIDTH				((BIVOUAC_PANEL_COLS - 1) * BIVOUAC_PANEL_COL_STEP + BIVOUAC_PANEL_CELL_WIDTH)
+#define BIVOUAC_PANEL_GRID_HEIGHT				((BIVOUAC_PANEL_ROWS - 1) * BIVOUAC_PANEL_ROW_STEP + BIVOUAC_PANEL_CELL_HEIGHT)
+#define BIVOUAC_PANEL_BORDER					2
+
+// SQUAD_BIVOUAC: background region covering the whole panel - blocks team list tooltips/highlight underneath
+static MOUSE_REGION BivouacPanelMaskRegion;
+
+// SQUAD_BIVOUAC: wood panel background (same graphic as the map screen item description box)
+static UINT32 guiBivouacPanelBackground = 0;
+
+MOUSE_REGION BivouacPanelSlots[ BIVOUAC_NUM_SLOTS ];
+UINT32 guiBivouacPanelDoneButtonImage = 0;
+UINT32 guiBivouacPanelDoneButton = 0;
+UINT32 guiBivouacPanelDropAllButtonImage = 0;
+UINT32 guiBivouacPanelDropAllButton = 0;
+static BOOLEAN gfBivouacPanelCreated = FALSE;
+
+// SQUAD_BIVOUAC: dedicated stash for the panel. Deliberately separate from pInventoryPoolList
+// so the bivouac panel and the fullscreen sector inventory can be open at the same time
+// without clobbering each other's contents.
+// NON-static: SquadBivouacManager::DumpToFloor syncs the panel edits into the squad slots
+// through this vector (pInventoryPoolList belongs to the SECTOR inventory and must never
+// be used for the bivouac).
+std::vector<WORLDITEM> pBivouacPanelList;
+
+// SQUAD_BIVOUAC: TRUE if the slot is disabled (not configured to a pocket template)
+static BOOLEAN BivouacSlotDisabled( INT32 iSlot )
+{
+	BivouacSlotConfig config = SQBM().GetSlotConfig( iSlot );
+
+	if( config.pPocketIndex == BIVOUAC_SLOT_POCKET_NONE ||
+		config.pPocketIndex >= LBEPocketType.size( ) )
+	{
+		return( TRUE );
+	}
+
+	return( FALSE );
+}
+
+// SQUAD_BIVOUAC: place the whole cursor stack into the bivouac panel stash.
+// Returns TRUE when the cursor is empty afterwards (everything fit); FALSE when the
+// bivouac is full / no slot accepts the item and (part of) the item is still on the cursor
+static BOOLEAN BivouacTryPlaceCursorItem( void )
+{
+	if( gpItemPointer == NULL || gpItemPointer->exists( ) == false )
+	{
+		return( TRUE );
+	}
+
+	if( pBivouacPanelList.size( ) < BIVOUAC_NUM_SLOTS )
+	{
+		return( FALSE );
+	}
+
+	// same item: stack into the first matching slot (money merges internally).
+	// The live slot content comes from the panel stash - the manager storage does not
+	// know about panel edits until the panel closes.
+	for( INT32 iSlot = 0; iSlot < BIVOUAC_NUM_SLOTS; ++iSlot )
+	{
+		WORLDITEM& wi = pBivouacPanelList[ iSlot ];
+
+		if( wi.object.exists( ) && wi.object.usItem == gpItemPointer->usItem )
+		{
+			int iReason = SQBM().CanItemFitInBivouacSlot( (UINT8)iSlot, gpItemPointer,
+				(UINT8)gpItemPointer->ubNumberOfObjects, &( wi.object ) );
+
+			if( iReason == BIVOUAC_FIT_OK )
+			{
+				wi.object.AddObjectsToStack( *gpItemPointer, ALL_OBJECTS, NULL, STACK_SIZE_LIMIT );
+				wi.fExists = TRUE;
+				wi.bVisible = 1;
+				wi.usFlags |= WORLD_ITEM_REACHABLE;
+
+				if( gpItemPointer->exists( ) == false )
+				{
+					return( TRUE );
+				}
+			}
+		}
+	}
+
+	// no stack partner (or leftover): free slots that accept the item
+	for( INT32 iSlot = 0; iSlot < BIVOUAC_NUM_SLOTS; ++iSlot )
+	{
+		WORLDITEM& wi = pBivouacPanelList[ iSlot ];
+
+		if( wi.object.exists( ) == false )
+		{
+			int iReason = SQBM().CanItemFitInBivouacSlot( (UINT8)iSlot, gpItemPointer,
+				(UINT8)gpItemPointer->ubNumberOfObjects, NULL );
+
+			if( iReason == BIVOUAC_FIT_OK )
+			{
+				gpItemPointer->MoveThisObjectTo( wi.object );
+				wi.fExists = TRUE;
+				wi.bVisible = 1;
+				wi.sGridNo = -1;
+				wi.usFlags = WORLD_ITEM_REACHABLE;
+
+				if( gpItemPointer->exists( ) == false )
+				{
+					return( TRUE );
+				}
+			}
+		}
+	}
+
+	// no accepting slot (full / rules), item (or remainder) still on the cursor
+	return( FALSE );
+}
 
 extern UINT32 GetLastTimePlayerWasInSector(INT16 sMapX, INT16 sMapY, INT8 sMapZ);	// Flugente: get time for another sector
 
@@ -301,6 +450,7 @@ INT32 GetTotalNumberOfItemsInSectorStash( void );
 // Flugente: gear templates
 void MapInventoryWriteEquipmentTemplate(GUI_BUTTON* btn, INT32 reason);
 void MapInventoryReadEquipmentTemplate(GUI_BUTTON* btn, INT32 reason);
+void MapInventoryBivouacToggleBtn(GUI_BUTTON* btn, INT32 reason);
 
 void HandleMapSectorInventory( void );
 void ResetMapSectorInventoryPoolHighLights( void );
@@ -313,8 +463,26 @@ void SortSectorInventory( std::vector<WORLDITEM>& pInventory, UINT32 uiSizeOfArr
 BOOLEAN CanPlayerUseSectorInventory( SOLDIERTYPE *pSelectedSoldier );
 
 extern void MAPEndItemPointer( );
+
+// SQUAD_BIVOUAC: dedicated stash of the bivouac panel (defined below, non-static:
+// SquadBivouacManager::DumpToFloor reads it to sync panel edits before a dump)
+extern std::vector<WORLDITEM> pBivouacPanelList;
 extern	BOOLEAN GetCurrentBattleSectorXYZAndReturnTRUEIfThereIsABattle( INT16 *psSectorX, INT16 *psSectorY, INT16 *psSectorZ );
 extern BOOLEAN MAPInternalInitItemDescriptionBox( OBJECTTYPE *pObject, UINT8 ubStatusIndex, SOLDIERTYPE *pSoldier );
+
+// SQUAD_BIVOUAC: compact left-panel bivouac inventory (visual clone of the vehicle trunk UI)
+BOOLEAN fShowBivouacPanel = FALSE;
+void CreateDestroyBivouacPanel( void );
+BOOLEAN IsBivouacPanelAllowedForSelectedChar( void );
+void CloseBivouacPanel( BOOLEAN fSaveStash );
+void RenderBivouacPanel( void );
+void BuildBivouacPanelStash( void );
+static void BivouacPanelCreateSlots( void );
+static void BivouacPanelDestroySlots( void );
+static void BivouacPanelSlotsCallback( MOUSE_REGION *pRegion, INT32 iReason );
+static void BivouacPanelSlotsMoveCallback( MOUSE_REGION *pRegion, INT32 iReason );
+static void BivouacPanelDoneBtn( GUI_BUTTON *btn, INT32 reason );
+static void BivouacPanelDropAllBtn( GUI_BUTTON *btn, INT32 reason );
 
 #ifdef INVFIX_Moa//dnl ch85 050214
 void DeleteAllItemsInInventoryPool();
@@ -1620,6 +1788,24 @@ void MapInvenPoolSlots(MOUSE_REGION * pRegion, INT32 iReason )
 
 			//CHRISL: Allow CTRL+LMB to clean up stacks just like we do with personal inventory
 			//Currently, screen isn't automatically refreshing.  You have to move your cursor after CTRL+LMB to see the results.
+			// SQUAD_BIVOUAC: while the bivouac panel is open, CTRL+LMB over a sector inventory
+			// slot sends the cursor stack INTO the bivouac instead of merging
+			if ( _KeyDown(CTRL) && fShowBivouacPanel )
+			{
+				if( BivouacTryPlaceCursorItem( ) )
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 70 ] );
+					MAPEndItemPointer( );
+				}
+				else
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 72 ] );
+				}
+
+				fMapPanelDirty = TRUE;
+				return;
+			}
+
 			if ( _KeyDown(CTRL) )
 			{
 				CleanUpStack( &( pInventoryPoolList[ ( iCurrentInventoryPoolPage * MAP_INVENTORY_POOL_SLOT_COUNT ) + iCounter ].object ), gpItemPointer );
@@ -1631,8 +1817,18 @@ void MapInvenPoolSlots(MOUSE_REGION * pRegion, INT32 iReason )
 			}
 
 			// Else, try to place here
+			// SQUAD_BIVOUAC: when the cursor item came from the bivouac panel, the sector
+			// index is unknown (-1) - ownership tracking inside PlaceObjectInInventoryStash
+			// must not use a bivouac slot index as a sector index
+			INT32 iSectorSourceSlot = iCurrentlyPickedUpItem;
+			if( iCurrentlyPickedUpBivouacItem != -1 )
+			{
+				iSectorSourceSlot = -1;
+				iCurrentlyPickedUpBivouacItem = -1;
+			}
+
 			if ( PlaceObjectInInventoryStash( &( pInventoryPoolList[ ( iCurrentInventoryPoolPage * MAP_INVENTORY_POOL_SLOT_COUNT ) + iCounter ].object ), gpItemPointer,
-				( iCurrentInventoryPoolPage * MAP_INVENTORY_POOL_SLOT_COUNT ) + iCounter, iCurrentlyPickedUpItem ) )
+				( iCurrentInventoryPoolPage * MAP_INVENTORY_POOL_SLOT_COUNT ) + iCounter, iSectorSourceSlot ) )
 			{
 				// nothing here before, then place here
 				if (iOldNumberOfObjects == 0)
@@ -1891,18 +2087,52 @@ void CreateMapInventoryButtons(void)
 	HandleSetFilterButtons();
 
 	// Gear Template: Save template button
-	guiMapInvenFilterButtonImage[10] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 40, 40, -1, 41, -1);
+	guiMapInvenFilterButtonImage[10] = guiBivouacPanelDoneButtonImage = LoadButtonImage(
+		INTERFACE_SECTOR_INV_BUTTONS_FILENAME,
+		static_cast<INT32>(MapInventoryFilterButtons::SaveTemplateButtonOn),
+		static_cast<INT32>(MapInventoryFilterButtons::SaveTemplateButtonOn),
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::SaveTemplateButtonOff),
+		-1
+	);
 	guiMapInvenFilterButton[10] = QuickCreateButton(guiMapInvenFilterButtonImage[10], INVEN_POOL_X + 371 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
 		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
 		NULL, (GUI_CALLBACK)MapInventoryWriteEquipmentTemplate);
 	// Gear Template: Read template button
-	guiMapInvenFilterButtonImage[11] = LoadButtonImage("INTERFACE\\sector_inventory_buttons.sti", 42, 42, -1, 43, -1);
+	guiMapInvenFilterButtonImage[11] = guiBivouacPanelDoneButtonImage = LoadButtonImage(
+		INTERFACE_SECTOR_INV_BUTTONS_FILENAME,
+		static_cast<INT32>(MapInventoryFilterButtons::ReadTemplateButtonOn),
+		static_cast<INT32>(MapInventoryFilterButtons::ReadTemplateButtonOn),
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::ReadTemplateButtonOff),
+		-1
+	);
+
 	guiMapInvenFilterButton[11] = QuickCreateButton(guiMapInvenFilterButtonImage[11], INVEN_POOL_X + 406 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
 		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
 		NULL, (GUI_CALLBACK)MapInventoryReadEquipmentTemplate);
+
+	// SQUAD_BIVOUAC: open/close the squad bivouac panel.
+	// Reuses the sector inventory zoom icon (magnifier) - it visually reads as "look inside".
+	// The button is only clickable when a bivouac-capable character is selected.
+	guiMapInvenFilterButtonImage[12] = guiBivouacPanelDoneButtonImage = LoadButtonImage(
+		INTERFACE_SECTOR_INV_BUTTONS_FILENAME,
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::OpenBivouacOn),
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::DropAllFromBivouacOff),
+		-1);
+	guiMapInvenFilterButton[12] = QuickCreateButton(guiMapInvenFilterButtonImage[12], INVEN_POOL_X + 441 + xResOffset, INVEN_POOL_Y + 10 + yResOffset,
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		NULL, (GUI_CALLBACK)MapInventoryBivouacToggleBtn);
+
+	SetButtonFastHelpText(guiMapInvenFilterButton[12], gzLateLocalizedString[ 82 ]);
 	return;
 }
 
+
+// Flugente: 
+extern void EquipmentListMenuCancel();
 
 // Flugente: 
 extern void EquipmentListMenuCancel();
@@ -2365,6 +2595,31 @@ void BeginInventoryPoolPtr( OBJECTTYPE *pInventorySlot )
 
 		if ( _KeyDown ( CTRL ))//MM: Pass item to selected merc.  Delete if none selected.
 		{
+			// SQUAD_BIVOUAC: with the bivouac panel open, CTRL+LMB sends the picked item
+			// into the bivouac instead of autoplacing it into the merc's inventory (the
+			// vanilla path also force-opens the merc inventory panel under the bivouac)
+			if( fShowBivouacPanel )
+			{
+				if( BivouacTryPlaceCursorItem( ) )
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 70 ] );
+					MAPEndItemPointer( );
+				}
+				else
+				{
+					// bivouac (partially) full: return everything to the sector stash slot
+					gpItemPointer->MoveThisObjectTo( *pInventorySlot );
+					MAPEndItemPointer( );
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 72 ] );
+				}
+
+				if ( fShowMapInventoryPool )
+					HandleButtonStatesWhileMapInventoryActive();
+
+				fMapPanelDirty = TRUE;
+				return;
+			}
+
 			SOLDIERTYPE *pSoldier = &Menptr[ gCharactersList[ bSelectedInfoChar ].usSolID ];
 			bool placedAllObjects = false;
 
@@ -2625,6 +2880,13 @@ BOOLEAN AutoPlaceObjectInInventoryStash( OBJECTTYPE *pItemPtr, INT32 sGridNo, IN
 				pInventoryPoolList[cnt].sGridNo = sGridNo;
 				pInventoryPoolList[cnt].usFlags |= WORLD_ITEM_REACHABLE;
 				pInventoryPoolList[cnt].ubLevel = ubLevel;
+				pInventoryPoolList[cnt].bVisible = 1;
+				pInventoryPoolList[cnt].fExists = TRUE;
+			}
+			else
+			{
+				// SQUAD_BIVOUAC: sGridNo == 0 means "don't touch position data" - still
+				// mark the freshly occupied slot valid for the UI (matches SaveSeenAndUnseenItems)
 				pInventoryPoolList[cnt].bVisible = 1;
 				pInventoryPoolList[cnt].fExists = TRUE;
 			}
@@ -3408,6 +3670,19 @@ void HandleButtonStatesWhileMapInventoryActive( void )
 		DisableButton( guiMapInvenSortButton[ 1 ] );
 		DisableButton( guiMapInvenSortButton[ 2 ] );
 		DisableButton( guiMapInvenSortButton[ 3 ] );
+	}
+
+	// SQUAD_BIVOUAC: the bivouac toggle button is enabled only when opening the bivouac
+	// is currently allowed (same checks as the 'B' hotkey: no cursor item, valid squad
+	// character, squad not moving, peaceful sector, enough live mercs). While the panel
+	// is open the button must stay enabled so it can close the panel again.
+	if( fShowBivouacPanel || IsBivouacPanelAllowedForSelectedChar( ) )
+	{
+		EnableButton( guiMapInvenFilterButton[ 12 ] );
+	}
+	else
+	{
+		DisableButton( guiMapInvenFilterButton[ 12 ] );
 	}
 }
 
@@ -6431,11 +6706,10 @@ void TemplateNameInputCallBack(UINT8 ubResult)
 {
 	if (ubResult == MSG_BOX_RETURN_OK && wcscmp(gszMsgBoxInputString, L"") > 0)
 	{
-		//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
 		SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
 		if (pSoldier)
 		{
-			// »—œ–¿¬À≈ÕŒ: —ÓÁ‰‡ÂÏ ˝ÍÁÂÏÔÎˇ ÌÓ‚Ó„Ó ÍÎ‡ÒÒ‡ ÏÂÌÂ‰ÊÂ‡ Ì‡ ÒÚÂÍÂ Ë ‚˚Á˚‚‡ÂÏ Â„Ó ÏÂÚÓ‰
+			// –ò–°–ü–†–ê–í–õ–ï–ù–û: –°–æ–∑–¥–∞–µ–º —ç–∫–∑–µ–º–ø–ª—è—Ä –Ω–æ–≤–æ–≥–æ –∫–ª–∞—Å—Å–∞ –º–µ–Ω–µ–¥–∂–µ—Ä–∞ –Ω–∞ —Å—Ç–µ–∫–µ –∏ –≤—ã–∑—ã–≤–∞–µ–º –µ–≥–æ –º–µ—Ç–æ–¥
 			GearTemplateManager gearManager;
 			gearManager.CreateFromSoldier(pSoldier, gszMsgBoxInputString);
 
@@ -6466,10 +6740,9 @@ void MapInventoryWriteEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
 	{
 		if (btn->uiFlags & (BUTTON_CLICKED_ON))
 		{
-			// »—œ–¿¬À≈Õ»≈: —‡ÁÛ ÒÌËÏ‡ÂÏ ÙÎ‡„ Ì‡Ê‡ÚËˇ, ˜ÚÓ·˚ ÍÌÓÔÍ‡ ‚ÂÌÛÎ‡Ò¸ ‚ ËÒıÓ‰ÌÓÂ ÒÓÒÚÓˇÌËÂ
+			// –ò–°–ü–†–ê–í–õ–ï–ù–ò–ï: –°—Ä–∞–∑—É —Å–Ω–∏–º–∞–µ–º —Ñ–ª–∞–≥ –Ω–∞–∂–∞—Ç–∏—è, —á—Ç–æ–±—ã –∫–Ω–æ–ø–∫–∞ –≤–µ—Ä–Ω—É–ª–∞—Å—å –≤ –∏—Å—Ö–æ–¥–Ω–æ–µ —Å–æ—Å—Ç–æ—è–Ω–∏–µ
 			btn->uiFlags &= ~(BUTTON_CLICKED_ON);
 
-			//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
 			SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
 			if (pSoldier)
 			{
@@ -6499,10 +6772,9 @@ void MapInventoryReadEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
 	{
 		if (btn->uiFlags & (BUTTON_CLICKED_ON))
 		{
-			// »—œ–¿¬À≈Õ»≈: —ÌËÏ‡ÂÏ ÙÎ‡„ Ì‡Ê‡ÚËˇ. ÃÂÌ˛ ÓÚÍÓÂÚÒˇ ˇ‰ÓÏ, ‡ ÍÌÓÔÍ‡ ‚ËÁÛ‡Î¸ÌÓ ÓÚÓÊÏÂÚÒˇ.
+			// –ò–°–ü–†–ê–í–õ–ï–ù–ò–ï: –°–Ω–∏–º–∞–µ–º —Ñ–ª–∞–≥ –Ω–∞–∂–∞—Ç–∏—è. –ú–µ–Ω—é –æ—Ç–∫—Ä–æ–µ—Ç—Å—è —Ä—è–¥–æ–º, –∞ –∫–Ω–æ–ø–∫–∞ –≤–∏–∑—É–∞–ª—å–Ω–æ –æ—Ç–æ–∂–º–µ—Ç—Å—è.
 			btn->uiFlags &= ~(BUTTON_CLICKED_ON);
 
-			//TODO travnik SOLDIERTYPE* pSoldier = gCharactersList[bSelectedInfoChar].usSolID;
 			SOLDIERTYPE* pSoldier = MercPtrs[gCharactersList[bSelectedInfoChar].usSolID];
 			if (pSoldier &&
 				pSoldier->sSectorX == sSelMapX && pSoldier->sSectorY == sSelMapY && pSoldier->bSectorZ == iCurrentMapSectorZ &&
@@ -6521,6 +6793,1163 @@ void MapInventoryReadEquipmentTemplate(GUI_BUTTON* btn, INT32 reason)
 			else
 			{
 				DoScreenIndependantMessageBox(szGearTemplateText[2], MSG_BOX_FLAG_OK, NULL);
+			}
+		}
+	}
+}
+
+// SQUAD_BIVOUAC: sector inventory toolbar button - open/close the bivouac panel.
+// Mirrors the 'B' hotkey handler in mapscreen.cpp: close when open, otherwise run the
+// full access check for the selected character and open the panel for his squad.
+void MapInventoryBivouacToggleBtn( GUI_BUTTON* btn, INT32 reason )
+{
+	if( reason & MSYS_CALLBACK_REASON_LBUTTON_DWN )
+	{
+		if( !( btn->uiFlags & ( BUTTON_CLICKED_ON ) ) )
+		{
+			btn->uiFlags |= ( BUTTON_CLICKED_ON );
+		}
+	}
+
+	if( reason & MSYS_CALLBACK_REASON_LBUTTON_UP )
+	{
+		if( btn->uiFlags & ( BUTTON_CLICKED_ON ) )
+		{
+			btn->uiFlags &= ~( BUTTON_CLICKED_ON );
+
+			if( fShowBivouacPanel )
+			{
+				// close: stash stored back via CreateDestroyBivouacPanel
+				CloseBivouacPanel( TRUE );
+			}
+			else if( IsBivouacPanelAllowedForSelectedChar( ) )
+			{
+				SQBM().SetBivouacUIMode( TRUE );
+				SQBM().SetActiveUISquadID( SQBM().GetBivouacUISquadID( ) );
+
+				fShowBivouacPanel = TRUE;
+
+				ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 69 ] );
+			}
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SQUAD_BIVOUAC: compact left-panel bivouac inventory
+//
+// Visual/functional clone of the vehicle trunk grid (3 columns, BIG_INV_SLOT sized cells) rendered
+// over the left-hand team list column. Data flows through the dedicated pBivouacPanelList stash
+// (filled by SQBM().BuildBivouacStash on open, stored back by SQBM().StoreBivouacStash on close),
+// separate from pInventoryPoolList so the fullscreen sector inventory can run concurrently.
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// coordinates of bivouac panel slot iCounter (0..29); the grid is centered in the panel
+static void BivouacPanelGetSlotCoords( INT32 iCounter, INT16 *psX, INT16 *psY )
+{
+	INT32 sPanelWidth = MAP_BORDER_X - 2 * 8;
+	INT32 sAvailHeight = ( BIVOUAC_PANEL_END_Y - BIVOUAC_PANEL_BTN_RESERVE ) - BIVOUAC_PANEL_START_Y;
+
+	INT32 sGridX = PLAYER_INFO_X + 8 + __max( 0, ( sPanelWidth - BIVOUAC_PANEL_GRID_WIDTH ) / 2 );
+	INT32 sGridY = BIVOUAC_PANEL_START_Y + __max( 0, ( sAvailHeight - BIVOUAC_PANEL_GRID_HEIGHT ) / 2 );
+
+	*psX = (INT16)( sGridX + ( ( iCounter % BIVOUAC_PANEL_COLS ) * BIVOUAC_PANEL_COL_STEP ) );
+	*psY = (INT16)( sGridY + ( ( iCounter / BIVOUAC_PANEL_COLS ) * BIVOUAC_PANEL_ROW_STEP ) );
+}
+
+// SQUAD_BIVOUAC: Y of the bottom button row, centered in the strip between the bottom of
+// the slot grid and the bottom edge of the panel. The grid bottom must be computed the
+// same way BivouacPanelGetSlotCoords does it.
+static INT16 BivouacPanelGetButtonsY( void )
+{
+	INT32 sPanelWidth = MAP_BORDER_X - 2 * 8;
+	INT32 sAvailHeight = ( BIVOUAC_PANEL_END_Y - BIVOUAC_PANEL_BTN_RESERVE ) - BIVOUAC_PANEL_START_Y;
+
+	INT32 sGridBottom = BIVOUAC_PANEL_START_Y + __max( 0, ( sAvailHeight - BIVOUAC_PANEL_GRID_HEIGHT ) / 2 )
+		+ BIVOUAC_PANEL_GRID_HEIGHT;
+
+	INT32 sStripHeight = BIVOUAC_PANEL_END_Y - sGridBottom;
+
+	return (INT16)( sGridBottom + __max( 0, ( sStripHeight - BIVOUAC_PANEL_BTN_ROW_HEIGHT ) / 2 ) );
+}
+
+BOOLEAN IsBivouacPanelAllowedForSelectedChar( void )
+{
+	if( fShowBivouacPanel )
+	{
+		return( FALSE );
+	}
+
+	// no item currently on cursor
+	if( gpItemPointer != NULL )
+	{
+		return( FALSE );
+	}
+
+	if( bSelectedInfoChar == -1 || gCharactersList[ bSelectedInfoChar ].fValid == FALSE )
+	{
+		return( FALSE );
+	}
+
+	return( SQBM().UpdateBivouacUIModeForSelectedChar( bSelectedInfoChar ) );
+}
+
+void BuildBivouacPanelStash( void )
+{
+	// fill the dedicated panel stash from the squad's bivouac slots
+	SQBM().BuildBivouacStash( pBivouacPanelList );
+
+	// single page, no unseen items
+	iCurrentInventoryPoolPage = 0;
+	iLastInventoryPoolPage = 0;
+	uiNumberOfUnSeenItems = 0;
+	pUnSeenItems.clear();
+
+	fMapInventoryZoom = FALSE;
+	fWaitingForZoomInput = FALSE;
+}
+
+// SQUAD_BIVOUAC: header column buttons (Name / Location / Time) on the bivouac panel top strip.
+// The bivouac panel covers the team list, so its sort buttons would be hidden underneath -
+// recreate clickable text buttons for the three most useful sort columns on the panel itself.
+static void BivouacPanelMaskCallback( MOUSE_REGION *pRegion, INT32 iReason )
+{
+	// background mask: any mouse activity over the panel kills the team list highlight,
+	// so merc tooltips/highlight never shine through the bivouac UI
+	if( iReason & ( MSYS_CALLBACK_REASON_MOVE | MSYS_CALLBACK_REASON_LOST_MOUSE ) )
+	{
+		giHighLine = -1;
+		giAssignHighLine = -1;
+		giDestHighLine = -1;
+		giContractHighLine = -1;
+		giSleepHighLine = -1;
+	}
+}
+
+static void BivouacPanelCreateSlots( void )
+{
+	// SQUAD_BIVOUAC: block the merc inventory underneath the panel - the merc's inventory
+	// is not visible while the bivouac panel is open, so its slots/camo/weight/keyring
+	// regions must not receive mouse input through the panel
+	// NOTE: gSMInvRegion/gSMInvCamoRegion etc. only exist while the merc inventory is
+	// open (fShowInventoryFlag), guard against disabling undefined regions
+	if( fShowInventoryFlag )
+	{
+		DisableInvRegions( TRUE );
+	}
+	MSYS_DisableRegion( &gMapMercWeightRegion );
+	MSYS_DisableRegion( &gMapMercCamoRegion );
+
+	// background mask over the whole panel: higher priority than the team list regions,
+	// so their tooltips/highlight cannot trigger while the bivouac panel is open.
+	// NOTE: must also cover the merc inventory "Done"/trash/keyring widgets (created
+	// with priorities up to MSYS_PRIORITY_HIGHEST-1 = 126) - a HIGHEST (127) mask
+	// blocks all of them; the panel's own slots/callbacks use explicit higher levels
+	MSYS_DefineRegion( &BivouacPanelMaskRegion,
+		PLAYER_INFO_X, PLAYER_INFO_Y - 2,
+		(INT16)( PLAYER_INFO_X + MAP_BORDER_X ), BIVOUAC_PANEL_END_Y,
+		MSYS_PRIORITY_HIGHEST, MSYS_NO_CURSOR,
+		MSYS_NO_CALLBACK, BivouacPanelMaskCallback );
+	// SQUAD_BIVOUAC: popups (stack popup, item description) are created at HIGHEST/HIGHEST-1
+	// over the panel - disable the mask while one is open so they receive clicks
+	if( InSectorStackPopup( ) || InItemStackPopup( ) || InItemDescriptionBox( ) )
+	{
+		MSYS_DisableRegion( &BivouacPanelMaskRegion );
+	}
+
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		INT16 sX, sY;
+		BivouacPanelGetSlotCoords( iCounter, &sX, &sY );
+
+		// slots live ABOVE the mask (see comment above) so they stay clickable
+		MSYS_DefineRegion( &BivouacPanelSlots[ iCounter ],
+			sX, sY,
+			(INT16)( sX + BIVOUAC_PANEL_CELL_WIDTH ), (INT16)( sY + BIVOUAC_PANEL_CELL_HEIGHT ),
+			MSYS_PRIORITY_HIGHEST, MSYS_NO_CURSOR,
+			BivouacPanelSlotsMoveCallback, BivouacPanelSlotsCallback );
+
+		MSYS_SetRegionUserData( &BivouacPanelSlots[ iCounter ], 0, iCounter );
+	}
+
+	// done button, at the BOTTOM of the panel (like the map screen item description Done button).
+	// SQUAD_BIVOUAC: the drop-all and Done buttons form one centered group under the item
+	// slots: [drop-all 28px] gap [Done 35px], group total 69px -> x offset = (261 - 69) / 2 = 96.
+	// The panel center (PLAYER_INFO_X + MAP_BORDER_X / 2) equals the item slot grid center,
+	// because the grid uses the same centering formula (see BivouacPanelGetSlotCoords).
+	// Vertically the group is centered between the bottom slot row and the panel bottom edge;
+	// each button centers its own sprite height (28 vs 27) on the same strip middle.
+	INT16 sBtnMid = BivouacPanelGetButtonsY( ) + BIVOUAC_PANEL_BTN_ROW_HEIGHT / 2;
+	INT16 sBtnsX = (INT16)( PLAYER_INFO_X + ( MAP_BORDER_X - BIVOUAC_PANEL_BTNS_TOTAL_WIDTH ) / 2 );
+
+	guiBivouacPanelDoneButtonImage = LoadButtonImage(
+		INTERFACE_SECTOR_INV_BUTTONS_FILENAME,
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::OpenBivouacOn),
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::OpenBivouacOff),
+		-1
+	);
+
+	guiBivouacPanelDoneButton = QuickCreateButton( guiBivouacPanelDoneButtonImage,
+		(INT16)( sBtnsX + BIVOUAC_PANEL_DROPALL_BTN_WIDTH + BIVOUAC_PANEL_BTN_GAP ), (INT16)( sBtnMid - BIVOUAC_PANEL_DONE_BTN_HEIGHT / 2 ),
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		(GUI_CALLBACK)BtnGenericMouseMoveButtonCallback, (GUI_CALLBACK)BivouacPanelDoneBtn );
+
+	SetButtonFastHelpText( guiBivouacPanelDoneButton, pMapScreenInvenButtonHelpText[ 2 ] );
+	// SQUAD_BIVOUAC: "drop all" button, left of the Done button.
+	// Reuses the sector inventory's stack-and-merge icon (arrows merging into one slot).
+	guiBivouacPanelDropAllButtonImage = LoadButtonImage(
+		INTERFACE_SECTOR_INV_BUTTONS_FILENAME,
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::DropAllFromBivouacOn),
+		-1,
+		static_cast<INT32>(MapInventoryFilterButtons::DropAllFromBivouacOff),
+		-1
+	);
+
+	guiBivouacPanelDropAllButton = QuickCreateButton( guiBivouacPanelDropAllButtonImage,
+		sBtnsX, (INT16)( sBtnMid - BIVOUAC_PANEL_DROPALL_BTN_HEIGHT / 2 ),
+		BUTTON_TOGGLE, MSYS_PRIORITY_HIGHEST,
+		(GUI_CALLBACK)BtnGenericMouseMoveButtonCallback, (GUI_CALLBACK)BivouacPanelDropAllBtn );
+
+	SetButtonFastHelpText( guiBivouacPanelDropAllButton, gzLateLocalizedString[ 81 ] );
+}
+
+static void BivouacPanelDestroySlots( void )
+{
+	MSYS_RemoveRegion( &BivouacPanelMaskRegion );
+
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		MSYS_RemoveRegion( &BivouacPanelSlots[ iCounter ] );
+	}
+
+	// SQUAD_BIVOUAC: restore the merc inventory input blocked when the panel opened
+	if( fShowInventoryFlag )
+	{
+		DisableInvRegions( FALSE );
+	}
+	MSYS_EnableRegion( &gMapMercWeightRegion );
+	MSYS_EnableRegion( &gMapMercCamoRegion );
+
+	if( guiBivouacPanelDoneButton )
+	{
+		RemoveButton( guiBivouacPanelDoneButton );
+		UnloadButtonImage( guiBivouacPanelDoneButtonImage );
+		guiBivouacPanelDoneButton = 0;
+		guiBivouacPanelDoneButtonImage = 0;
+	}
+
+	// SQUAD_BIVOUAC: remove the drop-all button
+	if( guiBivouacPanelDropAllButton )
+	{
+		RemoveButton( guiBivouacPanelDropAllButton );
+		UnloadButtonImage( guiBivouacPanelDropAllButtonImage );
+		guiBivouacPanelDropAllButton = 0;
+		guiBivouacPanelDropAllButtonImage = 0;
+	}
+}
+
+void CreateDestroyBivouacPanel( void )
+{
+	if( fShowBivouacPanel && !gfBivouacPanelCreated )
+	{
+		// open
+		BuildBivouacPanelStash( );
+
+		// load the item description box panel graphic (wood background)
+		VOBJECT_DESC VObjectDesc;
+		VObjectDesc.fCreateFlags = VOBJECT_CREATE_FROMFILE;
+		strcpy( VObjectDesc.ImageFile, "INTERFACE\\iteminfoc.STI" );
+		if( AddVideoObject( &VObjectDesc, &guiBivouacPanelBackground ) == FALSE )
+		{
+			guiBivouacPanelBackground = 0;
+		}
+
+		BivouacPanelCreateSlots( );
+		gfBivouacPanelCreated = TRUE;
+
+		fMapPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
+		fCharacterInfoPanelDirty = TRUE;
+	}
+	else if( !fShowBivouacPanel && gfBivouacPanelCreated )
+	{
+		// close
+		BivouacPanelDestroySlots( );
+
+		if( guiBivouacPanelBackground != 0 )
+		{
+			DeleteVideoObjectFromIndex( guiBivouacPanelBackground );
+			guiBivouacPanelBackground = 0;
+		}
+
+		// flush the stash back into the squad's bivouac
+		SQBM().StoreBivouacStash( pBivouacPanelList );
+		SQBM().SetBivouacUIMode( FALSE );
+		SQBM().SetActiveUISquadID( -1 );
+
+		gfBivouacPanelCreated = FALSE;
+
+		// close any open item description window
+		if( InItemDescriptionBox( ) )
+		{
+			DeleteItemDescriptionBox( );
+		}
+
+		fMapPanelDirty = TRUE;
+		fMapScreenBottomDirty = TRUE;
+		fCharacterInfoPanelDirty = TRUE;
+		// SQUAD_BIVOUAC: the team list column was covered by the panel - force the
+		// team panel background to redraw immediately, otherwise it stays stale
+		// until some other subsystem happens to set this flag
+		fTeamPanelDirty = TRUE;
+	}
+
+	if( gfBivouacPanelCreated )
+	{
+		// SQUAD_BIVOUAC: popups (stack popup, item description) may be opened/closed at any
+		// time over the panel - keep the background mask disabled while one is open, otherwise
+		// it swallows their clicks (mask is HIGHEST, popups are HIGHEST/HIGHEST-1)
+		static BOOLEAN fMaskWasDisabled = FALSE;
+
+		if( ( InSectorStackPopup( ) || InItemStackPopup( ) || InItemDescriptionBox( ) ) && !fMaskWasDisabled )
+		{
+			MSYS_DisableRegion( &BivouacPanelMaskRegion );
+			fMaskWasDisabled = TRUE;
+		}
+		else if( !( InSectorStackPopup( ) || InItemStackPopup( ) || InItemDescriptionBox( ) ) && fMaskWasDisabled )
+		{
+			MSYS_EnableRegion( &BivouacPanelMaskRegion );
+			fMaskWasDisabled = FALSE;
+		}
+
+		// auto-close when access is lost (squad started moving, combat started, ...)
+		// or when the selected character now belongs to a different squad
+		INT32 iSquad = SQBM().GetActiveUISquadID( );
+		if( iSquad == -1 ||
+			!SQBM().IsAccessAllowed( iSquad ) ||
+			SQBM().GetBivouacUISquadID( ) != iSquad )
+		{
+			CloseBivouacPanel( TRUE );
+		}
+	}
+}
+
+void CloseBivouacPanel( BOOLEAN fSaveStash )
+{
+	if( !fShowBivouacPanel )
+	{
+		return;
+	}
+
+	// an item on the cursor goes back into the bivouac stash to prevent item loss
+	// NOTE: AutoPlaceObjectInInventoryStash targets pInventoryPoolList (sector stash),
+	// not our pBivouacPanelList, so place the item manually
+	if( gpItemPointer != NULL )
+	{
+		for( INT32 iSlot = 0; iSlot < BIVOUAC_NUM_SLOTS; ++iSlot )
+		{
+			WORLDITEM& wi = pBivouacPanelList[ iSlot ];
+
+			if( wi.object.exists( ) == false )
+			{
+				gpItemPointer->MoveThisObjectTo( wi.object );
+				wi.fExists = TRUE;
+				wi.bVisible = 1;
+				wi.sGridNo = -1;
+				wi.usFlags = WORLD_ITEM_REACHABLE;
+				break;
+			}
+		}
+
+		// if the item still exists (stash full), drop it into the cursor target squad's
+		// sector via the standard pool - better than losing it
+		if( gpItemPointer->exists( ) )
+		{
+			AutoPlaceObjectInInventoryStash( gpItemPointer, 0, 0 );
+		}
+
+		MAPEndItemPointer( );
+	}
+
+	fShowBivouacPanel = FALSE;
+	CreateDestroyBivouacPanel( );
+}
+
+void RenderBivouacPanel( void )
+{
+	HVOBJECT hHandle;
+	CHAR16 sString[ 64 ];
+	INT16 sX, sY;
+
+	// SQUAD_BIVOUAC crash guard: the flag can be set one frame before the panel is actually
+	// built (CreateDestroyBivouacPanel runs in the handle phase) - pBivouacPanelList is empty
+	// until then, rendering it would read out of bounds
+	if( !gfBivouacPanelCreated || pBivouacPanelList.size( ) < BIVOUAC_NUM_SLOTS )
+	{
+		return;
+	}
+
+	// SQUAD_BIVOUAC: while a stack popup / item description is open over the panel, do not
+	// redraw the panel - it would paint over the popup every frame (the sector inventory
+	// does the same: the fullscreen pool render does not run while popups are open)
+	if( InSectorStackPopup( ) || InItemStackPopup( ) || InItemDescriptionBox( ) )
+	{
+		return;
+	}
+
+	// opaque backdrop: wood texture of the map screen item description box (iteminfoc.sti).
+	// The full box graphic contains the name bar / item slots, so instead of blitting the
+	// whole box we tile its clean wood band (rows 165..255 - verified identical in both
+	// subimages) across the entire panel, clipped to the panel rect. Base fill covers any
+	// remainder. A 48% shadow pass darkens the light-oak texture to dark wood afterwards.
+	UINT16 usBivouacBase = Get16BPPColor( FROMRGB( 24, 16, 8 ) );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER,
+		PLAYER_INFO_X, PLAYER_INFO_Y - 2,
+		PLAYER_INFO_X + MAP_BORDER_X, BIVOUAC_PANEL_END_Y,
+		usBivouacBase );
+
+	INT16 sBX = (INT16)PLAYER_INFO_X;
+	INT16 sBY = (INT16)( PLAYER_INFO_Y - 2 );
+	INT16 sBR = (INT16)( PLAYER_INFO_X + MAP_BORDER_X );
+	INT16 sBB = (INT16)BIVOUAC_PANEL_END_Y;
+
+	if( guiBivouacPanelBackground != 0 )
+	{
+		HVOBJECT hPanel;
+		GetVideoObject( &hPanel, guiBivouacPanelBackground );
+
+		// clean wood band: rows 165..255 in BOTH the 640x480 box (subimage 0) and the
+		// tall box (subimage 1) - pixel-verified, the band content is identical
+		UINT8 ubPanelImg = ( iResolution >= _640x480 && iResolution < _800x600 ) ? 0 : 1;
+		INT16 sStripY = 165;		// top of the clean wood band
+		INT16 sStripH = 90;			// height of the band
+
+		SGPRect OldClip;
+		GetClippingRect( &OldClip );
+
+		// tile the strip vertically over the panel; each tile is clipped to exactly one
+		// band of the panel so ONLY the clean wood rows of the box graphic are visible -
+		// blitting the whole image unclipped would leak the box's slots/borders into the panel
+		for( INT16 sY = sBY; sY < sBB; sY += sStripH )
+		{
+			SGPRect TileClip;
+			TileClip.iLeft = sBX;
+			TileClip.iTop = sY;
+			TileClip.iRight = sBR;
+			TileClip.iBottom = (INT16)__min( (INT32)sY + sStripH, (INT32)sBB );
+			SetClippingRect( &TileClip );
+
+			BltVideoObject( guiSAVEBUFFER, hPanel, ubPanelImg,
+				sBX, (INT16)( sY - sStripY ), VO_BLT_SRCTRANSPARENCY, NULL );
+		}
+
+		SetClippingRect( &OldClip );
+
+		// darken the light-oak wood to dark wood: 0.48 * 0.8 * 0.8 = 0.307 multiplier,
+		// mapping source avg (144,115,64) to the target dark-brown range
+		// (~30..60 R, 20..40 G, 15..30 B)
+		ShadowVideoSurfaceRect( guiSAVEBUFFER, sBX, sBY, sBR, sBB );
+		ShadowVideoSurfaceRectUsingLowPercentTable( guiSAVEBUFFER, sBX, sBY, sBR, sBB );
+		ShadowVideoSurfaceRectUsingLowPercentTable( guiSAVEBUFFER, sBX, sBY, sBR, sBB );
+	}
+
+	// frame around the panel: dark outline, then a lighter bevel (matching the interface)
+	UINT16 usBivouacFrameDark = Get16BPPColor( FROMRGB( 8, 0, 0 ) );
+	UINT16 usBivouacFrameLight = Get16BPPColor( FROMRGB( 57, 41, 33 ) );
+
+	// outer dark outline (1px)
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, sBX, sBY, sBR, (INT16)( sBY + 1 ), usBivouacFrameDark );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, sBX, (INT16)( sBB - 1 ), sBR, sBB, usBivouacFrameDark );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, sBX, sBY, (INT16)( sBX + 1 ), sBB, usBivouacFrameDark );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, (INT16)( sBR - 1 ), sBY, sBR, sBB, usBivouacFrameDark );
+
+	// inner light bevel (1px)
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, (INT16)( sBX + 1 ), (INT16)( sBY + 1 ), (INT16)( sBR - 1 ), (INT16)( sBY + 2 ), usBivouacFrameLight );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, (INT16)( sBX + 1 ), (INT16)( sBB - 2 ), (INT16)( sBR - 1 ), (INT16)( sBB - 1 ), usBivouacFrameLight );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, (INT16)( sBX + 1 ), (INT16)( sBY + 1 ), (INT16)( sBX + 2 ), (INT16)( sBB - 1 ), usBivouacFrameLight );
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER, (INT16)( sBR - 2 ), (INT16)( sBY + 1 ), (INT16)( sBR - 1 ), (INT16)( sBB - 1 ), usBivouacFrameLight );
+
+	// header strip underline, separates the header from the grid
+	ColorFillVideoSurfaceArea( guiSAVEBUFFER,
+		sBX, (INT16)( PLAYER_INFO_Y + 32 ),
+		sBR, (INT16)( PLAYER_INFO_Y + 34 ),
+		usBivouacFrameLight );
+
+	// slot backgrounds (same graphic as the sector inventory slots)
+	GetVideoObject( &hHandle, guiMapInventoryPoolSlot );
+
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		BivouacPanelGetSlotCoords( iCounter, &sX, &sY );
+		BltVideoObject( guiSAVEBUFFER, hHandle, 0, sX, sY, VO_BLT_SRCTRANSPARENCY, NULL );
+	}
+
+	// SQUAD_BIVOUAC: NIV pocket silhouettes for empty slots.
+	// The silhouette index is read from the slot's pocket template (LBEPocketType),
+	// exactly like INVRenderSilhouette() does for merc pockets.
+	HVOBJECT hSilhouette;
+	GetVideoObject( &hSilhouette, guiSILHOUETTE );
+
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		WORLDITEM *pWI = &( pBivouacPanelList[ iCounter ] );
+
+		if( pWI->object.exists( ) == true )
+		{
+			continue;
+		}
+
+		// disabled slot: no silhouette, the hatching pass below marks it
+		if( BivouacSlotDisabled( iCounter ) )
+		{
+			continue;
+		}
+
+		UINT8 ubSilhouetteID = LBEPocketType[ gBivouacSlotsConfig[ iCounter ].pPocketIndex ].pSilhouette;
+
+		// silhouette index must exist in the Silhouettes.sti image collection
+		if( ubSilhouetteID >= hSilhouette->usNumberOfObjects )
+		{
+			continue;
+		}
+
+		BivouacPanelGetSlotCoords( iCounter, &sX, &sY );
+
+		ETRLEObject *pTrav = &( hSilhouette->pETRLEObject[ ubSilhouetteID ] );
+
+		// center the silhouette inside the slot cell, canceling the image offsets
+		INT16 sCenX = (INT16)( sX + abs( BIVOUAC_PANEL_CELL_WIDTH - (double)pTrav->usWidth ) / 2 ) - pTrav->sOffsetX;
+		INT16 sCenY = (INT16)( sY + abs( BIVOUAC_PANEL_CELL_HEIGHT - (double)pTrav->usHeight ) / 2 ) - pTrav->sOffsetY;
+
+		BltVideoObjectOutlineFromIndex( guiSAVEBUFFER, guiSILHOUETTE, ubSilhouetteID, sCenX, sCenY, 0, FALSE );
+	}
+
+	// SQUAD_BIVOUAC: disabled slots get a subtle dark tint + dim red grid.
+	// A disabled slot has no pocket template assigned (pPocketIndex == 0xFF or out of
+	// range): it rejects every item, so it is marked unavailable without shouting.
+	UINT16 usBivouacGrid = Get16BPPColor( FROMRGB( 110, 45, 45 ) );
+
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		if( BivouacSlotDisabled( iCounter ) == FALSE )
+		{
+			continue;
+		}
+
+		BivouacPanelGetSlotCoords( iCounter, &sX, &sY );
+
+		INT16 sRX = (INT16)( sX + 2 );
+		INT16 sRY = (INT16)( sY + 2 );
+		INT16 sRR = (INT16)( sX + BIVOUAC_PANEL_CELL_WIDTH - 2 );
+		INT16 sRB = (INT16)( sY + BIVOUAC_PANEL_CELL_HEIGHT - 2 );
+
+		// light dark tint over the slot cell (was 45,10,10 - too heavy)
+		ColorFillVideoSurfaceArea( guiSAVEBUFFER, sRX, sRY, sRR, sRB, Get16BPPColor( FROMRGB( 70, 30, 25 ) ) );
+
+		// dim red grid: 1px horizontal lines every 5px
+		for( INT16 sGY = sRY; sGY < sRB; sGY += 5 )
+		{
+			ColorFillVideoSurfaceArea( guiSAVEBUFFER, sRX, sGY, sRR, (INT16)( sGY + 1 ), usBivouacGrid );
+		}
+
+		// dim red grid: 1px vertical lines every 5px
+		for( INT16 sGX = sRX; sGX < sRR; sGX += 5 )
+		{
+			ColorFillVideoSurfaceArea( guiSAVEBUFFER, sGX, sRY, (INT16)( sGX + 1 ), sRB, usBivouacGrid );
+		}
+	}
+
+	// items
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		WORLDITEM *pWI = &( pBivouacPanelList[ iCounter ] );
+
+		if( pWI->object.exists( ) == false )
+		{
+			continue;
+		}
+
+		BivouacPanelGetSlotCoords( iCounter, &sX, &sY );
+
+		INT16 sOutLine = us16BPPItemCyclePlacedItemColors[ 0 ];
+
+		// SQUAD_BIVOUAC: render into the panel surface; without this switch all the text
+		// INVRenderItem draws (stack count, ammo counter, jam, attachment asterisks) goes
+		// to FRAME_BUFFER and is lost - same pattern as RenderItemInPoolSlot()
+		SetFontDestBuffer( guiSAVEBUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, FALSE );
+
+		INVRenderItem( guiSAVEBUFFER, NULL, &( pWI->object ),
+			(INT16)( sX + 7 ), sY, 60, 25, DIRTYLEVEL2, NULL, 0, FALSE, sOutLine );
+
+		SetFontDestBuffer( FRAME_BUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, FALSE );
+
+		// condition bar
+		DrawItemUIBarEx( &( pWI->object ), 0,
+			(INT16)( sX + 5 ), (INT16)( sY + 22 ),
+			ITEMDESC_ITEM_STATUS_WIDTH_INV_POOL, ITEMDESC_ITEM_STATUS_HEIGHT_INV_POOL,
+			Get16BPPColor( DESC_STATUS_BAR ), Get16BPPColor( DESC_STATUS_BAR_SHADOW ), TRUE, guiSAVEBUFFER );
+
+		// item name
+		wcscpy( sString, ShortItemNames[ pWI->object.usItem ] );
+
+		if( StringPixLength( sString, MAP_INVEN_NAME_FONT ) >= ( BIVOUAC_PANEL_CELL_WIDTH ) )
+		{
+			ReduceStringLength( sString, (INT16)( BIVOUAC_PANEL_CELL_WIDTH - StringPixLength( L" ...", MAP_INVEN_NAME_FONT ) ), MAP_INVEN_NAME_FONT );
+		}
+
+		INT16 sWidth, sHeight;
+		FindFontCenterCoordinates( (INT16)( sX + 2 ), 0, BIVOUAC_PANEL_CELL_WIDTH, 0, sString, MAP_INVEN_NAME_FONT, &sWidth, &sHeight );
+
+		SetFont( MAP_INVEN_NAME_FONT );
+		SetFontForeground( FONT_GRAY2 );
+		SetFontBackground( FONT_BLACK );
+
+		mprintf( sWidth, (INT16)( sY + 25 ), sString );
+	}
+
+	// header line 1: squad title, line 2: current/max weight
+	INT32 iSquad = SQBM().GetActiveUISquadID( );
+
+	if( iSquad != -1 )
+	{
+		// SQUAD_BIVOUAC: while the panel is open the edits live in the local panel stash,
+		// the manager's slots are only updated on close - compute the current weight from
+		// pBivouacPanelList so the header reflects additions/removals immediately
+		UINT32 uiWeight = 0;
+		for( INT32 iSlot = 0; iSlot < BIVOUAC_NUM_SLOTS; ++iSlot )
+		{
+			uiWeight += CalculateObjectWeight( &( pBivouacPanelList[ iSlot ].object ) );
+		}
+
+		UINT32 uiCapacity = SQBM().GetWeightCapacity( iSquad );
+
+		INT16 sWidth, sHeight;
+
+		// SQUAD_BIVOUAC: draw into the panel surface (guiSAVEBUFFER) - the default
+		// FRAME_BUFFER destination gets overwritten by the save-buffer blit at frame end
+		// NOTE: fixed FONT10ARIAL - MAP_INVEN_NAME_FONT is the sector pool's zoom-dependent
+		// variable and changes between panel opens
+		SetFontDestBuffer( guiSAVEBUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, FALSE );
+
+		SetFont( FONT10ARIAL );
+		SetFontBackground( FONT_BLACK );
+
+		// line 1: "–ë–∏–≤—É–∞–∫ –æ—Ç—Ä—è–¥–∞ N" (squad number is 1-based for display) - white
+		swprintf( sString, gzLateLocalizedString[ 73 ], iSquad + 1 );
+		FindFontCenterCoordinates( PLAYER_INFO_X, 0, MAP_BORDER_X, 0,
+			sString, FONT10ARIAL, &sWidth, &sHeight );
+
+		SetFontForeground( FONT_WHITE );
+		mprintf( sWidth, (INT16)( PLAYER_INFO_Y + 4 ), sString );
+
+		// line 2: "prefix cur/max": the current weight number is drawn separately so it
+		// gets its own color (green normally, red when overloaded)
+		// weight in internal units (10ths of kg) -> display as kg with one decimal
+		// (prefix comes from the localized string - a Cyrillic literal here would be garbled
+		// because this source file's encoding differs from _RussianText.cpp)
+		CHAR16 sPrefix[ 64 ];
+		CHAR16 sCur[ 16 ];
+		CHAR16 sMax[ 16 ];
+		swprintf( sPrefix, gzLateLocalizedString[ 75 ] );
+		swprintf( sCur, L"%d.%d", uiWeight / 10, uiWeight % 10 );
+		swprintf( sMax, L"/%d.%d", uiCapacity / 10, uiCapacity % 10 );
+
+		UINT16 usPrefixW = StringPixLength( sPrefix, FONT10ARIAL );
+		UINT16 usCurW = StringPixLength( sCur, FONT10ARIAL );
+		UINT16 usMaxW = StringPixLength( sMax, FONT10ARIAL );
+		INT16 sTotalW = (INT16)( usPrefixW + usCurW + usMaxW );
+		INT16 sX0 = (INT16)( PLAYER_INFO_X + ( MAP_BORDER_X - sTotalW ) / 2 );
+
+		SetFontForeground( FONT_YELLOW );
+		mprintf( sX0, (INT16)( PLAYER_INFO_Y + 14 ), sPrefix );
+
+		SetFontForeground( ( uiWeight > uiCapacity ) ? FONT_LTRED : FONT_GREEN );
+		mprintf( (INT16)( sX0 + usPrefixW ), (INT16)( PLAYER_INFO_Y + 14 ), sCur );
+
+		SetFontForeground( FONT_YELLOW );
+		mprintf( (INT16)( sX0 + usPrefixW + usCurW ), (INT16)( PLAYER_INFO_Y + 14 ), sMax );
+
+		SetFontDestBuffer( FRAME_BUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, FALSE );
+	}
+
+	// fast help text for occupied slots
+	for( INT32 iCounter = 0; iCounter < BIVOUAC_NUM_SLOTS; ++iCounter )
+	{
+		WORLDITEM *pWI = &( pBivouacPanelList[ iCounter ] );
+
+		if( pWI->object.exists( ) == true )
+		{
+			CHAR16 pTemp[ 512 ];
+			GetHelpTextForItem( pTemp, &( pWI->object ), NULL );
+			SetRegionFastHelpText( &( BivouacPanelSlots[ iCounter ] ), pTemp );
+		}
+		else
+		{
+			SetRegionFastHelpText( &( BivouacPanelSlots[ iCounter ] ), L"" );
+		}
+	}
+
+	MarkButtonsDirty( );
+}
+
+static void BivouacPanelSlotsMoveCallback( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	INT32 iCounter = MSYS_GetRegionUserData( pRegion, 0 );
+
+	// disabled slots: no hover highlight at all
+	if( BivouacSlotDisabled( iCounter ) )
+	{
+		return;
+	}
+
+	if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
+	{
+		if( gpItemPointer == NULL )
+		{
+			iCurrentlyHighLightedItem = iCounter;
+			fChangedInventorySlots = TRUE;
+			fMapPanelDirty = TRUE;
+		}
+	}
+	else if( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
+	{
+		if( gpItemPointer == NULL )
+		{
+			iCurrentlyHighLightedItem = -1;
+			fChangedInventorySlots = TRUE;
+			fMapPanelDirty = TRUE;
+		}
+	}
+}
+
+static void BivouacPanelSlotsCallback( MOUSE_REGION * pRegion, INT32 iReason )
+{
+	INT32 iCounter = MSYS_GetRegionUserData( pRegion, 0 );
+	WORLDITEM *pWI = &( pBivouacPanelList[ iCounter ] );
+
+	// SQUAD_BIVOUAC: disabled slots do not react to clicks at all.
+	// An exception is a cursor item over a disabled slot: show WHY it is rejected.
+	if( BivouacSlotDisabled( iCounter ) )
+	{
+		if( ( iReason & MSYS_CALLBACK_REASON_LBUTTON_UP ) &&
+			gpItemPointer != NULL && gpItemPointer->exists( ) )
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 76 ] );
+		}
+
+		return;
+	}
+
+	// valid selected character required for all interactions
+	if( bSelectedInfoChar == -1 || gCharactersList[ bSelectedInfoChar ].fValid == FALSE )
+	{
+		return;
+	}
+
+	SOLDIERTYPE *pSoldier = MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ];
+
+	if( iReason & MSYS_CALLBACK_REASON_RBUTTON_UP )
+	{
+		// show description box / stack popup, same behavior as sector inventory
+		if( gpItemPointer == NULL && pWI->object.exists( ) == true &&
+			!InSectorStackPopup( ) && !InItemStackPopup( ) && !InKeyRingPopup( ) )
+		{
+			if( !CanPlayerUseSectorInventory( pSoldier ) )
+			{
+				DoMapMessageBox( MSG_BOX_BASIC_STYLE, New113HAMMessage[ 22 ], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL );
+			}
+			else if( pWI->object.ubNumberOfObjects > 1 && !_KeyDown( CTRL ) )
+			{
+				// multi-object stack: open the stack popup (one item per box), like sector inventory
+				InitSectorStackPopup( pSoldier, pWI, iCounter, xResOffset, yResOffset - 10, 261, ( SCREEN_HEIGHT - PLAYER_INFO_Y ) );
+				fTeamPanelDirty = TRUE;
+				fInterfacePanelDirty = DIRTYLEVEL2;
+			}
+			else
+			{
+				if( InItemDescriptionBox( ) )
+				{
+					DeleteItemDescriptionBox( );
+				}
+
+				MAPInternalInitItemDescriptionBox( &( pWI->object ), 0, pSoldier );
+			}
+		}
+	}
+	else if( iReason & MSYS_CALLBACK_REASON_LBUTTON_UP )
+	{
+		if( !CanPlayerUseSectorInventory( pSoldier ) )
+		{
+			DoMapMessageBox( MSG_BOX_BASIC_STYLE, pMapInventoryErrorString[ 3 ], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL );
+			return;
+		}
+
+		if( gpItemPointer == NULL )
+		{
+			// pick up
+			if( pWI->object.exists( ) == false )
+			{
+				return;
+			}
+
+			// debug deletion, same as sector inventory
+			if( _KeyDown( DEL ) )
+			{
+				if( _KeyDown( SHIFT ) )
+				{
+					pWI->object.ubNumberOfObjects = 0;
+				}
+				else
+				{
+					pWI->object.ubNumberOfObjects--;
+				}
+
+				ScreenMsg( FONT_MCOLOR_LTRED, MSG_INTERFACE, New113Message[ MSG113_DELETED ] );
+				fMapPanelDirty = TRUE;
+				return;
+			}
+
+			// SQUAD_BIVOUAC: CTRL+LMB moves the whole stack to the sector inventory
+			if( _KeyDown( CTRL ) )
+			{
+				// SQUAD_BIVOUAC: the sector inventory UI may be closed, in which case
+				// pInventoryPoolList is a stale/empty buffer (built/cleared when the pool
+				// opens/closes) - items placed there are lost. Bypass it:
+				// loaded sector  -> AddItemToPool() straight into the world item list
+				// other sector   -> AddWorldItemsToUnLoadedSector() into the temp item file
+				// EXCEPTION: while the fullscreen sector inventory is OPEN, the sector
+				// storage (gWorldItems / temp file) is shadowed by the pInventoryPoolList
+				// snapshot - closing the panel overwrites the storage with that snapshot,
+				// so direct writes would be lost. If the open panel shows the squad's
+				// sector, add the item into the snapshot instead.
+				BOOLEAN fPlaced = FALSE;
+
+				INT16 sSqX, sSqY, sSqZ;
+				INT32 iSquadID = SQBM().GetActiveUISquadID( );
+				if( iSquadID != -1 && SectorSquadIsIn( ( INT8 ) iSquadID, &sSqX, &sSqY, &sSqZ ) )
+				{
+					BOOLEAN fLoadedSector = ( gWorldSectorX == sSqX && gWorldSectorY == sSqY && gbWorldSectorZ == ( INT8 ) sSqZ );
+
+					// drop position: squad leader's gridno (loaded sector only)
+					INT32 sDropGridNo = -1;
+					if( fLoadedSector )
+					{
+						sDropGridNo = gMapInformation.sCenterGridNo;
+						for( INT32 iMember = 0; iMember < NUMBER_OF_SOLDIERS_PER_SQUAD; ++iMember )
+						{
+							SOLDIERTYPE *pMember = Squad[ iSquadID ][ iMember ];
+							if( pMember != NULL && pMember->bActive && pMember->stats.bLife > 0 &&
+								pMember->sSectorX == sSqX && pMember->sSectorY == sSqY && pMember->bSectorZ == ( INT8 ) sSqZ )
+							{
+								sDropGridNo = pMember->sGridNo;
+								break;
+							}
+						}
+					}
+
+					if( fShowMapInventoryPool &&
+						sSelMapX == sSqX && sSelMapY == sSqY && iCurrentMapSectorZ == ( INT32 ) sSqZ )
+					{
+						// sector inventory panel shadows this sector: append into its snapshot
+						WORLDITEM wi;
+						wi.initialize( );
+						wi.fExists = TRUE;
+						wi.bVisible = 1;
+						wi.ubLevel = 0;
+						wi.bRenderZHeightAboveLevel = 0;
+						wi.object = pWI->object;
+
+						if( fLoadedSector )
+						{
+							// resolve the gridno now: the snapshot is pushed back into the
+							// item pool through AddItemToPool() on panel close, which only
+							// silently fixes -1 for temp-file sectors (else beta warning spam)
+							wi.sGridNo = sDropGridNo;
+							wi.usFlags = WORLD_ITEM_REACHABLE;
+						}
+						else
+						{
+							wi.sGridNo = -1;
+							wi.usFlags = WORLD_ITEM_REACHABLE | WORLD_ITEM_GRIDNO_NOT_SET_USE_ENTRY_POINT;
+						}
+
+						// fill the FIRST free slot of the snapshot so the item shows up on
+						// the page the player is looking at, not on a trailing page
+						UINT32 uiDest = pInventoryPoolList.size( );
+						for( UINT32 i = 0; i < pInventoryPoolList.size( ); ++i )
+						{
+							if( !pInventoryPoolList[ i ].fExists && !pInventoryPoolList[ i ].object.exists( ) )
+							{
+								uiDest = i;
+								break;
+							}
+						}
+
+						if( uiDest < pInventoryPoolList.size( ) )
+						{
+							pInventoryPoolList[ uiDest ] = wi;
+						}
+						else
+						{
+							pInventoryPoolList.push_back( wi );
+						}
+
+						// the non-INVFIX_Moa code paths require pInventoryPoolList and
+						// pUnSeenItems to stay the same size (CTD in RefreshSeenAndUnseenPools)
+						pUnSeenItems.resize( pInventoryPoolList.size( ) );
+
+						// recompute pages/size NOW: the save window on panel close covers only
+						// SLOT_COUNT * (iLastInventoryPoolPage + 1) entries, and the page count
+						// is normally only refreshed during rendering
+						ResizeInventoryList( );
+
+						fPlaced = TRUE;
+					}
+					else if( fLoadedSector )
+					{
+						// loaded sector: put the item on the ground at the squad leader's position
+						if( AddItemToPool( sDropGridNo, &( pWI->object ), 1, 0, WORLD_ITEM_REACHABLE, 0 ) != NULL )
+						{
+							fPlaced = TRUE;
+						}
+					}
+					else
+					{
+						// unloaded sector: append the item to the sector's temp item file
+						std::vector<WORLDITEM> vecTemp( 1 );
+						vecTemp[ 0 ].object = pWI->object;
+						vecTemp[ 0 ].fExists = TRUE;
+						vecTemp[ 0 ].bVisible = 1;
+						vecTemp[ 0 ].sGridNo = -1;
+						vecTemp[ 0 ].ubLevel = 0;
+						vecTemp[ 0 ].usFlags = WORLD_ITEM_REACHABLE | WORLD_ITEM_GRIDNO_NOT_SET_USE_ENTRY_POINT;
+						vecTemp[ 0 ].bRenderZHeightAboveLevel = 0;
+
+						fPlaced = AddWorldItemsToUnLoadedSector( sSqX, sSqY, ( INT8 ) sSqZ, 0, 1, vecTemp, FALSE );
+					}
+				}
+
+				if( fPlaced )
+				{
+					pWI->object.initialize( );
+					pWI->fExists = FALSE;
+
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 71 ] );
+
+					// sector inventory UI may be visible behind the panel
+					fMapPanelDirty = TRUE;
+					fInterfacePanelDirty = DIRTYLEVEL2;
+				}
+				return;
+			}
+
+			sObjectSourceGridNo = pWI->sGridNo;
+			iCurrentlyPickedUpItem = -1;
+			iCurrentlyPickedUpBivouacItem = iCounter;
+
+			// standard pool pickup (handles SHIFT = whole stack)
+			BeginInventoryPoolPtr( &( pWI->object ) );
+
+			fMapPanelDirty = TRUE;
+		}
+		else
+		{
+			// place / swap / stack
+			INT32 iOldNumberOfObjects = pWI->object.ubNumberOfObjects;
+
+			// SQUAD_BIVOUAC: per-slot placement rules (size + item class)
+			// SQUAD_BIVOUAC: CTRL+LMB moves the whole cursor stack into the bivouac
+			// (from the sector inventory / merc), overriding stack merging
+			if( _KeyDown( CTRL ) )
+			{
+				if( BivouacTryPlaceCursorItem( ) )
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 70 ] );
+					MAPEndItemPointer( );
+				}
+				else
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 72 ] );
+				}
+
+				fMapPanelDirty = TRUE;
+				return;
+			}
+
+			// SQUAD_BIVOUAC: per-slot rule check for a direct drop into this slot.
+			// Placement into an EMPTY slot or a stack-partner slot must obey the rule.
+			// The live slot content comes from the panel stash (pBivouacPanelList), NOT from
+			// the manager storage - the manager only sees the edits when the panel closes.
+			// (Swapping an existing item out is allowed: the slot keeps a legal item.)
+			OBJECTTYPE* pLiveSlotItem = ( gpItemPointer != NULL && pWI->object.exists( ) ) ? &( pWI->object ) : NULL;
+
+			int iFitReason = ( gpItemPointer != NULL && gpItemPointer->exists( ) )
+				? SQBM().CanItemFitInBivouacSlot( (UINT8)iCounter, gpItemPointer,
+					(UINT8)gpItemPointer->ubNumberOfObjects, pLiveSlotItem )
+				: BIVOUAC_FIT_OK;
+
+			if( iFitReason != BIVOUAC_FIT_OK )
+			{
+				BivouacSlotConfig config = SQBM().GetSlotConfig( iCounter );
+
+				CHAR16 szReason[ 128 ];
+
+				// unconfigured slot (no pocket template assigned)
+				if( config.pPocketIndex == BIVOUAC_SLOT_POCKET_NONE ||
+					config.pPocketIndex >= LBEPocketType.size( ) )
+				{
+					swprintf( szReason, gzLateLocalizedString[ 76 ] );
+				}
+				// wrong item class per the pocket template restriction mask
+				else if( iFitReason == BIVOUAC_FIT_WRONG_CLASS )
+				{
+					// wrong item class: [77] = "slot does not accept this type"
+					swprintf( szReason, gzLateLocalizedString[ 77 ] );
+				}
+				else if( iFitReason == BIVOUAC_FIT_STACK_OVERFLOW )
+				{
+					// stack overflow: [79] = "stack does not fit (in slot: N, capacity M)"
+					swprintf( szReason, gzLateLocalizedString[ 79 ],
+						ShortItemNames[ gpItemPointer->usItem ],
+						pLiveSlotItem->ubNumberOfObjects,
+						SQBM().GetSlotCapacityForSize( iCounter,
+							(UINT8)__min( Item[ gpItemPointer->usItem ].ItemSize, gGameExternalOptions.guiMaxItemSize ) ) );
+				}
+				else
+				{
+					// item does not fit: [78] = "item (name, size N) does not fit (max M)"
+					UINT8 ubItemSize = (UINT8)__min( Item[ gpItemPointer->usItem ].ItemSize, gGameExternalOptions.guiMaxItemSize );
+					UINT8 ubMaxAllowed = SQBM().GetSlotCapacityForSize( iCounter, ubItemSize );
+
+					swprintf( szReason, gzLateLocalizedString[ 78 ],
+						ShortItemNames[ gpItemPointer->usItem ],
+						ubItemSize,
+						ubMaxAllowed );
+				}
+
+				ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, szReason );
+
+				fMapPanelDirty = TRUE;
+				return;
+			}
+
+			// NOTE: iDestSlot/iSrcSlot must be -1 here - PlaceObjectInInventoryStash uses
+			// them to maintain ownership in pInventoryPoolList (the SECTOR stash), which
+			// has nothing to do with the bivouac panel list and may even be empty
+			if( PlaceObjectInInventoryStash( &( pWI->object ), gpItemPointer, -1, -1 ) )
+			{
+				if( iOldNumberOfObjects == 0 )
+				{
+					// freshly occupied slot: mark it valid for the UI
+					pWI->fExists = TRUE;
+					pWI->bVisible = 1;
+					pWI->usFlags |= WORLD_ITEM_REACHABLE;
+				}
+
+				if( gpItemPointer->exists( ) == false )
+				{
+					MAPEndItemPointer( );
+				}
+				else
+				{
+					// swap happened: the cursor now holds the item from the bivouac slot.
+					// Update the cursor graphic - the sector inventory path does exactly
+					// this after PlaceObjectInInventoryStash (mapscreen inven click code)
+					guiExternVo = GetInterfaceGraphicForItem( &( Item[ gpItemPointer->usItem ] ) );
+					gusExternVoSubIndex = g_bUsePngItemImages ? 0 : Item[ gpItemPointer->usItem ].ubGraphicNum;
+
+					fMapInventoryItem = TRUE;
+					MSYS_ChangeRegionCursor( &gMPanelRegion, EXTERN_CURSOR );
+					SetCurrentCursorFromDatabase( EXTERN_CURSOR );
+				}
+			}
+
+			fMapPanelDirty = TRUE;
+		}
+	}
+}
+
+static void BivouacPanelDoneBtn( GUI_BUTTON *btn, INT32 reason )
+{
+	if( reason & MSYS_CALLBACK_REASON_LBUTTON_DWN )
+	{
+		btn->uiFlags |= ( BUTTON_CLICKED_ON );
+	}
+	else if( reason & MSYS_CALLBACK_REASON_LBUTTON_UP )
+	{
+		if( btn->uiFlags & BUTTON_CLICKED_ON )
+		{
+			btn->uiFlags &= ~( BUTTON_CLICKED_ON );
+
+			if( gfInItemDescBox )
+			{
+				DoMapMessageBox( MSG_BOX_BASIC_STYLE, gzLateLocalizedString[ 64 ], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL );
+			}
+			else
+			{
+				CloseBivouacPanel( TRUE );
+			}
+		}
+	}
+}
+
+// SQUAD_BIVOUAC: "drop all" button - dump the whole bivouac into the sector.
+// The panel stash is synced back into the squad slots first, then DumpToFloor handles
+// every placement case (loaded sector / sector inventory open / unloaded sector) and
+// rebuilds the panel stash empty afterwards.
+static void BivouacPanelDropAllBtn( GUI_BUTTON *btn, INT32 reason )
+{
+	if( reason & MSYS_CALLBACK_REASON_LBUTTON_DWN )
+	{
+		btn->uiFlags |= ( BUTTON_CLICKED_ON );
+	}
+	else if( reason & MSYS_CALLBACK_REASON_LBUTTON_UP )
+	{
+		if( btn->uiFlags & BUTTON_CLICKED_ON )
+		{
+			btn->uiFlags &= ~( BUTTON_CLICKED_ON );
+
+			INT32 iSquadID = SQBM().GetActiveUISquadID( );
+
+			if( iSquadID == -1 || gfInItemDescBox )
+			{
+				return;
+			}
+
+			INT16 sX = -1, sY = -1;
+			INT16 bZ = 0;
+
+			if( SectorSquadIsIn( (INT8)iSquadID, &sX, &sY, &bZ ) )
+			{
+				// SQUAD_BIVOUAC: anchor the drop at the selected merc's position - the player
+				// expects the items at the merc's feet, not at a random spot / map center.
+				// DumpToFloor resolves the anchor to the nearest reachable tile (loaded
+				// sector); for an unloaded sector the position goes into the temp file as is.
+				// NOTE: GetMercAnchorGridNo also works on the map screen, where sGridNo is
+				// NOWHERE - it falls back to sInsertionGridNo (last placement position).
+				INT32 sAnchorGridNo = -1;
+
+				if( bSelectedInfoChar != -1 && gCharactersList[ bSelectedInfoChar ].fValid )
+				{
+					SOLDIERTYPE* pSoldier = MercPtrs[ gCharactersList[ bSelectedInfoChar ].usSolID ];
+
+					if( pSoldier != NULL && pSoldier->bActive &&
+						pSoldier->sSectorX == sX && pSoldier->sSectorY == sY && pSoldier->bSectorZ == bZ )
+					{
+						sAnchorGridNo = SQBM().GetMercAnchorGridNo( pSoldier );
+					}
+				}
+
+				SQBM().DumpToFloor( iSquadID, sX, sY, bZ, sAnchorGridNo );
+
+				ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, gzLateLocalizedString[ 68 ] );
+
+				// panel is showing an empty bivouac now - repaint it
+				fMapPanelDirty = TRUE;
+				fInterfacePanelDirty = DIRTYLEVEL2;
 			}
 		}
 	}

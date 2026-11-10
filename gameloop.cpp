@@ -30,6 +30,7 @@
 	#include "Tactical Placement GUI.h"//dnl ch45 071009
 	#include "Map Screen Interface Map Inventory.h"//dnl ch51 081009
 	#include "World Items.h"//dnl ch77 191113
+	#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 	// sevenfm
 	#include "Ambient Control.h"
 #endif
@@ -154,6 +155,9 @@ BOOLEAN InitializeGame(void)
 	LoadReputationSettings();
 	// Load creatures settings
 	LoadCreaturesSettings();
+
+	// SQUAD_BIVOUAC: load per-slot bivouac placement rules (ini defaults + BivouacSlots.xml)
+	SQBM().LoadSlotRules();
 
 #ifdef JA2UB
 	LoadGameUBOptions(); // JA25 UB

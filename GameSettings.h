@@ -1331,7 +1331,7 @@ typedef struct
 	UINT8	usSpotterPreparationTurns;
 	UINT16	usSpotterRange;
 	UINT16	usSpotterMaxCTHBoost;
-	
+
 	// Flugente: External Feeding
 	UINT8	ubExternalFeeding;						// allow external feeding of guns (0 = no, 1 = only for others, 2 = we can also fed ourselves)
 
@@ -1548,7 +1548,15 @@ typedef struct
 	BOOLEAN fAllowCarsDrivingOverPeople;
 	BOOLEAN fAllowTanksDrivingOverPeople;
 	UINT8 ubCarsRammingMaxStructureArmour;
-	UINT8 ubTanksRammingMaxStructureArmour;	
+	UINT8 ubTanksRammingMaxStructureArmour;
+
+	// SQUAD_BIVOUAC: squad bivouac inventory settings
+	UINT16	usBivouacMinMercsRequired;			// minimal number of live mercs in squad to access the bivouac
+	UINT32	uiBivouacWeightCapacity;			// bivouac total weight capacity (internal JA2 weight units)
+	UINT16	usBivouacMovementPenaltyMultiplier;	// overload travel-time penalty scale: +% per (ratio-1)
+	UINT16	usBivouacBreathPenaltyMultiplier;	// overload breath drain scale: +points per overload percent
+	UINT16	usBivouacMoveMinMercs;				// minimal live mercs in a squad with a non-empty bivouac to move between sectors
+	UINT16	usBivouacSlotDefaultPocket;			// SQUAD_BIVOUAC: default pocket template index (Pockets.xml pIndex) for slots missing from BivouacSlots.xml, 255 = slot disabled
 
 } GAME_EXTERNAL_OPTIONS;
 

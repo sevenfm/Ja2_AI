@@ -6942,6 +6942,27 @@ STR16 gzLateLocalizedString[] =
 	L"Сперва закрой описание предмета!",
 
 	L"Невозможно ускорить время - враждебные гражданские или кошки-убийцы в секторе.", // 65
+
+	//66 (reserved)
+	L"",
+
+	//67-68 SQUAD_BIVOUAC
+	L"В бивуаке отряда остались предметы. Выбросить их в секторе перед роспуском отряда?",
+	L"Бивуак отряда опустошен в секторе.",
+	L"Просмотр бивуака отряда.",	// 69
+	L"Предмет перемещен в бивуак отряда.",	// 70
+	L"Предмет перемещен в инвентарь сектора.",	// 71
+	L"Бивуак отряда полон.",	// 72
+	L"Бивуак отряда %d",	// 73 SQUAD_BIVOUAC panel header: squad title (squad number)
+	L"Текущий/максимальный вес %d.%d/%d.%d",	// 74 SQUAD_BIVOUAC panel header: current/max weight (kg, one decimal)
+	L"Текущий/максимальный вес ",	// 75 SQUAD_BIVOUAC panel header: weight line prefix (no formatting)
+	L"Этот слот бивуака не настроен.",	// 76 SQUAD_BIVOUAC: slot has no pocket template assigned
+	L"Этот слот бивуака не принимает предметы такого типа.",	// 77 SQUAD_BIVOUAC: wrong item class (pocket restriction)
+	L"«%s»: габарит %d, вместимость слота %d.",	// 78 SQUAD_BIVOUAC: item does not fit slot capacity (name, item size, ItemCapacityPerSize)
+	L"«%s»: не помещается в слот (в слоте %d, вместимость %d).",	// 79 SQUAD_BIVOUAC: stack overflow (name, current stack count, capacity)
+	L"В бивуаке отряда остались предметы: для перемещения нужно минимум %d бойцов в отряде.",	// 80 SQUAD_BIVOUAC: squad with non-empty bivouac blocked from moving (min mercs)
+	L"Выгрузить всё содержимое бивуака в сектор.",	// 81 SQUAD_BIVOUAC: drop-all button tooltip
+	L"Открыть/закрыть бивуак отряда.",	// 82 SQUAD_BIVOUAC: sector inventory toolbar bivouac toggle tooltip
 };
 
 // HEADROCK HAM 3.5: Added sector name

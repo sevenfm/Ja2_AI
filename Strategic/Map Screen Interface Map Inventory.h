@@ -8,7 +8,19 @@
 #define MAX_DISTANCE_TO_PICKUP_ITEM 5
 
 // Flugente: number of map inventory filter buttons
-#define	MAP_INVENTORY_FILTER_BUTTONS	12	// Flugente: 9 -> 10
+#define	MAP_INVENTORY_FILTER_BUTTONS	13	// Flugente: 9 -> 10; travnik: +1 bivouac toggle (12)
+
+enum class MapInventoryFilterButtons {
+    SaveTemplateButtonOn = 40,
+    SaveTemplateButtonOff = 41,
+    ReadTemplateButtonOn = 42,
+    ReadTemplateButtonOff = 43,
+    OpenBivouacOn = 44,
+    OpenBivouacOff = 45,
+    DropAllFromBivouacOn = 46,
+    DropAllFromBivouacOff = 47,
+};
+
 
 // number of inventory slots
 //#define MAP_INVENTORY_POOL_SLOT_COUNT				84	//45	//45
@@ -66,6 +78,14 @@ extern INT32 MAP_INVENTORY_POOL_SLOT_COUNT;
 
 BOOLEAN IsMapScreenWorldItemInvisibleInMapInventory( WORLDITEM *pWorldItem );
 BOOLEAN IsMapScreenWorldItemVisibleInMapInventory( WORLDITEM *pWorldItem );
+
+// SQUAD_BIVOUAC: compact left-panel bivouac inventory (visual clone of the vehicle trunk UI).
+// Lives entirely inside the map area; the fullscreen sector inventory stays closed while active.
+extern BOOLEAN	fShowBivouacPanel;
+void CreateDestroyBivouacPanel( void );					// per-frame create/destroy driver (call next to CreateDestroyMapInventoryPoolButtons)
+BOOLEAN IsBivouacPanelAllowedForSelectedChar( void );	// access check for the 'B' hotkey
+void CloseBivouacPanel( BOOLEAN fSaveStash );			// store stash back into SQBM() and switch off
+void RenderBivouacPanel( void );						// called from RenderMapBorder like BlitInventoryPoolGraphic
 
 //dnl ch51 081009
 #define INVPOOLLISTNUM 10

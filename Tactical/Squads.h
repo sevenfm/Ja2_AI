@@ -44,6 +44,15 @@ enum{
 // squads
 extern SOLDIERTYPE *Squad[ NUMBER_OF_SQUADS ][ NUMBER_OF_SOLDIERS_PER_SQUAD ];
 
+// SQUAD_BIVOUAC: one-shot flag set by the bivouac disband YES-callback so the
+// pending removal of the last merc can proceed on the retry (bypasses the YES/NO box)
+extern BOOLEAN gBivouacAllowRemovalOnce;
+
+// SQUAD_BIVOUAC: TRUE if removing pCharacter from his squad would trigger the bivouac
+// disband guard (last merc of a squad with a non-empty bivouac). Pre-check before
+// assignment changes so the assignment is never touched when the player answers NO.
+BOOLEAN WouldRemovalTriggerBivouacGuard( SOLDIERTYPE *pCharacter );
+
 extern INT32 iCurrentTacticalSquad;
 
 

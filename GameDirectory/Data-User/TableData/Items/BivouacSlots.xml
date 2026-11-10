@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BIVOUACSLOTLIST>
+
+	<!-- ЗОНА 1: УНИВЕРСАЛЬНЫЕ СКЛАДСКИЕ СЕКЦИИ (СЛОТЫ 0–4) -->
+	<!-- Используют шаблон Vehicle (pIndex 3). Вмещают абсолютно всё и в больших количествах. -->
+	<BIVOUACSLOT>
+		<uiIndex>0</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>1</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>2</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>3</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>4</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+
+
+	<!-- ЗОНА 2: ОРУЖЕЙНЫЕ СЕКЦИИ ДЛЯ ВИНТОВОК И АВТОМАТОВ (СЛОТЫ 5–9) -->
+	<!-- Используют шаблон Gun Sling (pIndex 1). Предназначены для размещения длинноствольного оружия. -->
+	<BIVOUACSLOT>
+		<uiIndex>5</uiIndex>
+		<pPocketIndex>1</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>6</uiIndex>
+		<pPocketIndex>1</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>7</uiIndex>
+		<pPocketIndex>1</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>8</uiIndex>
+		<pPocketIndex>1</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>9</uiIndex>
+		<pPocketIndex>1</pPocketIndex>
+	</BIVOUACSLOT>
+
+
+	<!-- ЗОНА 3: ПОДСУМКИ ДЛЯ ПАТРОНОВ И МАГАЗИНОВ (СЛОТЫ 10–14) -->
+	<!-- Используют шаблон General AR Mag (pIndex 77). Идеально подходят под стаки автоматных магазинов. -->
+	<BIVOUACSLOT>
+		<uiIndex>10</uiIndex>
+		<pPocketIndex>77</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>11</uiIndex>
+		<pPocketIndex>77</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>12</uiIndex>
+		<pPocketIndex>77</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>13</uiIndex>
+		<pPocketIndex>77</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>14</uiIndex>
+		<pPocketIndex>77</pPocketIndex>
+	</BIVOUACSLOT>
+
+
+	<!-- ЗОНА 4: СЕКЦИИ ВЗРЫВЧАТКИ И ГРАНАТ (СЛОТЫ 15–19) -->
+	<!-- Используют шаблон Explosives (pIndex 60). Ограничивают тип предметов только гранатами и тротилом. -->
+	<BIVOUACSLOT>
+		<uiIndex>15</uiIndex>
+		<pPocketIndex>60</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>16</uiIndex>
+		<pPocketIndex>60</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>17</uiIndex>
+		<pPocketIndex>60</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>18</uiIndex>
+		<pPocketIndex>60</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>19</uiIndex>
+		<pPocketIndex>60</pPocketIndex>
+	</BIVOUACSLOT>
+
+
+	<!-- ЗОНА 5: МЕДИЦИНСКИЙ ОТСЕК И ИНСТРУМЕНТЫ (СЛОТЫ 20–24) -->
+	<!-- Используют шаблон 2x First Aid Kit (pIndex 40). Выделенные ячейки под аптечки первой помощи. -->
+	<BIVOUACSLOT>
+		<uiIndex>20</uiIndex>
+		<pPocketIndex>40</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>21</uiIndex>
+		<pPocketIndex>40</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>22</uiIndex>
+		<pPocketIndex>40</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>23</uiIndex>
+		<pPocketIndex>40</pPocketIndex>
+	</BIVOUACSLOT>
+
+	<BIVOUACSLOT>
+		<uiIndex>24</uiIndex>
+		<pPocketIndex>40</pPocketIndex>
+	</BIVOUACSLOT>
+
+
+	<!-- ЗОНА 6: РЕЗЕРВНЫЕ СЛОТЫ ДЛЯ ПРОВЕРКИ ИНИЦИАЛИЗАЦИИ ДЕФОЛТОВ (СЛОТЫ 25–29) -->
+	<!-- Эти слоты намеренно закомментированы для тестирования кода. -->
+	<!-- Раз их нет в XML, менеджер инициализирует их значениями по умолчанию из вашего INI-файла. -->
+	<!--
+	<BIVOUACSLOT>
+		<uiIndex>25</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+	<BIVOUACSLOT>
+		<uiIndex>26</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+	<BIVOUACSLOT>
+		<uiIndex>27</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+	<BIVOUACSLOT>
+		<uiIndex>28</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+	<BIVOUACSLOT>
+		<uiIndex>29</uiIndex>
+		<pPocketIndex>3</pPocketIndex>
+	</BIVOUACSLOT>
+	-->
+
+</BIVOUACSLOTLIST>

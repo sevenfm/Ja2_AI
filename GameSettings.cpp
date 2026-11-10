@@ -1363,7 +1363,7 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.usSpotterPreparationTurns			= iniReader.ReadInteger("Tactical Gameplay Settings","SPOTTER_PREPARATIONTURNS", 2, 2,  4);
 	gGameExternalOptions.usSpotterRange						= iniReader.ReadInteger("Tactical Gameplay Settings","SPOTTER_RANGE",			10, 0,  30);
 	gGameExternalOptions.usSpotterMaxCTHBoost				= iniReader.ReadInteger("Tactical Gameplay Settings","SPOTTER_MAX_CTHBOOST",	50, 0, 100);
-		
+
 	gGameExternalOptions.ubExternalFeeding					= iniReader.ReadInteger("Tactical Gameplay Settings","EXTERNAL_FEEDING", 2, 0, 2);
 	
 	// WANNE: Externalized grid number of new merc when they arrive with the helicopter (by Jazz)
@@ -2402,6 +2402,16 @@ void LoadGameExternalOptions()
 	// sevenfm: show help picture
 	iniReader.ReadString("Extended Options", "HELP_PICTURE_KEY", NULL, sFFKeyBuffer, _countof(sFFKeyBuffer));
 	gGameExternalOptions.iHelpPictureKey = ParseKeyString(sFFKeyBuffer);
+
+	// SQUAD_BIVOUAC: squad bivouac inventory settings
+	gGameExternalOptions.usBivouacMinMercsRequired = (UINT16)iniReader.ReadInteger("Extended Options", "BIVOUAC_MIN_MERCS_REQUIRED", 1, 1, 20);
+	gGameExternalOptions.uiBivouacWeightCapacity = (UINT32)iniReader.ReadInteger("Extended Options", "BIVOUAC_WEIGHT_CAPACITY", 1000, 1, 1000000);
+	gGameExternalOptions.usBivouacMovementPenaltyMultiplier = (UINT16)iniReader.ReadInteger("Extended Options", "BIVOUAC_MOVEMENT_PENALTY_MULTIPLIER", 15, 0, 1000);
+	gGameExternalOptions.usBivouacBreathPenaltyMultiplier = (UINT16)iniReader.ReadInteger("Extended Options", "BIVOUAC_BREATH_PENALTY_MULTIPLIER", 15, 0, 1000);
+	// SQUAD_BIVOUAC: minimal live mercs for a squad with a non-empty bivouac to move between sectors
+	gGameExternalOptions.usBivouacMoveMinMercs = (UINT16)iniReader.ReadInteger("Extended Options", "BIVOUAC_MOVE_MIN_MERCS", 2, 1, 20);
+	// SQUAD_BIVOUAC: default pocket template (Pockets.xml pIndex) for slots missing from BivouacSlots.xml
+	gGameExternalOptions.usBivouacSlotDefaultPocket = (UINT16)iniReader.ReadInteger("Extended Options", "BIVOUAC_SLOT_DEFAULT_POCKET", 255, 0, 255);
 }
 
 // SANDRO - externalization of all skill trait values and STOMP settings into separate file

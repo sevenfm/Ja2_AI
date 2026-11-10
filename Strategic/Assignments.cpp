@@ -81,6 +81,7 @@ class SOLDIERTYPE;
 #include "Sound Control.h"
 // HEADROCK HAM 3.5: Include Facility data
 #include "Facilities.h"
+#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 
 #include "Vehicles.h"
 
@@ -204,7 +205,7 @@ INT32 ghSnitchBox = -1;
 INT32 ghSnitchToggleBox = -1;
 INT32 ghSnitchSectorBox = -1;
 
-// Ïåðåìåííûå-ïðîêñè äëÿ ñîâìåñòèìîñòè ñ îðèãèíàëüíûìè ôàéëàìè èãðû
+// ÐŸÐµÑ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ðµ-Ð¿Ñ€Ð¾ÐºÑÐ¸ Ð´Ð»Ñ ÑÐ¾Ð²Ð¼ÐµÑÑ‚Ð¸Ð¼Ð¾ÑÑ‚Ð¸ Ñ Ð¾Ñ€Ð¸Ð³Ð¸Ð½Ð°Ð»ÑŒÐ½Ñ‹Ð¼Ð¸ Ñ„Ð°Ð¹Ð»Ð°Ð¼Ð¸ Ð¸Ð³Ñ€Ñ‹
 INT32 ghRadioBox = -1;
 INT32 ghRadioSectorBox = -1;
 INT32 ghRadioNumberBox = -1;
@@ -5226,6 +5227,16 @@ void FatigueCharacter( SOLDIERTYPE *pSoldier )
 			iBreathLoss = (INT32)(bMaxBreathLoss * iPercentEncumbrance * iPercentEncumbrance / (100 * 100));
 			bMaxBreathLoss = (float)min( 127, iBreathLoss );
 		}
+
+		// SQUAD_BIVOUAC: extra breath drain for carrying an overloaded squad bivouac
+		if( pSoldier->bAssignment < ON_DUTY )
+		{
+			INT32 iBivouacDrain = SQBM().GetOverloadBreathDrain( pSoldier->bAssignment );
+			if( iBivouacDrain > 0 )
+			{
+				bMaxBreathLoss = (float)min( 127, bMaxBreathLoss + iBivouacDrain );
+			}
+		}
 	}
 
 	// if breath max is below the "really tired" threshold
@@ -8458,6 +8469,13 @@ void RepairMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 			}
 
 			// remove from squad
+			// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				SQBM().SetPendingAssignmentChange( pSoldier, REPAIR, FALSE, FALSE, ( INT32 ) iRepairWhat );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				return;
+			}
 			RemoveCharacterFromSquads( pSoldier );
 			MakeSureToolKitIsInHand( pSoldier );
 
@@ -8486,6 +8504,14 @@ void RepairMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 			if ( pSoldier->bOldAssignment == VEHICLE )
 			{
 				TakeSoldierOutOfVehicle( pSoldier );
+			}
+
+			// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				SQBM().SetPendingAssignmentChange( pSoldier, REPAIR, TRUE, FALSE, -1 );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				return;
 			}
 
 			// remove from squad
@@ -8518,6 +8544,14 @@ void RepairMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 			if( pSoldier->bOldAssignment == VEHICLE )
 			{
 				TakeSoldierOutOfVehicle( pSoldier );
+			}
+
+			// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				SQBM().SetPendingAssignmentChange( pSoldier, REPAIR, FALSE, TRUE, -1 );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				return;
 			}
 
 			RemoveCharacterFromSquads( pSoldier );
@@ -10529,7 +10563,7 @@ void CreateDestroyMouseRegionsForRadioMenu(void)
 
 	if ((fShowRadioMenu == TRUE) && (fCreated == FALSE) && (g_StrategicMilitiaCall.GetRadioBoxID() != -1))
 	{
-		// Ïðèíóäèòåëüíî âûñòðàèâàåì êîîðäèíàòû ïåðåä ôèêñàöèåé ìûøè
+		// ÐŸÑ€Ð¸Ð½ÑƒÐ´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾ Ð²Ñ‹ÑÑ‚Ñ€Ð°Ð¸Ð²Ð°ÐµÐ¼ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ñ‹ Ð¿ÐµÑ€ÐµÐ´ Ñ„Ð¸ÐºÑÐ°Ñ†Ð¸ÐµÐ¹ Ð¼Ñ‹ÑˆÐ¸
 		DetermineBoxPositions();
 		DefineRadioBoxRegions(g_StrategicMilitiaCall.GetRadioBoxID(), gRadioMenuRegion, RadioMenuMvtCallBack, RadioMenuBtnCallback);
 		fCreated = TRUE;
@@ -10548,7 +10582,7 @@ void CreateDestroyMouseRegionsForRadioSectorMenu(void)
 
 	if ((fShowRadioSectorMenu == TRUE) && (fCreated == FALSE) && (g_StrategicMilitiaCall.GetSectorBoxID() != -1))
 	{
-		// Ñèíõðîíèçèðóåì ïîëîæåíèå 3-ãî ìåíþ è ñðàçó âåøàåì ìûøü
+		// Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ Ð¿Ð¾Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ 3-Ð³Ð¾ Ð¼ÐµÐ½ÑŽ Ð¸ ÑÑ€Ð°Ð·Ñƒ Ð²ÐµÑˆÐ°ÐµÐ¼ Ð¼Ñ‹ÑˆÑŒ
 		DetermineBoxPositions();
 		DefineRadioBoxRegions(g_StrategicMilitiaCall.GetSectorBoxID(), gRadioSectorMenuRegion, RadioSectorMenuMvtCallBack, RadioSectorMenuBtnCallback);
 		fCreated = TRUE;
@@ -10567,7 +10601,7 @@ void CreateDestroyMouseRegionsForRadioNumberMenu(void)
 
 	if ((fShowRadioNumberMenu == TRUE) && (fCreated == FALSE) && (g_StrategicMilitiaCall.GetNumberBoxID() != -1))
 	{
-		// Ñèíõðîíèçèðóåì ïîëîæåíèå 4-ãî ìåíþ è âåøàåì ìûøü
+		// Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ Ð¿Ð¾Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ 4-Ð³Ð¾ Ð¼ÐµÐ½ÑŽ Ð¸ Ð²ÐµÑˆÐ°ÐµÐ¼ Ð¼Ñ‹ÑˆÑŒ
 		DetermineBoxPositions();
 		DefineRadioBoxRegions(g_StrategicMilitiaCall.GetNumberBoxID(), gRadioNumberMenuRegion, RadioNumberMenuMvtCallBack, RadioNumberMenuBtnCallback);
 		fCreated = TRUE;
@@ -10654,7 +10688,7 @@ void RadioMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
 			fShowRadioMenu = FALSE;
 		}
 		else if ((iValue == RADIO_MENU_SCAN) && pSoldier) {
-			// Ëîãèêà ñêàíèðîâàíèÿ ðàäèîñòàíöèåé...
+			// Ð›Ð¾Ð³Ð¸ÐºÐ° ÑÐºÐ°Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ Ñ€Ð°Ð´Ð¸Ð¾ÑÑ‚Ð°Ð½Ñ†Ð¸ÐµÐ¹...
 		}
 		else if ((iValue == RADIO_MENU_CALL_MILITIA) && pSoldier) {
 			if (g_StrategicMilitiaCall.CanCharacterCallMilitia(pSoldier)) {
@@ -10697,28 +10731,28 @@ void RadioSectorMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
 
 void RadioNumberMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
 {
-	// Èñïîëüçóåì êîíñòàíòó NUM_MENU_ALL äëÿ ðàçìåðà ìàññèâà, ÷òîáû èçáåæàòü ïðåäóïðåæäåíèé êîìïèëÿòîðà
+	// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ ÐºÐ¾Ð½ÑÑ‚Ð°Ð½Ñ‚Ñƒ NUM_MENU_ALL Ð´Ð»Ñ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð° Ð¼Ð°ÑÑÐ¸Ð²Ð°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð¸Ð·Ð±ÐµÐ¶Ð°Ñ‚ÑŒ Ð¿Ñ€ÐµÐ´ÑƒÐ¿Ñ€ÐµÐ¶Ð´ÐµÐ½Ð¸Ð¹ ÐºÐ¾Ð¼Ð¿Ð¸Ð»ÑÑ‚Ð¾Ñ€Ð°
 	static const UINT16 usRadioNumbers[MilitiaCall::NUM_MENU_ALL] = { 5, 10, 15, 20, 30, 40 };
 	INT32 iValue = MSYS_GetRegionUserData(pRegion, 0);
 	SOLDIERTYPE* pSoldier = GetSelectedAssignSoldier(FALSE);
 
 	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
 	{
-		// ÈÑÏÐÀÂËÅÍÈÅ: Çàìåíèëè íåíàéäåííóþ RADIO_NUMBER_MENU_CANCEL íà êîíñòàíòó èç êëàññà
+		// Ð˜Ð¡ÐŸÐ ÐÐ’Ð›Ð•ÐÐ˜Ð•: Ð—Ð°Ð¼ÐµÐ½Ð¸Ð»Ð¸ Ð½ÐµÐ½Ð°Ð¹Ð´ÐµÐ½Ð½ÑƒÑŽ RADIO_NUMBER_MENU_CANCEL Ð½Ð° ÐºÐ¾Ð½ÑÑ‚Ð°Ð½Ñ‚Ñƒ Ð¸Ð· ÐºÐ»Ð°ÑÑÐ°
 		if (iValue == MilitiaCall::NUM_MENU_CANCEL) {
 			fShowRadioNumberMenu = FALSE;
 		}
 		else if (pSoldier && g_StrategicMilitiaCall.GetRadioSelectedSector() != 0xFFFF) {
 			UINT16 usNumber = 0;
 
-			// ÈÑÏÐÀÂËÅÍÈÅ: Çàìåíèëè ìàãè÷åñêîå ÷èñëî 6 íà êîíñòàíòó MilitiaCall::NUM_MENU_ALL
-			if (iValue == MilitiaCall::NUM_MENU_ALL) { // Ïóëë "Âñå"
+			// Ð˜Ð¡ÐŸÐ ÐÐ’Ð›Ð•ÐÐ˜Ð•: Ð—Ð°Ð¼ÐµÐ½Ð¸Ð»Ð¸ Ð¼Ð°Ð³Ð¸Ñ‡ÐµÑÐºÐ¾Ðµ Ñ‡Ð¸ÑÐ»Ð¾ 6 Ð½Ð° ÐºÐ¾Ð½ÑÑ‚Ð°Ð½Ñ‚Ñƒ MilitiaCall::NUM_MENU_ALL
+			if (iValue == MilitiaCall::NUM_MENU_ALL) { // ÐŸÑƒÐ»Ð» "Ð’ÑÐµ"
 				UINT16 usSelectedSector = g_StrategicMilitiaCall.GetRadioSelectedSector();
 
-				// Âûçûâàåì ãëîáàëüíóþ ôóíêöèþ äâèæêà JA2 äëÿ ïîäñ÷åòà, òàê êàê ìåòîä êëàññà ïðèâàòíûé
+				// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ð³Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½ÑƒÑŽ Ñ„ÑƒÐ½ÐºÑ†Ð¸ÑŽ Ð´Ð²Ð¸Ð¶ÐºÐ° JA2 Ð´Ð»Ñ Ð¿Ð¾Ð´ÑÑ‡ÐµÑ‚Ð°, Ñ‚Ð°Ðº ÐºÐ°Ðº Ð¼ÐµÑ‚Ð¾Ð´ ÐºÐ»Ð°ÑÑÐ° Ð¿Ñ€Ð¸Ð²Ð°Ñ‚Ð½Ñ‹Ð¹
 				usNumber = CountAllMilitiaInSector(SECTORX(usSelectedSector), SECTORY(usSelectedSector));
 			}
-			// ÈÑÏÐÀÂËÅÍÈÅ: Áåçîïàñíàÿ ïðîâåðêà äèàïàçîíà ñòðîê êîëè÷åñòâà
+			// Ð˜Ð¡ÐŸÐ ÐÐ’Ð›Ð•ÐÐ˜Ð•: Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð°Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð´Ð¸Ð°Ð¿Ð°Ð·Ð¾Ð½Ð° ÑÑ‚Ñ€Ð¾Ðº ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð°
 			else if (iValue >= 0 && iValue < MilitiaCall::NUM_MENU_ALL) {
 				usNumber = usRadioNumbers[iValue];
 			}
@@ -10727,7 +10761,7 @@ void RadioNumberMenuBtnCallback(MOUSE_REGION* pRegion, INT32 iReason)
 				g_StrategicMilitiaCall.ExecuteStrategicMilitiaCall(pSoldier, usNumber);
 			}
 
-			// Çàêðûâàåì âñþ öåïî÷êó ìåíþ (ôè÷à óñïåøíî îòðàáîòàëà)
+			// Ð—Ð°ÐºÑ€Ñ‹Ð²Ð°ÐµÐ¼ Ð²ÑÑŽ Ñ†ÐµÐ¿Ð¾Ñ‡ÐºÑƒ Ð¼ÐµÐ½ÑŽ (Ñ„Ð¸Ñ‡Ð° ÑƒÑÐ¿ÐµÑˆÐ½Ð¾ Ð¾Ñ‚Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð»Ð°)
 			fShowRadioNumberMenu = FALSE;
 			fShowRadioSectorMenu = FALSE;
 			fShowRadioMenu = FALSE;
@@ -11307,6 +11341,14 @@ void SquadMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 				// old normal handling
 				else
 				{
+					// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+					if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+					{
+						SQBM().SetPendingAssignmentChange( pSoldier, ( INT8 )iValue, 0, 0, 0 );
+						SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+						return;
+					}
+
 					if( pSoldier->bOldAssignment == VEHICLE )
 					{
 						TakeSoldierOutOfVehicle( pSoldier );
@@ -11552,6 +11594,15 @@ void TrainingMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 					{
 						TakeSoldierOutOfVehicle( pSoldier );
 					}
+
+					// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+					if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+					{
+						SQBM().SetPendingAssignmentChange( pSoldier, TRAIN_TOWN, 0, 0, 0 );
+						SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+						return;
+					}
+
 					RemoveCharacterFromSquads(	pSoldier );
 
 					ChangeSoldiersAssignment( pSoldier, TRAIN_TOWN );
@@ -11610,6 +11661,15 @@ void TrainingMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 				{
 					TakeSoldierOutOfVehicle( pSoldier );
 				}
+
+				// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+				if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+				{
+					SQBM().SetPendingAssignmentChange( pSoldier, TRAIN_MOBILE, 0, 0, 0 );
+					SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+					return;
+				}
+
 				RemoveCharacterFromSquads(	pSoldier );
 
 				ChangeSoldiersAssignment( pSoldier, TRAIN_MOBILE );
@@ -11722,6 +11782,15 @@ void AttributesMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 			{
 				TakeSoldierOutOfVehicle( pSoldier );
 			}
+
+			// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				SQBM().SetPendingAssignmentChange( pSoldier, gbTrainingMode, ( INT32 )iValue, 0, 0 );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				return;
+			}
+
 			RemoveCharacterFromSquads( pSoldier );
 
 			// train stat
@@ -11905,6 +11974,15 @@ void SnitchSectorMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 				{
 					TakeSoldierOutOfVehicle( pSoldier );
 				}
+
+				// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+				if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+				{
+					SQBM().SetPendingAssignmentChange( pSoldier, SNITCH_SPREAD_PROPAGANDA, 0, 0, 0 );
+					SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+					return;
+				}
+
 				RemoveCharacterFromSquads(	pSoldier );
 				ChangeSoldiersAssignment( pSoldier, SNITCH_SPREAD_PROPAGANDA );
 				AssignMercToAMovementGroup( pSoldier );
@@ -11938,6 +12016,15 @@ void SnitchSectorMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 				{
 					TakeSoldierOutOfVehicle( pSoldier );
 				}
+
+				// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+				if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+				{
+					SQBM().SetPendingAssignmentChange( pSoldier, SNITCH_GATHER_RUMOURS, 0, 0, 0 );
+					SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+					return;
+				}
+
 				RemoveCharacterFromSquads(	pSoldier );
 				ChangeSoldiersAssignment( pSoldier, SNITCH_GATHER_RUMOURS );
 				AssignMercToAMovementGroup( pSoldier );
@@ -12036,6 +12123,15 @@ void AssignmentMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 						{
 							TakeSoldierOutOfVehicle( pSoldier );
 						}
+
+						// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+						if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+						{
+							SQBM().SetPendingAssignmentChange( pSoldier, PATIENT, 0, 0, 0 );
+							SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+							return;
+						}
+
 						RemoveCharacterFromSquads(	pSoldier );
 						ChangeSoldiersAssignment( pSoldier, PATIENT );
 						AssignMercToAMovementGroup( pSoldier );
@@ -12169,6 +12265,15 @@ void AssignmentMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 						{
 							TakeSoldierOutOfVehicle( pSoldier );
 						}
+
+						// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+						if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+						{
+							SQBM().SetPendingAssignmentChange( pSoldier, DOCTOR, 0, 0, 0 );
+							SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+							return;
+						}
+
 						RemoveCharacterFromSquads(	pSoldier );
 
 						ChangeSoldiersAssignment( pSoldier, DOCTOR );
@@ -12237,6 +12342,15 @@ void AssignmentMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 						{
 							TakeSoldierOutOfVehicle( pSoldier );
 						}
+
+						// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+						if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+						{
+							SQBM().SetPendingAssignmentChange( pSoldier, PATIENT, 0, 0, 0 );
+							SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+							return;
+						}
+
 						RemoveCharacterFromSquads(	pSoldier );
 						ChangeSoldiersAssignment( pSoldier, PATIENT );
 
@@ -14511,8 +14625,56 @@ UINT8 RepairRobot( SOLDIERTYPE *pRobot, UINT8 ubRepairPts, BOOLEAN *pfNothingLef
 }
 
 
+// SQUAD_BIVOUAC: replay the deferred assignment change after the player confirmed the
+// bivouac dump with YES. The squad's bivouac is already empty at this point and the
+// one-shot gBivouacAllowRemovalOnce bypass was set, so the RemoveCharacterFromSquads()
+// call inside SetSoldierAssignment() succeeds without showing the dialog again.
+void BivouacReplayPendingAssignmentChange( void )
+{
+	UINT16 usSoldierID = 0;
+	INT8 bAssignment = -1;
+	INT32 iParam1 = 0, iParam2 = 0, iParam3 = 0;
+
+	if ( !SQBM().TakePendingAssignmentChange( usSoldierID, bAssignment, iParam1, iParam2, iParam3 ) )
+	{
+		return;
+	}
+
+	SOLDIERTYPE* pSoldier = &Menptr[ usSoldierID ];
+	if ( pSoldier == NULL || !pSoldier->bActive )
+	{
+		return;
+	}
+
+	// squad-targeted change queued from SetAssignmentForList: replay the
+	// "remove from old squad, join the target squad" path directly
+	if ( bAssignment >= 0 && bAssignment < ON_DUTY )
+	{
+		RemoveCharacterFromSquads( pSoldier );
+
+		if ( AddCharacterToSquad( pSoldier, bAssignment ) == FALSE )
+		{
+			AddCharacterToAnySquad( pSoldier );
+		}
+		return;
+	}
+
+	SetSoldierAssignment( pSoldier, bAssignment, iParam1, iParam2, iParam3 );
+}
+
 void SetSoldierAssignment( SOLDIERTYPE *pSoldier, INT8 bAssignment, INT32 iParam1, INT32 iParam2, INT32 iParam3 )
 {
+	// SQUAD_BIVOUAC: if this merc is the last one of a squad whose bivouac still holds
+	// items, ask the player BEFORE touching anything. On NO the assignment stays as is;
+	// on YES the items are dumped and the same change is replayed from the callback
+	// (the removal then succeeds via the one-shot gBivouacAllowRemovalOnce bypass).
+	if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+	{
+		SQBM().SetPendingAssignmentChange( pSoldier, bAssignment, iParam1, iParam2, iParam3 );
+		SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+		return;
+	}
+
 	switch( bAssignment )
 	{
 		case( ASSIGNMENT_HOSPITAL ):
@@ -15257,7 +15419,7 @@ BOOLEAN HandleAssignmentExpansionAndHighLightForRadioSectorMenu(void)
 {
 	if (fShowRadioNumberMenu)
 	{
-		// ÈÑÏÐÀÂËÅÍÈÅ: Áåðåì ID áîêñà è èíäåêñ ïîäñâå÷åííîé ñòðîêè íàïðÿìóþ èç êëàññà ôè÷è
+		// Ð˜Ð¡ÐŸÐ ÐÐ’Ð›Ð•ÐÐ˜Ð•: Ð‘ÐµÑ€ÐµÐ¼ ID Ð±Ð¾ÐºÑÐ° Ð¸ Ð¸Ð½Ð´ÐµÐºÑ Ð¿Ð¾Ð´ÑÐ²ÐµÑ‡ÐµÐ½Ð½Ð¾Ð¹ ÑÑ‚Ñ€Ð¾ÐºÐ¸ Ð½Ð°Ð¿Ñ€ÑÐ¼ÑƒÑŽ Ð¸Ð· ÐºÐ»Ð°ÑÑÐ° Ñ„Ð¸Ñ‡Ð¸
 		INT32 hSectorBox = g_StrategicMilitiaCall.GetSectorBoxID();
 		INT32 iHighLine = g_StrategicMilitiaCall.GetSectorMenuHighLine();
 
@@ -16380,6 +16542,19 @@ void SetAssignmentForList(INT8 bAssignment, INT8 bParam, UINT8 ubFacilityType, U
 				!(Menptr[ gCharactersList[ iCounter ].usSolID].flags.uiStatusFlags & SOLDIER_VEHICLE ) )
 		{
 			pSoldier = MercPtrs[ gCharactersList[ iCounter ].usSolID ];
+
+			// SQUAD_BIVOUAC: if this merc is the last one of a squad whose bivouac still
+			// holds items, ask the player BEFORE changing anything. On NO nothing happens;
+			// on YES the items are dumped and the same assignment change is replayed.
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				// only the direct squad-to-squad / any-squad moves need a replay here;
+				// SetSoldierAssignment()-based branches guard themselves, so queue the
+				// removal-only path as a generic "join target squad / any squad" replay
+				SQBM().SetPendingAssignmentChange( pSoldier, bAssignment, bParam, 0, 0 );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				continue;
+			}
 
 			// assume it's NOT gonna work
 			fItWorked = FALSE;
@@ -19950,6 +20125,15 @@ void FacilityAssignmentMenuBtnCallback ( MOUSE_REGION * pRegion, INT32 iReason )
 			{
 				TakeSoldierOutOfVehicle( pSoldier );
 			}
+
+			// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				SQBM().SetPendingAssignmentChange( pSoldier, ( INT8 )FACILITY_STAFF, ( INT32 )ubFacilityType, ( INT32 )ubAssignmentType, ( INT32 )ubVehicleID );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				return;
+			}
+
 			RemoveCharacterFromSquads(	pSoldier );
 
 			// Change assignment to new type
@@ -20920,6 +21104,14 @@ void MoveItemMenuBtnCallback( MOUSE_REGION * pRegion, INT32 iReason )
 			if( pSoldier->bOldAssignment == VEHICLE )
 			{
 				TakeSoldierOutOfVehicle( pSoldier );
+			}
+
+			// SQUAD_BIVOUAC: pre-check - the dump dialog may abort this assignment change
+			if ( WouldRemovalTriggerBivouacGuard( pSoldier ) )
+			{
+				SQBM().SetPendingAssignmentChange( pSoldier, MOVE_EQUIPMENT, ( INT32 )pSoldier->ubItemMoveSectorID, 0, 0 );
+				SQBM().HandleLastMercLeavingSquad( SquadCharacterIsIn( pSoldier ), pSoldier );
+				return;
 			}
 
 			// remove from squad

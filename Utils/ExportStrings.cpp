@@ -346,7 +346,7 @@ bool Loc::ExportStrings()
 	ExportSection(props, L"CreditNameFunny",			Loc::gzCreditNameFunny,				0,	15);
 	ExportSection(props, L"RepairsDone",				Loc::sRepairsDoneString,			0,	7);
 	ExportSection(props, L"GioDifConfirm",				Loc::zGioDifConfirmText,			0,	TEXT_NUM_GIO_CFS);
-	ExportSection(props, L"LateLocalized",				Loc::gzLateLocalizedString,			0,	64);
+	ExportSection(props, L"LateLocalized",				Loc::gzLateLocalizedString,			0,	82);
 	ExportSection(props, L"CWStrings",					Loc::gzCWStrings,					0,	1);
 	ExportSection(props, L"TooltipStrings",				Loc::gzTooltipStrings,				0,	TEXT_NUM_STR_TT);
 	ExportSection(props, L"New113Message",				Loc::New113Message,					0,	TEXT_NUM_MSG113);

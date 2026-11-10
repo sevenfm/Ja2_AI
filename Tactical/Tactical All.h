@@ -229,5 +229,6 @@
 #include "expat.h"
 #include "spread burst.h"
 #include "XML.h"
+#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 
 #endif

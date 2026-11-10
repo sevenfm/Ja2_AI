@@ -59,14 +59,14 @@ void StrategicMilitiaCall::FinishRadioBoxSetup(INT32 hBox) {
 }
 
 BOOLEAN StrategicMilitiaCall::CanCharacterCallMilitia(SOLDIERTYPE* pSoldier) {
-	if (!pSoldier || !gGameExternalOptions.gfAllowReinforcements) 
-    return FALSE;
+	if (!pSoldier || !gGameExternalOptions.gfAllowReinforcements)
+		return FALSE;
 	if (pSoldier->stats.bLife < OKLIFE || pSoldier->bSectorZ != 0)
-    return FALSE;
-	if (IsCharacterInTransit(pSoldier) || pSoldier->flags.fBetweenSectors) 
-    return FALSE;
-	if (pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC) 
-    return FALSE;
+		return FALSE;
+	if (IsCharacterInTransit(pSoldier) || pSoldier->flags.fBetweenSectors)
+		return FALSE;
+	if (pSoldier->ubWhatKindOfMercAmI == MERC_TYPE__EPC)
+		return FALSE;
 
 	if (pSoldier->bAssignment == VEHICLE) {
 		if ((iHelicopterVehicleId != -1) && (pSoldier->iVehicleId == iHelicopterVehicleId)) {
@@ -123,15 +123,22 @@ BOOLEAN StrategicMilitiaCall::ExecuteStrategicMilitiaCall(SOLDIERTYPE* pSoldier,
 }
 
 void StrategicMilitiaCall::CreateRadioBox() {
-	// sevenfm: qwen proposed fix for popup crash
-	// Çàùèòà îò óòå÷êè: åñëè îêíî óæå ñóùåñòâóåò (handle != -1), óäàëÿåì åãî ïåðåä ñîçäàíèåì íîâîãî
-	if (m_hRadioBox != -1) 
-  { 
-    RemoveBox(m_hRadioBox);
-    m_hRadioBox = -1;
-  }
+	// safety: never leak a slot if the previous box was not removed
+	if (m_hRadioBox != -1)
+	{
+		HideBox(m_hRadioBox);
+		RemoveBox(m_hRadioBox);
+		m_hRadioBox = -1;
+	}
 
 	UINT32 hStringHandle;
+	// safety: never leak a slot if the previous box was not removed
+	if (m_hRadioBox != -1)
+	{
+		HideBox(m_hRadioBox);
+		RemoveBox(m_hRadioBox);
+		m_hRadioBox = -1;
+	}
 	CreatePopUpBox(&m_hRadioBox, RadioDimensions, RadioPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioBox = m_hRadioBox;
 
@@ -148,7 +155,6 @@ void StrategicMilitiaCall::CreateRadioBox() {
 
 void StrategicMilitiaCall::CreateRadioSectorBox() {
 	// sevenfm: qwen proposed fix for popup crash
-	// Çàùèòà îò óòå÷êè: åñëè îêíî óæå ñóùåñòâóåò (handle != -1), óäàëÿåì åãî ïåðåä ñîçäàíèåì íîâîãî
 	if (m_hRadioSectorBox != -1)
   {
     RemoveBox(m_hRadioSectorBox);
@@ -156,6 +162,12 @@ void StrategicMilitiaCall::CreateRadioSectorBox() {
   }
 
 	UINT32 hStringHandle;
+	if (m_hRadioSectorBox != -1)
+	{
+		HideBox(m_hRadioSectorBox);
+		RemoveBox(m_hRadioSectorBox);
+		m_hRadioSectorBox = -1;
+	}
 	CreatePopUpBox(&m_hRadioSectorBox, RadioSectorDimensions, RadioSectorPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioSectorBox = m_hRadioSectorBox;
 
@@ -174,14 +186,18 @@ void StrategicMilitiaCall::CreateRadioSectorBox() {
 
 void StrategicMilitiaCall::CreateRadioNumberBox() {
 	// sevenfm: qwen proposed fix for popup crash
-	// Çàùèòà îò óòå÷êè: åñëè îêíî óæå ñóùåñòâóåò (handle != -1), óäàëÿåì åãî ïåðåä ñîçäàíèåì íîâîãî
-	if (m_hRadioNumberBox != -1) 
-  { 
-    RemoveBox(m_hRadioNumberBox);
-    m_hRadioNumberBox = -1;
-  }
+	if (m_hRadioNumberBox != -1)
+	{
+		RemoveBox(m_hRadioNumberBox);
+		m_hRadioNumberBox = -1;
+	}
 
 	UINT32 hStringHandle;
+	if (m_hRadioNumberBox != -1)
+	{
+		HideBox(m_hRadioNumberBox);
+		RemoveBox(m_hRadioNumberBox); m_hRadioNumberBox = -1;
+	}
 	CreatePopUpBox(&m_hRadioNumberBox, RadioNumberDimensions, RadioNumberPosition, (POPUP_BOX_FLAG_CLIP_TEXT | POPUP_BOX_FLAG_CENTER_TEXT | POPUP_BOX_FLAG_RESIZE));
 	ghRadioNumberBox = m_hRadioNumberBox;
 
@@ -342,21 +358,21 @@ void StrategicMilitiaCall::HandleShadingOfLinesForRadioNumberMenu() {
 
 void StrategicMilitiaCall::CloseAllMenus() {
 	// sevenfm: qwen proposed fix for popup crash
-	if (m_hRadioBox != -1)      
-  { 
-    RemoveBox(m_hRadioBox);   
-    m_hRadioBox = -1;
-  }
+	if (m_hRadioBox != -1)
+	{
+		RemoveBox(m_hRadioBox);
+		m_hRadioBox = -1;
+	}
 	if (m_hRadioSectorBox != -1)
-  { 
-    RemoveBox(m_hRadioSectorBox); 
-    m_hRadioSectorBox = -1;
-  }
-	if (m_hRadioNumberBox != -1) 
-  { 
-    RemoveBox(m_hRadioNumberBox); 
-    m_hRadioNumberBox = -1; 
-  }
+	{
+		RemoveBox(m_hRadioSectorBox);
+		m_hRadioSectorBox = -1;
+	}
+	if (m_hRadioNumberBox != -1)
+	{
+		RemoveBox(m_hRadioNumberBox);
+		m_hRadioNumberBox = -1;
+	}
 
 	ghRadioBox = ghRadioSectorBox = ghRadioNumberBox = -1;
 	fShowRadioMenu = fShowRadioSectorMenu = fShowRadioNumberMenu = FALSE;

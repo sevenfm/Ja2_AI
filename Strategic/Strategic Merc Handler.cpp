@@ -46,6 +46,7 @@
 	#include "Facilities.h"
 	// HEADROCK HAM 3.6: And another include, for militia upkeep costs.
 	#include "Town Militia.h"
+	#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 #endif
 
 #ifdef JA2UB
@@ -75,6 +76,34 @@ void StrategicHandlePlayerTeamMercDeath( SOLDIERTYPE *pSoldier )
 {
 	SOLDIERTYPE *pKiller = NULL;
 	INT16 sSectorX, sSectorY;
+
+	// SQUAD_BIVOUAC: if the DEAD merc was the last member of a squad with a NON-EMPTY
+	// bivouac, drop the bivouac items into the squad's sector - otherwise they would
+	// stay hidden in the bivouac of a now-empty squad (or be blocked forever by the
+	// disband guard, which never triggers for dead mercs). Must run while the squad
+	// array still holds this member and the squad's sector is still resolvable.
+	if( pSoldier != NULL && pSoldier->bActive &&
+		pSoldier->bAssignment >= 0 && pSoldier->bAssignment < ON_DUTY &&
+		pSoldier->flags.fBetweenSectors == FALSE )
+	{
+		INT8 bSquad = pSoldier->bAssignment;
+
+		// count LIVE members only: a dead member doesn't "carry" the bivouac
+		INT32 iLive = 0;
+		for( INT32 iSlot = 0; iSlot < NUMBER_OF_SOLDIERS_PER_SQUAD; ++iSlot )
+		{
+			SOLDIERTYPE* pMember = Squad[ bSquad ][ iSlot ];
+			if( pMember != NULL && pMember->bActive && pMember->stats.bLife > 0 )
+			{
+				iLive++;
+			}
+		}
+
+		if( iLive <= 1 && SQBM().IsEmpty( bSquad ) == FALSE )
+		{
+			SQBM().AutoDumpBivouacOnSquadLoss( bSquad, pSoldier );
+		}
+	}
 
 	//if the soldier HAS a profile
 	if( pSoldier->ubProfile != NO_PROFILE )

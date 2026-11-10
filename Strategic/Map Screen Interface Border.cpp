@@ -189,6 +189,13 @@ void RenderMapBorder( void )
 			// render background, then leave
 			BlitInventoryPoolGraphic( );
 		}
+
+		// SQUAD_BIVOUAC: compact panel may be open over the team list column
+		// at the same time as the fullscreen sector inventory
+		if( fShowBivouacPanel )
+		{
+			RenderBivouacPanel( );
+		}
 		return;
 	}
 
@@ -208,6 +215,12 @@ void RenderMapBorder( void )
 
 	// show the level marker
 	DisplayCurrentLevelMarker( );
+
+	// SQUAD_BIVOUAC: compact panel renders over the team list column, on top of everything
+	if( fShowBivouacPanel )
+	{
+		RenderBivouacPanel( );
+	}
 
 	return;
 }

@@ -1639,7 +1639,9 @@ void RebuildWayPointsForGroupPath( PathStPtr pHeadOfPath, INT16 sMvtGroup )
 	
 	if(!AddWaypointStrategicIDToPGroup(pGroup, pNode->uiSectorId))
 	{
-		ScreenMsg(FONT_LTRED, MSG_INTERFACE, L"Group %d has corrupted waypoints. Cancelling movement!", pGroup->ubGroupID);
+		// the waypoint was rejected by a movement guard (e.g. SQUAD_BIVOUAC: not enough
+		// mercs to carry a non-empty bivouac) - the guard has already shown its localized
+		// message; do NOT print the misleading "corrupted waypoints" debug text here
 		RemovePGroupWaypoints(pGroup);
 		return;
 	}

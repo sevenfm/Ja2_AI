@@ -38,6 +38,7 @@
 	#include "Vehicles.h"
 	#include "email.h"
 	#include "Map Screen Helicopter.h"
+	#include "SquadBivouacManager.h"	// SQUAD_BIVOUAC
 #endif
 
 #include "GameSettings.h"
@@ -933,6 +934,24 @@ BOOLEAN StrategicRemoveMerc( SOLDIERTYPE *pSoldier )
 {
 	UINT8	ubHistoryCode=0;
 
+	// SQUAD_BIVOUAC: the merc is leaving the party for good (dismissal, contract expiry,
+	// dead merc cleanup). If he is the last member of a squad with a NON-EMPTY bivouac,
+	// drop the bivouac items into the squad's sector - otherwise they would vanish
+	// together with the squad. Must run BEFORE RemoveCharacterFromSquads(), while the
+	// squad array and the squad's sector are still valid; with the bivouac emptied here
+	// the disband guard inside RemoveCharacterFromSquads() passes silently.
+	if( pSoldier != NULL && pSoldier->bActive &&
+		!( gTacticalStatus.uiFlags & LOADING_SAVED_GAME ) &&
+		pSoldier->bAssignment >= 0 && pSoldier->bAssignment < ON_DUTY )
+	{
+		INT8 bSquad = pSoldier->bAssignment;
+
+		if( NumberOfPeopleInSquad( bSquad ) == 1 &&
+			SQBM().IsEmpty( bSquad ) == FALSE )
+		{
+			SQBM().AutoDumpBivouacOnSquadLoss( bSquad, pSoldier );
+		}
+	}
 
 	if ( gfInContractMenuFromRenewSequence )
 	{
