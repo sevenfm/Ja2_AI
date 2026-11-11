@@ -66,6 +66,11 @@
 
 #include <vector>
 
+#include "ai.h"
+#include "Isometric Utils.h"
+#include "Map Information.h"
+#include "soldier add.h"
+
 //The sector information required for the strategic AI.  Contains the number of enemy troops,
 //as well as intentions, etc.
 //SECTORINFO SectorInfo[256];
@@ -586,6 +591,28 @@ BOOLEAN PrepareEnemyForSectorBattle()
 
 	if( gbWorldSectorZ > 0 )
 		return PrepareEnemyForUndergroundBattle();
+
+	// travnik: night ambush - move player mercs to the map center so the ambush placement code
+	// (which surrounds gMapInformation.sCenterGridNo) encircles them properly
+	if( gubEnemyEncounterCode == ENEMY_AMBUSH_CODE && gMapInformation.sCenterGridNo > 0 &&
+		!TileIsOutOfBounds( gMapInformation.sCenterGridNo ) )
+	{
+		UINT8 ubMercDirection;
+		for( UINT16 i = gTacticalStatus.Team[ OUR_TEAM ].bFirstID; i <= gTacticalStatus.Team[ OUR_TEAM ].bLastID; ++i )
+		{
+			SOLDIERTYPE* pMerc = MercPtrs[ i ];
+			if( pMerc && pMerc->bActive && pMerc->bInSector && !pMerc->flags.fBetweenSectors &&
+				pMerc->stats.bLife > 0 && !( pMerc->flags.uiStatusFlags & SOLDIER_VEHICLE ) &&
+				pMerc->sGridNo != gMapInformation.sCenterGridNo )
+			{
+				INT32 sNewGridNo = FindRandomGridNoFromSweetSpotExcludingSweetSpot( pMerc, gMapInformation.sCenterGridNo, 4, &ubMercDirection );
+				if( !TileIsOutOfBounds( sNewGridNo ) )
+				{
+					pMerc->EVENT_SetSoldierPositionForceDelete( (FLOAT)CenterX( sNewGridNo ), (FLOAT)CenterY( sNewGridNo ) );
+				}
+			}
+		}
+	}
 
 	// Add the invading group
 	if (gpBattleGroup && !gpBattleGroup->fPlayer )
@@ -1938,6 +1965,30 @@ void AddEnemiesToBattle( GROUP *pGroup, UINT8 ubStrategicInsertionCode, UINT8 ub
 	}
 
 	ubTotalSoldiers = ubNumAdmins + ubNumTroops + ubNumElites;
+
+	// travnik: night raid ambush - place the raiding party in a ring around the map center
+	// (player mercs are teleported there by PrepareEnemyForSectorBattle) instead of the map edge
+	BOOLEAN fAmbushRing = ( gubEnemyEncounterCode == ENEMY_AMBUSH_CODE &&
+							!TileIsOutOfBounds( gMapInformation.sCenterGridNo ) &&
+							ubStrategicInsertionCode >= INSERTION_CODE_NORTH && ubStrategicInsertionCode <= INSERTION_CODE_WEST );
+	INT32 sAmbushGridNo[ 32 ];
+	UINT8 ubAmbushNumPoints = 0;
+	if( fAmbushRing )
+	{
+		UINT8 ubAmbushDirection = 0;
+		for( UINT8 ubSlot = 0; ubSlot < 32 && ubSlot < ubTotalSoldiers; ++ubSlot )
+		{
+			INT32 sGridNo = FindRandomGridNoBetweenCircles( gMapInformation.sCenterGridNo, VISION_RANGE * 3 / 4, VISION_RANGE + DAY_VISION_RANGE / 2, ubAmbushDirection );
+			if( !TileIsOutOfBounds( sGridNo ) )
+				sAmbushGridNo[ ubAmbushNumPoints++ ] = sGridNo;
+		}
+
+		if( !ubAmbushNumPoints )
+		{
+			// no valid ring spots found - fall back to edge insertion
+			fAmbushRing = FALSE;
+		}
+	}
 	
 	#ifdef JA2UB
 	if( gsGridNoForMapEdgePointInfo != -1 )
@@ -1973,8 +2024,20 @@ void AddEnemiesToBattle( GROUP *pGroup, UINT8 ubStrategicInsertionCode, UINT8 ub
 	
 	
 	ubCurrSlot = 0;
+	UINT8 ubAmbushSlot = 0;
 	while( ubTotalSoldiers )
 	{
+		// travnik: pick insertion position: ambush ring spot (if raid ambush) or normal map edgepoint
+		INT32 sInsertionGridNo = NOWHERE;
+		if( fAmbushRing && ubAmbushSlot < ubAmbushNumPoints )
+		{
+			sInsertionGridNo = sAmbushGridNo[ ubAmbushSlot++ ];
+		}
+		else if( ubCurrSlot < MapEdgepointInfo.ubNumPoints )
+		{
+			sInsertionGridNo = MapEdgepointInfo.sGridNo[ ubCurrSlot++ ];
+		}
+
 		if( ubNumElites && Random( ubTotalSoldiers ) < ubNumElites )
 		{
 			ubNumElites--;
@@ -1987,13 +2050,13 @@ void AddEnemiesToBattle( GROUP *pGroup, UINT8 ubStrategicInsertionCode, UINT8 ub
 
 			pSoldier->ubInsertionDirection = bDesiredDirection;
 			//Setup the position
-			if( ubCurrSlot < MapEdgepointInfo.ubNumPoints )
-			{ //using an edgepoint
+			if( !TileIsOutOfBounds( sInsertionGridNo ) )
+			{ //using a gridno
 				pSoldier->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
-				pSoldier->usStrategicInsertionData = MapEdgepointInfo.sGridNo[ ubCurrSlot++ ];
+				pSoldier->usStrategicInsertionData = sInsertionGridNo;
 			}
 			else
-			{ //no edgepoints left, so put him at the entrypoint.
+			{ //no spot found, so put him at the entrypoint.
 				pSoldier->ubStrategicInsertionCode = ubStrategicInsertionCode;
 			}
 			UpdateMercInSector( pSoldier, gWorldSectorX, gWorldSectorY, 0 );
@@ -2010,13 +2073,13 @@ void AddEnemiesToBattle( GROUP *pGroup, UINT8 ubStrategicInsertionCode, UINT8 ub
 
 			pSoldier->ubInsertionDirection = bDesiredDirection;
 			//Setup the position
-			if( ubCurrSlot < MapEdgepointInfo.ubNumPoints )
-			{ //using an edgepoint
+			if( !TileIsOutOfBounds( sInsertionGridNo ) )
+			{ //using a gridno
 				pSoldier->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
-				pSoldier->usStrategicInsertionData = MapEdgepointInfo.sGridNo[ ubCurrSlot++ ];
+				pSoldier->usStrategicInsertionData = sInsertionGridNo;
 			}
 			else
-			{ //no edgepoints left, so put him at the entrypoint.
+			{ //no spot found, so put him at the entrypoint.
 				pSoldier->ubStrategicInsertionCode = ubStrategicInsertionCode;
 			}
 			UpdateMercInSector( pSoldier, gWorldSectorX, gWorldSectorY, 0 );
@@ -2033,13 +2096,13 @@ void AddEnemiesToBattle( GROUP *pGroup, UINT8 ubStrategicInsertionCode, UINT8 ub
 
 			pSoldier->ubInsertionDirection = bDesiredDirection;
 			//Setup the position
-			if( ubCurrSlot < MapEdgepointInfo.ubNumPoints )
-			{ //using an edgepoint
+			if( !TileIsOutOfBounds( sInsertionGridNo ) )
+			{ //using a gridno
 				pSoldier->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
-				pSoldier->usStrategicInsertionData = MapEdgepointInfo.sGridNo[ ubCurrSlot++ ];
+				pSoldier->usStrategicInsertionData = sInsertionGridNo;
 			}
 			else
-			{ //no edgepoints left, so put him at the entrypoint.
+			{ //no spot found, so put him at the entrypoint.
 				pSoldier->ubStrategicInsertionCode = ubStrategicInsertionCode;
 			}
 			UpdateMercInSector( pSoldier, gWorldSectorX, gWorldSectorY, 0 );

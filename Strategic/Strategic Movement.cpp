@@ -1169,6 +1169,13 @@ BOOLEAN CheckConditionsForBattle( GROUP *pGroup )
 		{
 			fBattlePending = TRUE;
 		}
+
+		// travnik: ONLY lua-created raid groups (night ambush) ambush the player's sector;
+		// random enemy patrols and regular invasions do not
+		if( fBattlePending && pGroup->uiFlags & GROUPFLAG_RAID_GROUP )
+		{
+			gfHighPotentialForAmbush = TRUE;
+		}
 	}
 
 	if( !fAliveMerc && !fMilitiaPresent )

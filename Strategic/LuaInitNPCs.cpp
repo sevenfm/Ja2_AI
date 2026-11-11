@@ -866,6 +866,14 @@ static int l_SetStartingCashDifLevel(lua_State *L);
 static int l_GetUsedLanguage(lua_State *L);
 static int l_CreateArmedCivilain(lua_State *L);
 static int l_CreateCivilian(lua_State *L);
+static int l_GetSectorTerrain(lua_State *L);
+static int l_SetSectorAmbushLocation(lua_State *L);
+static int l_SetGroupHighAmbushPotential(lua_State *L);
+static int l_CreateEnemyGroup(lua_State *L);
+static int l_AddWaypointToGroup(lua_State *L);
+static int l_SendGroupToSectorNow(lua_State *L);
+static int l_SetGroupFlag(lua_State *L);
+static int l_GetGroupFlag(lua_State *L);
 
 using namespace std;
 
@@ -1744,6 +1752,9 @@ void IniFunction(lua_State *L, BOOLEAN bQuests)
 	lua_register(L, "GetUsedLanguage", l_GetUsedLanguage);
 	lua_register(L, "CreateArmedCivilain", l_CreateArmedCivilain);
 	lua_register(L, "CreateCivilian", l_CreateCivilian);
+	lua_register(L, "GetSectorTerrain", l_GetSectorTerrain);
+	lua_register(L, "SetSectorAmbushLocation", l_SetSectorAmbushLocation);
+	lua_register(L, "SetGroupHighAmbushPotential", l_SetGroupHighAmbushPotential);
 }
 #ifdef NEWMUSIC
 BOOLEAN LetLuaMusicControl(UINT8 Init)
@@ -3031,7 +3042,12 @@ BOOLEAN LetLuaPerformItemAction(UINT32 ActionID, INT32 sGridNo, UINT8 InitFuncti
 
 BOOLEAN LetLuaHourlyQuestUpdate(UINT8 Init)
 {
-	const char* filename = "scripts\\HourlyUpdate.lua";
+	// travnik: if the lua script is not present, return FALSE so that the hardcoded C++ logic can be used instead
+	if ( !FileExists(SCRIPTS_HOURLYUPDATE_FILENAME) )
+	{
+		DebugQuestInfo(String("LetLuaHourlyQuestUpdate: script %s not found", SCRIPTS_HOURLYUPDATE_FILENAME));
+		return FALSE;
+	}
 
 	LuaScopeState _LS(true);
 
@@ -3047,14 +3063,60 @@ BOOLEAN LetLuaHourlyQuestUpdate(UINT8 Init)
 	lua_register(_LS.L(), "SetgubBoxersRests", l_SetgubBoxersRests);
 	lua_register(_LS.L(), "GetWorldHour", l_GetWorldHour);
 
-	SGP_THROW_IFFALSE(_LS.L.EvalFile(filename), _BS("Cannot open file: ") << filename << _BS::cget);
+	// travnik: night ambush support (HourlyUpdate.lua)
+	lua_register(_LS.L(), "CreateEnemyGroup", l_CreateEnemyGroup);
+	lua_register(_LS.L(), "AddWaypointToGroup", l_AddWaypointToGroup);
+	lua_register(_LS.L(), "SendGroupToSectorNow", l_SendGroupToSectorNow);
+	lua_register(_LS.L(), "SetGroupFlag", l_SetGroupFlag);
+	lua_register(_LS.L(), "GetGroupFlag", l_GetGroupFlag);
+
+	// travnik: load localized message strings (Messages.lua / Russian.Messages.lua / ...), same scheme as undergroundsectornames
+	try
+	{
+		std::string messagesfile("scripts\\");
+
+		// same language prefix logic as GetLanguagePrefix() in Init.cpp
+		// (prefix macros are defined in Tactical\XML.h, literals used here to avoid the include)
+		const char* langPrefix =
+#ifdef RUSSIAN
+			"Russian.";
+#elif defined(GERMAN)
+			"German.";
+#elif defined(DUTCH)
+			"Dutch.";
+#elif defined(POLISH)
+			"Polish.";
+#elif defined(FRENCH)
+			"French.";
+#elif defined(ITALIAN)
+			"Italian.";
+#elif defined(CHINESE)
+			"Chinese.";
+#else
+			""; // ENGLISH
+#endif
+		messagesfile.append( langPrefix );
+		messagesfile.append( "Messages.lua" );
+
+		if ( FileExists( (STR)messagesfile.c_str() ) )
+		{
+			_LS.L.EvalFile( messagesfile.c_str() );
+		}
+	}
+	catch (...)
+	{
+		// missing or broken messages file must not break the hourly update
+		// (script strings will be nil - guard with tostring() in lua)
+	}
+
+	SGP_THROW_IFFALSE(_LS.L.EvalFile(SCRIPTS_HOURLYUPDATE_FILENAME), _BS("Cannot open file: ") << SCRIPTS_HOURLYUPDATE_FILENAME << _BS::cget);
 
 	if (Init == 0)
 	{
 		LuaFunction(_LS.L, "HourlyQuestUpdate").Call(0);
 	}
 
-	return true;
+	return TRUE;
 }
 
 //object
@@ -13497,4 +13559,220 @@ static int l_CreateCivilian(lua_State* L)
 	}
 
 	return 0;
+}
+
+//--------------------------------------------------------------
+//Lua 1.13 port: ambush/terrain helpers
+//--------------------------------------------------------------
+
+// GetSectorTerrain( sectorX, sectorY ) -> terrain code of the sector (ubTraversability[4] = general terrain when passing through)
+// Codes: 0=SPARSE, 1=DENSE, 2=SWAMP, 3=WATER, 4=HILLS, 5=GROUNDBARRIER, 6=NS_RIVER, 7=EW_RIVER, 8=EDGEOFWORLD,
+//        9=TROPICS, 10=FARMLAND, 11=PLAINS_ROAD, 12=SPARSE_ROAD, 13=FARMLAND_ROAD, 14=TROPICS_ROAD, 15=DENSE_ROAD,
+//        16=COASTAL, 17=HILLS_ROAD, 18=COASTAL_ROAD, 19=SAND_ROAD, 20=SWAMP_ROAD
+// "forest/wilderness" sectors are TROPICS (9) and DENSE (1)
+static int l_GetSectorTerrain(lua_State* L)
+{
+	if (lua_gettop(L) >= 2)
+	{
+		UINT8 x = (UINT8)lua_tointeger(L, 1);
+		UINT8 y = (UINT8)lua_tointeger(L, 2);
+
+		if (x >= 1 && x <= 16 && y >= 1 && y <= 16)
+		{
+			UINT8 sector = (UINT8)SECTOR(x, y);
+			lua_pushinteger(L, SectorInfo[sector].ubTraversability[4]);
+			return 1;
+		}
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+// SetSectorAmbushLocation( sectorX, sectorY, on ) - mark/unmark sector as an ambush location
+// (same flag as engine ROADBLOCK garrisons use, adds +20% chance of enemy ambush on entry)
+static int l_SetSectorAmbushLocation(lua_State* L)
+{
+	if (lua_gettop(L) >= 3)
+	{
+		UINT8 x = (UINT8)lua_tointeger(L, 1);
+		UINT8 y = (UINT8)lua_tointeger(L, 2);
+		BOOLEAN on = (BOOLEAN)lua_tointeger(L, 3);
+
+		if (x >= 1 && x <= 16 && y >= 1 && y <= 16)
+		{
+			UINT8 sector = (UINT8)SECTOR(x, y);
+			if (on)
+				SectorInfo[sector].uiFlags |= SF_ENEMY_AMBUSH_LOCATION;
+			else
+				SectorInfo[sector].uiFlags &= ~SF_ENEMY_AMBUSH_LOCATION;
+		}
+	}
+
+	return 0;
+}
+
+// SetGroupHighAmbushPotential( groupID ) - flag an enemy group so its next encounter with the player
+// has a 90% chance to be an ambush (same flag the engine sets after the player retreats from a battle)
+static int l_SetGroupHighAmbushPotential(lua_State* L)
+{
+	if (lua_gettop(L) >= 1)
+	{
+		UINT8 ubGroupID = (UINT8)lua_tointeger(L, 1);
+
+		GROUP* pGroup = GetGroup( ubGroupID );
+
+		if (pGroup)
+		{
+			pGroup->uiFlags |= GROUPFLAG_HIGH_POTENTIAL_FOR_AMBUSH;
+		}
+	}
+
+	return 0;
+}
+
+// CreateEnemyGroup( sectorID, numAdmins, numTroops, numElites ) - create an enemy group departing from the given sector
+// sectorID is the strategic sector ID (0..255), returns the group ID (0 if the group could not be created)
+static int l_CreateEnemyGroup(lua_State* L)
+{
+	UINT8 n = lua_gettop(L);
+
+	if (n >= 4)
+	{
+		UINT32 uiSector = (UINT32)lua_tointeger(L, 1);
+		UINT8 ubNumAdmins = (UINT8)lua_tointeger(L, 2);
+		UINT8 ubNumTroops = (UINT8)lua_tointeger(L, 3);
+		UINT8 ubNumElites = (UINT8)lua_tointeger(L, 4);
+
+		GROUP* pGroup = CreateNewEnemyGroupDepartingFromSector( uiSector, ubNumAdmins, ubNumTroops, ubNumElites );
+
+		if (pGroup)
+		{
+			lua_pushinteger( L, pGroup->ubGroupID );
+			return 1;
+		}
+	}
+
+	lua_pushnil( L );
+	return 1;
+}
+
+// SetGroupFlag( groupID, flag, on ) - set/clear a flag on a strategic group
+// flag values: 0x10 GROUPFLAG_HIGH_POTENTIAL_FOR_AMBUSH (90% chance the encounter becomes an ambush),
+//              0x40 GROUPFLAG_RAID_GROUP (lua raid group - when it attacks a player sector, the encounter becomes an ambush)
+// on: true/1 to set, false/0 to clear. Returns TRUE on success, FALSE if the group does not exist.
+static int l_SetGroupFlag(lua_State* L)
+{
+	UINT8 n = lua_gettop(L);
+	BOOLEAN fResult = FALSE;
+
+	if (n >= 2)
+	{
+		UINT8 ubGroupID = (UINT8)lua_tointeger(L, 1);
+		UINT32 uiFlag = (UINT32)lua_tointeger(L, 2);
+		BOOLEAN fOn = ( n >= 3 ) ? lua_toboolean(L, 3) : TRUE;
+
+		GROUP* pGroup = GetGroup( ubGroupID );
+
+		if ( pGroup )
+		{
+			if ( fOn )
+				pGroup->uiFlags |= uiFlag;
+			else
+				pGroup->uiFlags &= ~uiFlag;
+
+			fResult = TRUE;
+		}
+	}
+
+	lua_pushboolean( L, fResult );
+	return 1;
+}
+
+// GetGroupFlag( groupID, flag ) - check whether a strategic group has a flag set, returns TRUE/FALSE
+static int l_GetGroupFlag(lua_State* L)
+{
+	UINT8 n = lua_gettop(L);
+	BOOLEAN fResult = FALSE;
+
+	if (n >= 2)
+	{
+		UINT8 ubGroupID = (UINT8)lua_tointeger(L, 1);
+		UINT32 uiFlag = (UINT32)lua_tointeger(L, 2);
+
+		GROUP* pGroup = GetGroup( ubGroupID );
+
+		if ( pGroup )
+		{
+			fResult = ( pGroup->uiFlags & uiFlag ) ? TRUE : FALSE;
+		}
+	}
+
+	lua_pushboolean( L, fResult );
+	return 1;
+}
+
+// AddWaypointToGroup( groupID, sectorX, sectorY ) - add a waypoint to a group, sector coords are 1..16
+static int l_AddWaypointToGroup(lua_State* L)
+{
+	UINT8 n = lua_gettop(L);
+
+	if (n >= 3)
+	{
+		UINT8 ubGroupID = (UINT8)lua_tointeger(L, 1);
+		UINT8 ubSectorX = (UINT8)lua_tointeger(L, 2);
+		UINT8 ubSectorY = (UINT8)lua_tointeger(L, 3);
+
+		AddWaypointToGroup( ubGroupID, ubSectorX, ubSectorY );
+	}
+
+	return 0;
+}
+
+// SendGroupToSectorNow( groupID, sectorX, sectorY, delayMinutes ) - send a group to the target sector immediately,
+// overriding the normal travel time. The group arrives delayMinutes after the current game time (0 = instantly).
+// Used by the night ambush script so that the raiding party arrives within the same game hour.
+// Returns TRUE on success, FALSE if the group does not exist.
+static int l_SendGroupToSectorNow(lua_State* L)
+{
+	UINT8 n = lua_gettop(L);
+	BOOLEAN fResult = FALSE;
+
+	if (n >= 3)
+	{
+		UINT8 ubGroupID = (UINT8)lua_tointeger(L, 1);
+		UINT8 ubSectorX = (UINT8)lua_tointeger(L, 2);
+		UINT8 ubSectorY = (UINT8)lua_tointeger(L, 3);
+		UINT32 uiDelayMinutes = 0;
+		if (n >= 4)
+			uiDelayMinutes = (UINT32)lua_tointeger(L, 4);
+
+		GROUP* pGroup = GetGroup( ubGroupID );
+
+		if ( pGroup )
+		{
+			// replace any existing path with the single target waypoint
+			RemoveGroupWaypoints( ubGroupID );
+			AddWaypointToGroup( ubGroupID, ubSectorX, ubSectorY );
+
+			// initiate movement (computes a normal traverse time, posts the arrival event)
+			InitiateGroupMovementToNextSector( pGroup );
+
+			// shorten the trip: clamp the arrival event to (now + delayMinutes)
+			UINT32 uiArrivalTime = GetWorldTotalMin() + uiDelayMinutes;
+
+			// remove the previously posted arrival event and repost it with the new time
+			DeleteStrategicEvent( EVENT_GROUP_ARRIVAL, ubGroupID );
+			AddStrategicEvent( EVENT_GROUP_ARRIVAL, uiArrivalTime, ubGroupID );
+
+			// keep group data consistent
+			pGroup->uiTraverseTime = uiArrivalTime - GetWorldTotalMin();
+			SetGroupArrivalTime( pGroup, uiArrivalTime );
+
+			fResult = TRUE;
+		}
+	}
+
+	lua_pushboolean( L, fResult );
+	return 1;
 }

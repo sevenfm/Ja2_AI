@@ -3,6 +3,8 @@
 
 #include "Types.h"
 
+const STR SCRIPTS_HOURLYUPDATE_FILENAME = "scripts\\HourlyUpdate.lua";
+
 typedef struct
 {
 	BOOLEAN	fGlobalLuaBool;

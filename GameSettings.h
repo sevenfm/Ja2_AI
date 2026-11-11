@@ -560,6 +560,9 @@ typedef struct
 	BOOLEAN autoSaveOnAssertionFailure;
 	UINT32  autoSaveTime;
 
+	// travnik: hourly quest update mode: 0 - C++ code only (default), 1 - C++ code supplemented by lua script, 2 - lua script completely replaces C++ code
+	UINT32  ubHourlyQuestUpdateMode;
+
 	//JMich
 	UINT16 guiMaxWeaponSize;
 	UINT16 guiMaxItemSize;
