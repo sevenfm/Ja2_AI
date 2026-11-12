@@ -106,6 +106,15 @@ typedef struct
 
 typedef struct
 {
+	INT32 x;
+	INT32 y;
+	INT32 width;
+	INT32 height;
+
+} SGPRectangle;
+
+typedef struct
+{
 	INT32 	iX;
 	INT32	iY;
 

@@ -3070,6 +3070,5 @@ void this_is_the_Ja25PolishText_public_symbol(void);
 extern STR16 szGearTemplateText[];
 // Flugente: IMP gear selection
 extern STR16	szIMPGearWebSiteText[];
-extern STR16	szIMPGearDropDownText[];
-extern STR16	szIMPGearDropDownNoneText[];
+extern STR16	szIMPGearPocketText[];
 void this_is_the_Ja25RussianText_public_symbol(void);
