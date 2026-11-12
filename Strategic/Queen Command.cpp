@@ -70,6 +70,7 @@
 #include "Isometric Utils.h"
 #include "Map Information.h"
 #include "soldier add.h"
+#include "LuaInitNPCs.h"	// travnik: AMBUSH_* raid constants
 
 //The sector information required for the strategic AI.  Contains the number of enemy troops,
 //as well as intentions, etc.
@@ -605,7 +606,7 @@ BOOLEAN PrepareEnemyForSectorBattle()
 				pMerc->stats.bLife > 0 && !( pMerc->flags.uiStatusFlags & SOLDIER_VEHICLE ) &&
 				pMerc->sGridNo != gMapInformation.sCenterGridNo )
 			{
-				INT32 sNewGridNo = FindRandomGridNoFromSweetSpotExcludingSweetSpot( pMerc, gMapInformation.sCenterGridNo, 4, &ubMercDirection );
+				INT32 sNewGridNo = FindRandomGridNoFromSweetSpotExcludingSweetSpot( pMerc, gMapInformation.sCenterGridNo, AMBUSH_MERC_CENTER_RADIUS, &ubMercDirection );
 				if( !TileIsOutOfBounds( sNewGridNo ) )
 				{
 					pMerc->EVENT_SetSoldierPositionForceDelete( (FLOAT)CenterX( sNewGridNo ), (FLOAT)CenterY( sNewGridNo ) );
@@ -1971,14 +1972,14 @@ void AddEnemiesToBattle( GROUP *pGroup, UINT8 ubStrategicInsertionCode, UINT8 ub
 	BOOLEAN fAmbushRing = ( gubEnemyEncounterCode == ENEMY_AMBUSH_CODE &&
 							!TileIsOutOfBounds( gMapInformation.sCenterGridNo ) &&
 							ubStrategicInsertionCode >= INSERTION_CODE_NORTH && ubStrategicInsertionCode <= INSERTION_CODE_WEST );
-	INT32 sAmbushGridNo[ 32 ];
+	INT32 sAmbushGridNo[ LARGEST_NUMBER_IN_ANY_GROUP ];
 	UINT8 ubAmbushNumPoints = 0;
 	if( fAmbushRing )
 	{
 		UINT8 ubAmbushDirection = 0;
-		for( UINT8 ubSlot = 0; ubSlot < 32 && ubSlot < ubTotalSoldiers; ++ubSlot )
+		for( UINT8 ubSlot = 0; ubSlot < LARGEST_NUMBER_IN_ANY_GROUP && ubSlot < ubTotalSoldiers; ++ubSlot )
 		{
-			INT32 sGridNo = FindRandomGridNoBetweenCircles( gMapInformation.sCenterGridNo, VISION_RANGE * 3 / 4, VISION_RANGE + DAY_VISION_RANGE / 2, ubAmbushDirection );
+			INT32 sGridNo = FindRandomGridNoBetweenCircles( gMapInformation.sCenterGridNo, AMBUSH_RING_INNER_RADIUS, AMBUSH_RING_OUTER_RADIUS, ubAmbushDirection );
 			if( !TileIsOutOfBounds( sGridNo ) )
 				sAmbushGridNo[ ubAmbushNumPoints++ ] = sGridNo;
 		}

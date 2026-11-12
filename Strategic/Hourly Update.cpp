@@ -277,17 +277,14 @@ void HandleQuarterHourUpdate()
 
 void HourlyQuestUpdate()
 {	
-	// travnik: HOURLY_QUEST_UPDATE_MODE
-	// 0 (default) - hardcoded C++ code only
-	// 1 - C++ code, supplemented by lua script (HourlyUpdate.lua)
-	// 2 - lua script completely replaces C++ code (script has to be present, otherwise C++ code is used)
+	// travnik: HOURLY_QUEST_UPDATE_MODE (see HOURLY_QUEST_UPDATE_MODES in GameSettings.h)
 	UINT32 ubMode = gGameExternalOptions.ubHourlyQuestUpdateMode;
 
-	if ( ubMode > 0 )
+	if ( ubMode != HOURLY_QUEST_CPP_ONLY )
 	{
 		BOOLEAN fLuaResult = LetLuaHourlyQuestUpdate(0);
 
-		if ( fLuaResult && ubMode == 2 )
+		if ( fLuaResult && ubMode == HOURLY_QUEST_LUA_ONLY )
 		{
 			return;
 		}

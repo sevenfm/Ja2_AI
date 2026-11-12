@@ -1045,8 +1045,8 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.autoSaveOnAssertionFailure		= iniReader.ReadBoolean("Troubleshooting Settings","AUTO_SAVE_ON_ASSERTION_FAILURE", FALSE);
 	gGameExternalOptions.autoSaveTime 					= iniReader.ReadInteger("Troubleshooting Settings","AUTO_SAVE_EVERY_N_HOURS", 6, 0, 24);
 
-	// travnik: hourly quest update mode: 0 - C++ code only (default), 1 - C++ code supplemented by lua script, 2 - lua script completely replaces C++ code
-	gGameExternalOptions.ubHourlyQuestUpdateMode		= iniReader.ReadInteger("Script Settings","HOURLY_QUEST_UPDATE_MODE", 0, 0, 2);
+	// travnik: hourly quest update mode (see HOURLY_QUEST_UPDATE_MODES in GameSettings.h)
+	gGameExternalOptions.ubHourlyQuestUpdateMode		= iniReader.ReadInteger("Script Settings","HOURLY_QUEST_UPDATE_MODE", HOURLY_QUEST_CPP_ONLY, HOURLY_QUEST_CPP_ONLY, HOURLY_QUEST_LUA_ONLY);
 
 	//################# Graphics Settings #################
 	gGameExternalOptions.gfVSync = iniReader.ReadBoolean("Graphics Settings","VERTICAL_SYNC",0);

@@ -3070,44 +3070,44 @@ BOOLEAN LetLuaHourlyQuestUpdate(UINT8 Init)
 	lua_register(_LS.L(), "SetGroupFlag", l_SetGroupFlag);
 	lua_register(_LS.L(), "GetGroupFlag", l_GetGroupFlag);
 
-	// travnik: load localized message strings (Messages.lua / Russian.Messages.lua / ...), same scheme as undergroundsectornames
-	try
-	{
-		std::string messagesfile("scripts\\");
-
-		// same language prefix logic as GetLanguagePrefix() in Init.cpp
-		// (prefix macros are defined in Tactical\XML.h, literals used here to avoid the include)
-		const char* langPrefix =
-#ifdef RUSSIAN
-			"Russian.";
-#elif defined(GERMAN)
-			"German.";
-#elif defined(DUTCH)
-			"Dutch.";
-#elif defined(POLISH)
-			"Polish.";
-#elif defined(FRENCH)
-			"French.";
-#elif defined(ITALIAN)
-			"Italian.";
-#elif defined(CHINESE)
-			"Chinese.";
-#else
-			""; // ENGLISH
-#endif
-		messagesfile.append( langPrefix );
-		messagesfile.append( "Messages.lua" );
-
-		if ( FileExists( (STR)messagesfile.c_str() ) )
+		// travnik: load localized message strings (Messages.lua / Russian.Messages.lua / ...), same scheme as undergroundsectornames
+		try
 		{
-			_LS.L.EvalFile( messagesfile.c_str() );
+			std::string messagesfile("scripts\\");
+
+			// same language prefix logic as GetLanguagePrefix() in Init.cpp
+			// (prefix macros are defined in Tactical\XML.h, literals used here to avoid the include)
+			const char* langPrefix =
+#ifdef RUSSIAN
+				"Russian.";
+#elif defined(GERMAN)
+				"German.";
+#elif defined(DUTCH)
+				"Dutch.";
+#elif defined(POLISH)
+				"Polish.";
+#elif defined(FRENCH)
+				"French.";
+#elif defined(ITALIAN)
+				"Italian.";
+#elif defined(CHINESE)
+				"Chinese.";
+#else
+				""; // ENGLISH
+#endif
+			messagesfile.append( langPrefix );
+			messagesfile.append( SCRIPTS_MESSAGES_FILENAME );
+
+			if ( FileExists( (STR)messagesfile.c_str() ) )
+			{
+				_LS.L.EvalFile( messagesfile.c_str() );
+			}
 		}
-	}
-	catch (...)
-	{
-		// missing or broken messages file must not break the hourly update
-		// (script strings will be nil - guard with tostring() in lua)
-	}
+		catch (...)
+		{
+			// missing or broken messages file must not break the hourly update
+			// (script strings will be nil - guard with tostring() in lua)
+		}
 
 	SGP_THROW_IFFALSE(_LS.L.EvalFile(SCRIPTS_HOURLYUPDATE_FILENAME), _BS("Cannot open file: ") << SCRIPTS_HOURLYUPDATE_FILENAME << _BS::cget);
 
@@ -13658,8 +13658,7 @@ static int l_CreateEnemyGroup(lua_State* L)
 }
 
 // SetGroupFlag( groupID, flag, on ) - set/clear a flag on a strategic group
-// flag values: 0x10 GROUPFLAG_HIGH_POTENTIAL_FOR_AMBUSH (90% chance the encounter becomes an ambush),
-//              0x40 GROUPFLAG_RAID_GROUP (lua raid group - when it attacks a player sector, the encounter becomes an ambush)
+// flag values: see LUAGROUPFLAG_* in LuaInitNPCs.h
 // on: true/1 to set, false/0 to clear. Returns TRUE on success, FALSE if the group does not exist.
 static int l_SetGroupFlag(lua_State* L)
 {

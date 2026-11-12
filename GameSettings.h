@@ -284,6 +284,14 @@ bool UsingNewCTHSystem();
 BOOLEAN UsingFoodSystem();
 BOOLEAN IsNIVModeValid(bool checkRes = true);
 
+// travnik: hourly quest update mode values (HOURLY_QUEST_UPDATE_MODE ini setting)
+enum HOURLY_QUEST_UPDATE_MODES
+{
+	HOURLY_QUEST_CPP_ONLY = 0,		// (default) hardcoded C++ code only, lua is not called
+	HOURLY_QUEST_CPP_AND_LUA,		// C++ code, supplemented by lua script (HourlyUpdate.lua)
+	HOURLY_QUEST_LUA_ONLY,			// lua script completely replaces C++ code (script has to be present, otherwise C++ code is used)
+};
+
 // Snap: Options read from an INI file in the default of custom Data directory
 typedef struct
 {
@@ -560,7 +568,7 @@ typedef struct
 	BOOLEAN autoSaveOnAssertionFailure;
 	UINT32  autoSaveTime;
 
-	// travnik: hourly quest update mode: 0 - C++ code only (default), 1 - C++ code supplemented by lua script, 2 - lua script completely replaces C++ code
+	// travnik: hourly quest update mode (HOURLY_QUEST_UPDATE_MODES)
 	UINT32  ubHourlyQuestUpdateMode;
 
 	//JMich
