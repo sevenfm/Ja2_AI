@@ -18421,6 +18421,25 @@ void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravel
 	// Stop side effects until were done....
 	this->drugs.bDrugSideEffectRate[ ubDrugType ]	= 0;
 
+	// sevenfm: immediately add some value
+	if (this->drugs.bDrugEffectRate[ubDrugType] > 0)
+	{
+		// Seap some in....
+		this->drugs.bFutureDrugEffect[ubDrugType] -= this->drugs.bDrugEffectRate[ubDrugType];
+		this->drugs.bDrugEffect[ubDrugType] += this->drugs.bDrugEffectRate[ubDrugType];
+
+		// Refresh morale w/ new drug value...
+		RefreshSoldierMorale(this);
+
+		// Check if we need to stop 'adding'
+		if (this->drugs.bFutureDrugEffect[ubDrugType] <= 0)
+		{
+			this->drugs.bFutureDrugEffect[ubDrugType] = 0;
+			// Change rate to -ve..
+			this->drugs.bDrugEffectRate[ubDrugType] = -Drug[ubDrugType].ubDrugWearoffRate;
+		}
+	}
+
 	// set flag: we are on drugs
 	this->usSoldierFlagMask |= SOLDIER_DRUGGED;
 }
@@ -26647,12 +26666,12 @@ void SOLDIERTYPE::Rally(void)
 				if (!MercUnderTheInfluence(this, DRUG_TYPE_ADRENALINE))
 				{
 					// AP bonus
-					const INT16 sMaxAP = APBPConstants[AP_MAXIMUM];
+					/*const INT16 sMaxAP = APBPConstants[AP_MAXIMUM];
 					if (this->bActionPoints > 0 && this->bActionPoints < sMaxAP && sMaxAP > 0)
 					{
 						this->bActionPoints += (sMaxAP / 4) * (sMaxAP - this->bActionPoints) / sMaxAP;
-					}
-
+					}*/
+					
 					// add adrenaline effect
 					UINT8 ubEffect = min(APBPConstants[MAX_AP_CARRIED], Drug[DRUG_TYPE_ADRENALINE].ubDrugWearoffRate * 4);
 					this->AddDrugValues(DRUG_TYPE_ADRENALINE, ubEffect, ubEffect / 2, ubEffect / 2);

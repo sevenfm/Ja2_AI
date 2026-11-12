@@ -200,7 +200,7 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 			pSoldier->AddDrugValues(ubLoop, Drug[ubLoop].ubDrugEffect, Drug[ubLoop].ubDrugTravelRate, Drug[ubLoop].ubDrugSideEffect);
 
 			// sevenfm: increase effect...
-			if (pSoldier->drugs.bDrugEffectRate[ubLoop] > 0)
+			/*if (pSoldier->drugs.bDrugEffectRate[ubLoop] > 0)
 			{
 				// Seap some in....
 				pSoldier->drugs.bFutureDrugEffect[ubLoop] -= pSoldier->drugs.bDrugEffectRate[ubLoop];
@@ -216,7 +216,7 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 					// Change rate to -ve..
 					pSoldier->drugs.bDrugEffectRate[ubLoop] = -Drug[ubLoop].ubDrugWearoffRate;
 				}
-			}
+			}*/
 
 			// ATE: Make guy collapse from heart attack if too much stuff taken....
 			if (pSoldier->drugs.bDrugSideEffectRate[ubLoop] > (Drug[ubLoop].ubDrugSideEffect * 3) ||
@@ -439,13 +439,13 @@ BOOLEAN ApplyDrugs( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, BOOLEAN fUseAPs 
 				StopCoweringAnimation(pSoldier);
 			}
 
-			if (pSoldier->bActionPoints >= 0 && !pSoldier->bBreathCollapsed)
+			/*if (pSoldier->bActionPoints >= 0 && !pSoldier->bBreathCollapsed)
 			{
 				if (fUseAPs && consumeitem)
 					DeductPoints(pSoldier, -APBPConstants[AP_DRINK] * 2, 0);
 				else
 					DeductPoints(pSoldier, -APBPConstants[AP_DRINK], 0);
-			}
+			}*/
 		}
 	}
 
@@ -496,7 +496,7 @@ void HandleEndTurnDrugAdjustments( SOLDIERTYPE *pSoldier )
 			}*/
 
 			// If side effect rate is non-zero....
-			if (pSoldier->drugs.bDrugSideEffectRate[cnt] >= 0 && pSoldier->drugs.bDrugSideEffect[cnt] > 0)
+			if (pSoldier->drugs.bDrugSideEffectRate[cnt] > 0 && pSoldier->drugs.bDrugSideEffect[cnt] > 0)
 			{
 				// Subtract some...
 				pSoldier->drugs.bDrugSideEffect[ cnt ] -= pSoldier->drugs.bDrugSideEffectRate[ cnt ];
@@ -977,6 +977,20 @@ void HourlyDrugUpdate( )
 	{
 		pSoldier = MercPtrs[ubID];
 
+		// sevenfm: reset all short term tactical drug every hour in case they are still active
+		for (UINT8 ubLoop = DRUG_TYPE_ADRENALINE; ubLoop < DRUG_TYPE_MAX; ++ubLoop)
+		{
+			if (ubLoop == DRUG_TYPE_ALCOHOL)
+				continue;
+
+			// After a full hour outside combat, short-term tactical drug effects and side effects expire
+			pSoldier->drugs.bDrugEffect[ubLoop] = 0;
+			pSoldier->drugs.bFutureDrugEffect[ubLoop] = 0;
+			pSoldier->drugs.bDrugEffectRate[ubLoop] = 0;
+			pSoldier->drugs.bDrugSideEffect[ubLoop] = 0;
+			pSoldier->drugs.bDrugSideEffectRate[ubLoop] = 0;
+		}
+
 		// every hour, we lower our alcohol counter
 
 		// If side effect rate is non-zero....
@@ -1033,7 +1047,6 @@ void HourlyDrugUpdate( )
 			}
 		}
 
-		//if (pSoldier->drugs.bDrugSideEffectRate[DRUG_TYPE_ALCOHOL] != 0 || pSoldier->drugs.bDrugEffectRate[DRUG_TYPE_ALCOHOL] != 0 || pSoldier->drugs.bDrugEffect[DRUG_TYPE_ALCOHOL] != 0 || pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_ALCOHOL] != 0)
 		if (MercUnderTheInfluence(pSoldier))
 		{
 			PrintDrugEffects(pSoldier);
