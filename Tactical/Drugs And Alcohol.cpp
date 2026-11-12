@@ -633,25 +633,25 @@ void HandleEndTurnDrugAdjustments( SOLDIERTYPE *pSoldier )
 
 	// Flugente: always do the following checks. Thereby, if the effect runs out, our stats will be back to normal
 	//////////////// STRENGTH ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_STRENGTH] > 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_STRENGTH] >= 0)
 		pSoldier->bExtraStrength = pSoldier->drugs.bDrugEffect[ DRUG_TYPE_STRENGTH ];
 	else
 		pSoldier->bExtraStrength = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_STRENGTH];
 
 	//////////////// DEXTERITY ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_DEXTERITY] > 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_DEXTERITY] >= 0)
 		pSoldier->bExtraDexterity = pSoldier->drugs.bDrugEffect[ DRUG_TYPE_DEXTERITY ];
 	else
 		pSoldier->bExtraDexterity = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_DEXTERITY];
 
 	//////////////// AGILITY ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_AGILITY] > 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_AGILITY] >= 0)
 		pSoldier->bExtraAgility	= pSoldier->drugs.bDrugEffect[ DRUG_TYPE_AGILITY ];
 	else
 		pSoldier->bExtraAgility = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_AGILITY];
 
 	//////////////// WISDOM ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_WISDOM] > 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_WISDOM] >= 0)
 		pSoldier->bExtraWisdom = pSoldier->drugs.bDrugEffect[DRUG_TYPE_WISDOM];
 	else
 		pSoldier->bExtraWisdom = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_WISDOM];
@@ -977,18 +977,27 @@ void HourlyDrugUpdate( )
 	{
 		pSoldier = MercPtrs[ubID];
 
-		// sevenfm: reset all short term tactical drug every hour in case they are still active
-		for (UINT8 ubLoop = DRUG_TYPE_ADRENALINE; ubLoop < DRUG_TYPE_MAX; ++ubLoop)
-		{
-			if (ubLoop == DRUG_TYPE_ALCOHOL)
-				continue;
+		// sevenfm: safety check
+		if (!pSoldier || !pSoldier->bActive) continue;
 
-			// After a full hour outside combat, short-term tactical drug effects and side effects expire
-			pSoldier->drugs.bDrugEffect[ubLoop] = 0;
-			pSoldier->drugs.bFutureDrugEffect[ubLoop] = 0;
-			pSoldier->drugs.bDrugEffectRate[ubLoop] = 0;
-			pSoldier->drugs.bDrugSideEffect[ubLoop] = 0;
-			pSoldier->drugs.bDrugSideEffectRate[ubLoop] = 0;
+		// sevenfm: reset all short term tactical drug every hour in case they are still active
+		if (!(gTacticalStatus.uiFlags & INCOMBAT))
+		{
+			for (UINT8 ubLoop = DRUG_TYPE_ADRENALINE; ubLoop < DRUG_TYPE_MAX; ++ubLoop)
+			{
+				if (ubLoop == DRUG_TYPE_ALCOHOL)
+					continue;
+
+				// sevenfm: only reset drugs if they are somehow stuck due to bug, otherwise they will wear of normally
+				if (pSoldier->drugs.bDrugEffectRate[ubLoop] == 0 && 
+					pSoldier->drugs.bDrugSideEffectRate[ubLoop] == 0 &&
+					(pSoldier->drugs.bDrugEffect[ubLoop] != 0 || pSoldier->drugs.bDrugSideEffect[ubLoop] != 0 || pSoldier->drugs.bFutureDrugEffect[ubLoop] != 0))
+				{
+					pSoldier->drugs.bDrugEffect[ubLoop] = 0;
+					pSoldier->drugs.bFutureDrugEffect[ubLoop] = 0;
+					pSoldier->drugs.bDrugSideEffect[ubLoop] = 0;
+				}
+			}
 		}
 
 		// every hour, we lower our alcohol counter
@@ -1070,10 +1079,10 @@ void HourlyDrugUpdate( )
 				pSoldier->drugs.bDrugEffectRate[ DRUG_TYPE_ALCOHOL ] = -Drug[cnt].ubDrugWearoffRate;
 			}
 		}*/
-	}
 
-	// if all drug effects have ended, delete flag
-	if ( !MercUnderTheInfluence(pSoldier) )
-		pSoldier->usSoldierFlagMask &= ~SOLDIER_DRUGGED;
+		// if all drug effects have ended, delete flag
+		if (!MercUnderTheInfluence(pSoldier))
+			pSoldier->usSoldierFlagMask &= ~SOLDIER_DRUGGED;
+	}
 }
 

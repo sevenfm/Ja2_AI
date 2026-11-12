@@ -18424,9 +18424,10 @@ void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravel
 	// sevenfm: immediately add some value
 	if (this->drugs.bDrugEffectRate[ubDrugType] > 0)
 	{
-		// Seap some in....
-		this->drugs.bFutureDrugEffect[ubDrugType] -= this->drugs.bDrugEffectRate[ubDrugType];
-		this->drugs.bDrugEffect[ubDrugType] += this->drugs.bDrugEffectRate[ubDrugType];
+		// Seep some in....
+		INT8 bSeep = min(this->drugs.bFutureDrugEffect[ubDrugType], this->drugs.bDrugEffectRate[ubDrugType]);
+		this->drugs.bFutureDrugEffect[ubDrugType] -= bSeep;
+		this->drugs.bDrugEffect[ubDrugType] += bSeep;
 
 		// Refresh morale w/ new drug value...
 		RefreshSoldierMorale(this);
@@ -18435,8 +18436,9 @@ void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravel
 		if (this->drugs.bFutureDrugEffect[ubDrugType] <= 0)
 		{
 			this->drugs.bFutureDrugEffect[ubDrugType] = 0;
-			// Change rate to -ve..
-			this->drugs.bDrugEffectRate[ubDrugType] = -Drug[ubDrugType].ubDrugWearoffRate;
+
+			// Change rate to -ve (ensure at least -1 so it always decays)
+			this->drugs.bDrugEffectRate[ubDrugType] = -max((UINT8)1, Drug[ubDrugType].ubDrugWearoffRate);
 		}
 	}
 
@@ -18912,7 +18914,7 @@ void SOLDIERTYPE::SoldierPropertyUpkeep()
 	this->usSoldierFlagMask2 |= SOLDIER_ALLOW_RED_SHOOTING_CODE;
 
 	if ( HasBackgroundFlag( BACKGROUND_EXP_UNDERGROUND ) && this->bSectorZ )
-		++bExtraExpLevel;	
+		++bExtraExpLevel;
 
 	// Flugente: as pows received faulty poison values, we apply a very simple fix:
 	// remove in a few revisions - the code has already been fixed, so this won't be necessary anymore soon^^

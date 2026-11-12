@@ -2407,7 +2407,7 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.iHelpPictureKey = ParseKeyString(sFFKeyBuffer);
 
 	// Lua 1.13 port: can extra civilians be created via LUA?
-	gGameExternalOptions.bExtraCivilians = iniReader.ReadBoolean( "Tactical Interface Settings", "ALLOW_EXTRA_CIVILIANS", FALSE );
+	gGameExternalOptions.bExtraCivilians = iniReader.ReadBoolean( "Tactical Interface Settings", "ALLOW_EXTRA_CIVILIANS", FALSE, false );
 }
 
 // SANDRO - externalization of all skill trait values and STOMP settings into separate file
