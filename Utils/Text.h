@@ -268,6 +268,7 @@ extern STR16 pTransactionAlternateText[];
 extern STR16 pMoralStrings[];
 extern STR16 pDrunkStrings[];
 extern STR16 pDrugStrings[];
+extern STR16 pSituationalStrings[];
 extern STR16 pSkyriderText[];
 extern STR16 pMercFellAsleepString[];
 extern STR16 pLeftEquipmentString[]; 
