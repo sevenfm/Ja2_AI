@@ -1631,6 +1631,23 @@ BOOLEAN LoadImpCharacter( STR nickName )
 		}
 		guiCurrentSaveGameVersion = SAVE_GAME_VERSION;
 
+		// travnik: validate the stored voice set. 0 (or an unknown value from files of other builds) means
+		// "voice not set" -> keep the legacy behaviour where the voice equals the profile id
+		{
+			UINT32 uiVoice = gMercProfiles[iProfileId].GetVoiceIndex();
+			BOOLEAN fVoiceValid = ( uiVoice > 0 );
+			for ( UINT32 i = 0; i < gIMPVoice.size() && fVoiceValid; ++i )
+			{
+				if ( gIMPVoice[i].voiceset == uiVoice )
+					break;
+				if ( i == gIMPVoice.size() - 1 )
+					fVoiceValid = FALSE;
+			}
+
+			if ( !fVoiceValid )
+				gMercProfiles[iProfileId].SetVoiceIndex( iProfileId );
+		}
+
 		// close file
 		FileClose(hFile);
 		//CHRISL: At this point, we need to resort profile inventory so that NewInv items don't accidentally appear in OldInv

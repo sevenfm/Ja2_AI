@@ -10886,7 +10886,11 @@ BOOLEAN SOLDIERTYPE::InternalDoMercBattleSound( UINT8 ubBattleSoundID, INT8 bSpe
 	// OK, build file and play!
 	if ( pSoldier->ubProfile != NO_PROFILE )
 	{
-		UINT32 usVoiceSet = pSoldier->ubProfile;
+		// travnik: the voice set is no longer tied to the profile id (see IMPVoices.xml).
+		// 0 means "not set" -> fall back to the legacy behaviour (voice == profile id)
+		UINT32 usVoiceSet = gMercProfiles[pSoldier->ubProfile].GetVoiceIndex();
+		if ( usVoiceSet == 0 )
+			usVoiceSet = pSoldier->ubProfile;
 
 		//ScreenMsg(FONT_LTGREEN, MSG_INTERFACE, L"found profile %d", pSoldier->ubProfile);
 
