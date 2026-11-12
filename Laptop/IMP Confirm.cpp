@@ -39,6 +39,9 @@
 
 #include "Soldier Profile.h"
 
+#include "IMP Gear Entrance.h"		// added by Flugente
+#include "IMP Gear.h"				// added by Flugente
+
 #include "SaveLoadGame.h"
 
 // Changed by ADB (rev 1513) to resolve IMPs created prior to structural changes
@@ -343,7 +346,7 @@ void	BtnIMPConfirmYes(GUI_BUTTON *btn,INT32 reason)
 
 			// silversurfer: We need to store the profile cost here because right now our new IMP doesn't occupy a slot yet.
 			// However function iGetProfileCost() will already calculate price including that slot. We would charge too much money after the IMP is created below.
-			INT32 iIMPCost = iGetProfileCost();
+			INT32 iIMPCost = iGetProfileCost( TRUE );
 			if( LaptopSaveInfo.iCurrentBalance < iIMPCost ) 
 			{
 				// not enough
@@ -667,6 +670,21 @@ void DistributeInitialGear(MERCPROFILESTRUCT *pProfile)
 	DebugStartingGear(String("finished distributing starting gear for %s\n", name8));
 }
 
+INT32 GetEquippedGearCost( MERCPROFILESTRUCT *pProfile )
+{
+	INT32 cost = 0;
+
+	for ( int i = INV_START_POS; i<NUM_INV_SLOTS; ++i )
+	{
+		if ( pProfile->inv[i] != NOTHING )
+		{
+			cost += pProfile->bInvNumber[i] * Item[pProfile->inv[i]].usPrice;
+		}
+	}
+
+	return cost;
+}
+
 void GiveItemsToPC( UINT8 ubProfileId )
 {
 	MERCPROFILESTRUCT *pProfile;
@@ -676,11 +694,20 @@ void GiveItemsToPC( UINT8 ubProfileId )
 
 	pProfile = &(gMercProfiles[ubProfileId]);
 
+	// Flugente: if necessary, give us the gear we selected
+	if ( IsIMPGearUsed( ) )
+	{
+		GiveIMPSelectedGear( pProfile );
+	}
+	else
+	{
 	// STANDARD EQUIPMENT
 	// SANDRO - obsolete code deleted
 
 	GiveIMPItems(pProfile, 100, IMP_DEFAULT);
 	GiveIMPRandomItems(pProfile, IMP_RANDOMDEFAULT);
+	// silversurfer: added sidearm selection
+	GiveIMPRandomItems(pProfile, IMP_SIDEARM);
 
 	GiveIMPItems (pProfile,pProfile->bWisdom,IMP_WISDOM);
 	GiveIMPItems (pProfile,pProfile->bMarksmanship,IMP_MARKSMANSHIP);
@@ -1009,6 +1036,7 @@ void GiveItemsToPC( UINT8 ubProfileId )
 				GiveIMPRandomItems(pProfile, IMP_HEAVY_WEAPONS);
 			}
 		}
+	}
 	}
 	/////////////////////////////////////////////////////////////////////
 
@@ -1591,13 +1619,6 @@ BOOLEAN LoadImpCharacter( STR nickName )
 	{
 		LaptopSaveInfo.iIMPIndex = iProfileId;
 
-		// silversurfer: Store current IMP cost. Function iGetProfileCost() already takes the new slot into account.
-		// If we create the IMP first we would charge too much.
-		INT32 iIMPCost = iGetProfileCost();
-
-		// read in the profile
-		//if ( !gMercProfiles[ iProfileId ].Load(hFile, false) )
-
 		// anv: before loading profile we need to set guiCurrentSaveGameVersion to profile's version
 		// and set it back to SAVE_GAME_VERSION right after or else new saves will be broken!
 		guiCurrentSaveGameVersion = version;
@@ -1614,6 +1635,13 @@ BOOLEAN LoadImpCharacter( STR nickName )
 		FileClose(hFile);
 		//CHRISL: At this point, we need to resort profile inventory so that NewInv items don't accidentally appear in OldInv
 		DistributeInitialGear(&gMercProfiles[iProfileId]);
+
+		// silversurfer: Store current IMP cost. Function iGetProfileCost() already takes the new slot into account.
+		// If we create the IMP first we would charge too much.
+		INT32 iIMPCost = iGetProfileCost( FALSE );
+
+		// Flugente: as we do not store the cost of the gear in the IMP file, we have to determine the cost here
+		iIMPCost += max(0, GetEquippedGearCost( &gMercProfiles[iProfileId] ) - gGameExternalOptions.iIMPProfileCost );
 
 		// Changed to find actual IMP cost - SANDRO
 		if( LaptopSaveInfo.iCurrentBalance < iIMPCost )
@@ -1743,7 +1771,8 @@ void GiveIMPRandomItems( MERCPROFILESTRUCT *pProfile, UINT8 typeIndex )
 	for ( UINT8 cnt=0; cnt < ubNumChoices; cnt++ )
 	{
 		usItem = gIMPItemChoices[ typeIndex ].bItemNo[ cnt ];
-		if ( ItemIsLegal(usItem) )
+		// allow guns no matter if Tons of Guns was selected so the merc doesn't have to start without a weapon
+		if ( ItemIsLegal(usItem) || Item[usItem].usItemClass == IC_GUN )
 			ubValidChoices++;
 	}
 
@@ -1767,7 +1796,7 @@ void GiveIMPRandomItems( MERCPROFILESTRUCT *pProfile, UINT8 typeIndex )
 				iChoice = Random( ubNumChoices );
 				usItem = gIMPItemChoices[ typeIndex ].bItemNo[ iChoice ];
 				// is this legal and we don't have it already?
-				if (ItemIsLegal(usItem) && !ubItemsGiven[iChoice] )
+				if ( (ItemIsLegal(usItem) || Item[usItem].usItemClass == IC_GUN) && !ubItemsGiven[iChoice] )
 					ubItemsGiven[iChoice] = TRUE;
 				else
 					usItem=0;
@@ -1849,8 +1878,11 @@ void GiveIMPItems( MERCPROFILESTRUCT *pProfile, INT8 abilityValue, UINT8 typeInd
 }
 
 // SANDRO - Function to determine actual cost of profile
-INT32 iGetProfileCost()
+INT32 iGetProfileCost( BOOLEAN aWithGearCost )
 {
+	// Flugente: aditional imp gear cost
+	INT32 impgearcost = aWithGearCost ? GetIMPGearCost( ) : 0;
+
 	if (gGameExternalOptions.fDynamicIMPProfileCost)
 	{
 		INT32 iIMPProfileCost;
@@ -1859,12 +1891,12 @@ INT32 iGetProfileCost()
 		iIMPProfileCost = gGameExternalOptions.iIMPProfileCost * ( CountFilledIMPSlots(-1) + 1 );
 
 		if (iIMPProfileCost >= gGameExternalOptions.iIMPProfileCost)
-			return(iIMPProfileCost);
+			return(iIMPProfileCost + impgearcost);
 		else
-			return(gGameExternalOptions.iIMPProfileCost);
+			return(gGameExternalOptions.iIMPProfileCost + impgearcost);
 	}
 	else
-		return(gGameExternalOptions.iIMPProfileCost);
+		return(gGameExternalOptions.iIMPProfileCost + impgearcost);
 }
 
 

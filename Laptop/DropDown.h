@@ -32,6 +32,35 @@ enum definedDropDowns
 	DROPDOWNNR_RACE,
 	DROPDOWNNR_SEXIST,
 	DROPDOWNNR_RACISTFEATURE,
+
+	// Flugente: IMP gear selection
+	DROPDOWNNR_IMPGEAR_LBE1,
+	DROPDOWNNR_IMPGEAR_LBE2,
+	DROPDOWNNR_IMPGEAR_LBE3,
+	DROPDOWNNR_IMPGEAR_LBE4,
+	DROPDOWNNR_IMPGEAR_LBE5,
+
+	DROPDOWNNR_IMPGEAR_GUN_1,
+	DROPDOWNNR_IMPGEAR_AMMO_1,
+	DROPDOWNNR_IMPGEAR_GUN_2,
+	DROPDOWNNR_IMPGEAR_AMMO_2,
+	DROPDOWNNR_IMPGEAR_MELEE,
+
+	DROPDOWNNR_IMPGEAR_HELMET,
+	DROPDOWNNR_IMPGEAR_VEST,
+	DROPDOWNNR_IMPGEAR_LEGS,
+	DROPDOWNNR_IMPGEAR_FACE1,
+	DROPDOWNNR_IMPGEAR_FACE2,
+
+	DROPDOWNNR_IMPGEAR_MISC_1,
+	DROPDOWNNR_IMPGEAR_MISC_2,
+	DROPDOWNNR_IMPGEAR_MISC_3,
+	DROPDOWNNR_IMPGEAR_MISC_4,
+	DROPDOWNNR_IMPGEAR_MISC_5,
+	DROPDOWNNR_IMPGEAR_MISC_6,
+	DROPDOWNNR_IMPGEAR_MISC_7,
+
+	DROPDOWNNR_IMPGEAR_MAX = DROPDOWNNR_IMPGEAR_MISC_7,
 };
 
 /*
@@ -132,12 +161,23 @@ public:
 	/*
 	 * Get key of selected entry
 	 */
-	INT16	GetSelectedEntryKey()		{ return mEntryVector[mSelectedEntry].first; }
+	INT16	GetSelectedEntryKey()
+	{
+		if ( mEntryVector.empty() )
+			return -1;
+
+		return mEntryVector[mSelectedEntry].first;
+	}
 
 	/*
 	* If aKey exists among our keys, set it as the current one
 	*/
 	void	SetSelectedEntryKey( INT16 aKey );
+
+	/*
+	* set the nth entry as the selected one
+	*/
+	void	SetNthEntry( UINT8 aNr );
 
 	/*
 	 * Get width of entire DropDownBase
@@ -147,12 +187,32 @@ public:
 	/*
 	 * Get right x coordinate
 	 */
-	UINT16	GetLastX()					{ return musStartX + GetTotalWidth(); }
+	UINT16	GetLastX()					{ return GetX() + GetTotalWidth(); }
+
+	/*
+	 * Get x coordinate
+	 */
+	UINT16	GetX()						{ return musStartX; }
+
+	/*
+	 * Get y coordinate
+	 */
+	UINT16	GetY()						{ return musStartY; }
 
 	/*
 	 * Are we displayed?
 	 */
 	BOOLEAN	IsDisplayed()				{ return mfMouseRegionsCreated; }
+
+	/*
+	* Do we have data to display?
+	*/
+	BOOLEAN HasEntries( )				{ return !mEntryVector.empty(); }
+
+	/*
+	* Remove all entries
+	*/
+	void ClearEntries( )				{ mSelectedEntry = 0; mEntryVector.clear( ); }
 
 	// call to open/close the drop down
 	void OpenDropDownRegionCallBack(MOUSE_REGION * pRegion, INT32 iReason );

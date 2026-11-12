@@ -33,6 +33,8 @@
 	#include "IMP Minor Trait.h"
 	#include "IMP Background.h"		// added by Flugente
 	#include "IMP Prejudice.h"		// added by Flugente
+	#include "IMP Gear Entrance.h"	// added by Flugente
+	#include "IMP Gear.h"			// added by Flugente
 #endif
 
 
@@ -296,6 +298,12 @@ void HandleCharProfile()
 		case( IMP_PREJUDICE ):
 			HandleIMPPrejudice( );
 		break;
+		case IMP_GEAR_ENTRANCE:
+			HandleIMPGearEntrance( );
+		break;
+		case IMP_GEAR:
+			HandleIMPGear( );
+		break;
 	}
 
 	return;
@@ -377,6 +385,12 @@ void RenderCharProfile()
 		break;
 		case( IMP_PREJUDICE ):
 			RenderIMPPrejudice( );
+		break;
+		case IMP_GEAR_ENTRANCE:
+			RenderIMPGearEntrance( );
+		break;
+		case IMP_GEAR:
+			RenderIMPGear( );
 		break;
 	}
 
@@ -491,6 +505,14 @@ void ExitOldIMPMode( void )
 			DestroyIMPButtons( );
 			ExitIMPPrejudice( );
 		break;
+		case IMP_GEAR_ENTRANCE:
+			DestroyIMPButtons( );
+			ExitIMPGearEntrance( );
+		break;
+		case IMP_GEAR:
+			DestroyIMPButtons( );
+			ExitIMPGear( );
+		break;
 	}
 
 	return;
@@ -585,6 +607,14 @@ void EnterNewIMPMode( void )
 		case( IMP_PREJUDICE ):
 			CreateIMPButtons( );
 			EnterIMPPrejudice( );
+		break;
+		case IMP_GEAR_ENTRANCE:
+			CreateIMPButtons( );
+			EnterIMPGearEntrance( );
+		break;
+		case IMP_GEAR:
+			CreateIMPButtons( );
+			EnterIMPGear( );
 		break;
 	}
 

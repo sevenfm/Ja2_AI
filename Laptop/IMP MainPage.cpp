@@ -599,7 +599,7 @@ void BtnIMPMainPageBeginCallback(GUI_BUTTON *btn,INT32 reason)
 			else
 			{
 				//if( LaptopSaveInfo.iCurrentBalance < COST_OF_PROFILE )
-				if( LaptopSaveInfo.iCurrentBalance < iGetProfileCost() ) // SANDRO - changed to find actual profile cost in IMPConfirm
+				if( LaptopSaveInfo.iCurrentBalance < iGetProfileCost( FALSE ) ) // SANDRO - changed to find actual profile cost in IMPConfirm (gear cost not yet known)
 				{
 					DoLapTopMessageBox( MSG_BOX_IMP_STYLE, pImpPopUpStrings[ 3 ], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, BeginMessageBoxCallBack);
 

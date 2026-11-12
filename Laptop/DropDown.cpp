@@ -629,6 +629,15 @@ DropDownBase::SetSelectedEntryKey( INT16 aKey )
 	}
 }
 
+/*
+* set the nth entry as the selected one
+*/
+void
+DropDownBase::SetNthEntry( UINT8 aNr )
+{
+	mSelectedEntry = min( aNr, max(0, (INT32)mEntryVector.size() - 1) );
+}
+
 void
 DropDownBase::OpenDropDownRegionCallBack(MOUSE_REGION * pRegion, INT32 iReason )
 {
