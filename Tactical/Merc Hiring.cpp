@@ -220,10 +220,18 @@ INT8 HireMerc( MERC_HIRE_STRUCT *pHireMerc)
 			// Give it
 			fReturn = AutoPlaceObject( MercPtrs[iNewIndex], &gTempObject, FALSE );
 			// CHRISL: This condition should resolve the issue of the letter not being issued to the first merc
-			if(!fReturn && (UsingNewInventorySystem() == true))
+			if(!fReturn)
 			{
-				(MercPtrs[iNewIndex]->inv[NUM_INV_SLOTS-1]) = gTempObject;
-				fReturn=TRUE;
+				if (UsingNewInventorySystem())
+				{
+					(MercPtrs[iNewIndex]->inv[NUM_INV_SLOTS-1]) = gTempObject;
+					fReturn=TRUE;
+				}
+				else
+				{
+					(MercPtrs[iNewIndex]->inv[SMALLPOCK8POS]) = gTempObject;
+					fReturn = TRUE;
+				}
 			}
 			Assert( fReturn );
 		}
@@ -1073,8 +1081,8 @@ if ( gGameUBOptions.InGameHeliCrash == TRUE )
 	pSoldier->fWaitingToGetupFromJA25Start = TRUE;
 	pSoldier->fIgnoreGetupFromCollapseCheck = TRUE;
 
-	//pSoldier->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO; //to by³o wy³¹czone
-	//pSoldier->usStrategicInsertionData = GetInitialHeliGridNo( ); //to by³o wy³¹czone
+	//pSoldier->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO; //to byï¿½o wyï¿½ï¿½czone
+	//pSoldier->usStrategicInsertionData = GetInitialHeliGridNo( ); //to byï¿½o wyï¿½ï¿½czone
 
 	RESETTIMECOUNTER( pSoldier->GetupFromJA25StartCounter, gsInitialHeliRandomTimes[ 6 ] + 800 + Random( 400 ) );
 

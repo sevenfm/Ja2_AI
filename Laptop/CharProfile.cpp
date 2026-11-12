@@ -722,6 +722,7 @@ void LoadImpGraphics( void )
 	// Added by SANDRO
 	LoadAttribStartingLevelFrame( );
 	LoadColorChoiceFrame( );
+	LoadImpGearSelection();
 
 	return;
 
@@ -776,6 +777,7 @@ void RemoveImpGraphics( void )
 	 // Added by SANDRO
 	DeleteAttribStartingLevelFrame( );
 	DeleteColorChoiceFrame( );
+	DeleteImpGearSelection();
 
 	return;
 }

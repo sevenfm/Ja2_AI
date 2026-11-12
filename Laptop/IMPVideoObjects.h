@@ -154,6 +154,12 @@ BOOLEAN LoadColorChoiceFrame( void );
 void DeleteColorChoiceFrame( void );
 void RenderColorChoiceFrame(INT16 sX, INT16 sY);
 
+// added by Asdow: IMP gear selection interface
+BOOLEAN LoadImpGearSelection(void);
+void DeleteImpGearSelection(void);
+void RenderImpGearSelection(void);
+void RenderImpGearSelectionGrid(void);
+
 // graphical handles
 
 extern UINT32 guiBACKGROUND;
@@ -174,6 +180,9 @@ extern UINT32 guiATTRIBUTEFRAME;
 extern UINT32 guiATTRIBUTESCREENINDENT1;
 extern UINT32 guiATTRIBUTESCREENINDENT2;
 extern UINT32 guiSLIDERBAR;
+extern UINT32 gIMPINVENTORY;
+extern SGPRectangle gIMPGearLayout;
+extern SGPRectangle gIMPInvPoolLayout;
 
 #endif
 
