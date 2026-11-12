@@ -87,6 +87,8 @@ typedef struct ENEMYGROUP
 #define GROUPFLAG_JUST_RETREATED_FROM_BATTLE		0x00000008
 #define GROUPFLAG_HIGH_POTENTIAL_FOR_AMBUSH			0x00000010
 #define GROUPFLAG_GROUP_ARRIVED_SIMULTANEOUSLY	0x00000020
+// travnik: marks enemy groups created by lua script (night raid) - only these groups can trigger ENEMY_AMBUSH_CODE when attacking a player sector
+#define GROUPFLAG_RAID_GROUP										0x00000040
 
 
 typedef struct GROUP

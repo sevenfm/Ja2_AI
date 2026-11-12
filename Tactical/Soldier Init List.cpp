@@ -1106,25 +1106,6 @@ UINT8 AddSoldierInitListTeamToWorld( INT8 bTeam, UINT8 ubMaxNum )
 		if ( bTeam == CIV_TEAM )
 			SectorAddPrisonersofWar(gWorldSectorX, gWorldSectorY, gbWorldSectorZ);
 
-		// Lua 1.13 port: script-defined actions on tactical sector entry
-		{
-			BOOLEAN sectorhaseverbeenplayercontrolled = FALSE;
-
-			if ( gbWorldSectorZ )
-			{
-				UNDERGROUND_SECTORINFO *pSector = FindUnderGroundSector( gWorldSectorX, gWorldSectorY, gbWorldSectorZ );
-
-				if ( pSector && pSector->ubNumElites + pSector->ubNumTroops + pSector->ubNumAdmins > 0 )
-				{
-					sectorhaseverbeenplayercontrolled = TRUE;
-				}
-			}
-			else
-				sectorhaseverbeenplayercontrolled = SectorInfo[SECTOR( gWorldSectorX, gWorldSectorY )].fSurfaceWasEverPlayerControlled;
-
-			LuaHandleSectorTacticalEntry( gWorldSectorX, gWorldSectorY, gbWorldSectorZ, sectorhaseverbeenplayercontrolled );
-		}
-
 		//There aren't any basic placements of desired team, so exit.
 		return ubNumAdded;
 	}

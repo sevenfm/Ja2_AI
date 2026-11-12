@@ -2543,6 +2543,25 @@ void PrepareLoadedSector()
 			AddSoldierInitListBloodcats();
 		}
 
+		// Lua 1.13 port: script-defined actions on tactical sector entry (called on EVERY sector load,
+		// after all teams have been placed, so the script can see and modify the resulting situation)
+		{
+			BOOLEAN sectorhaseverbeenplayercontrolled = FALSE;
+
+			if ( gbWorldSectorZ )
+			{
+				UNDERGROUND_SECTORINFO *pSector = FindUnderGroundSector( gWorldSectorX, gWorldSectorY, gbWorldSectorZ );
+
+				if ( pSector && pSector->ubNumElites + pSector->ubNumTroops + pSector->ubNumAdmins > 0 )
+				{
+					sectorhaseverbeenplayercontrolled = TRUE;
+				}
+			}
+			else
+				sectorhaseverbeenplayercontrolled = SectorInfo[SECTOR( gWorldSectorX, gWorldSectorY )].fSurfaceWasEverPlayerControlled;
+
+			LuaHandleSectorTacticalEntry( gWorldSectorX, gWorldSectorY, gbWorldSectorZ, sectorhaseverbeenplayercontrolled );
+		}
 
 		//Creatures are only added if there are actually some of them.  It has to go through some
 		//additional checking.

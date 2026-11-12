@@ -66,3 +66,6 @@ bin/
 /vs
 /Python
 /.idea
+/.opencode/instructions
+/opencode.jsonc
+/sourcecraft_history.md

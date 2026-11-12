@@ -1045,6 +1045,9 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.autoSaveOnAssertionFailure		= iniReader.ReadBoolean("Troubleshooting Settings","AUTO_SAVE_ON_ASSERTION_FAILURE", FALSE);
 	gGameExternalOptions.autoSaveTime 					= iniReader.ReadInteger("Troubleshooting Settings","AUTO_SAVE_EVERY_N_HOURS", 6, 0, 24);
 
+	// travnik: hourly quest update mode (see HOURLY_QUEST_UPDATE_MODES in GameSettings.h)
+	gGameExternalOptions.ubHourlyQuestUpdateMode		= iniReader.ReadInteger("Script Settings","HOURLY_QUEST_UPDATE_MODE", HOURLY_QUEST_CPP_ONLY, HOURLY_QUEST_CPP_ONLY, HOURLY_QUEST_LUA_ONLY);
+
 	//################# Graphics Settings #################
 	gGameExternalOptions.gfVSync = iniReader.ReadBoolean("Graphics Settings","VERTICAL_SYNC",0);
 
@@ -2402,6 +2405,9 @@ void LoadGameExternalOptions()
 	// sevenfm: show help picture
 	iniReader.ReadString("Extended Options", "HELP_PICTURE_KEY", NULL, sFFKeyBuffer, _countof(sFFKeyBuffer));
 	gGameExternalOptions.iHelpPictureKey = ParseKeyString(sFFKeyBuffer);
+
+	// Lua 1.13 port: can extra civilians be created via LUA?
+	gGameExternalOptions.bExtraCivilians = iniReader.ReadBoolean( "Tactical Interface Settings", "ALLOW_EXTRA_CIVILIANS", FALSE );
 }
 
 // SANDRO - externalization of all skill trait values and STOMP settings into separate file

@@ -3,6 +3,28 @@
 
 #include "Types.h"
 
+const STR SCRIPTS_HOURLYUPDATE_FILENAME = "scripts\\HourlyUpdate.lua";
+const STR SCRIPTS_MESSAGES_FILENAME = "Messages.lua";
+
+// travnik: night raid ambush constants (used by HourlyUpdate.lua bindings and battle setup code)
+
+// group flag values for SetGroupFlag/GetGroupFlag lua bindings (see GROUPFLAG_* in Strategic Movement.h)
+#define LUAGROUPFLAG_HIGH_POTENTIAL_FOR_AMBUSH	(GROUPFLAG_HIGH_POTENTIAL_FOR_AMBUSH)	// 0x10: encounter with this group becomes an ambush (90%)
+#define LUAGROUPFLAG_RAID_GROUP					(GROUPFLAG_RAID_GROUP)					// 0x40: lua raid group - attacking a player sector becomes an ambush
+
+// facts used by the night raid script (must be < NUM_FACTS, not used by the engine - engine facts end at FACT_CONVO_MANUEL = 430)
+#define FACT_NIGHT_AMBUSH_ENABLED	431	// 1 = night ambushes enabled (NightAmbushControl)
+#define FACT_NIGHT_AMBUSH_COUNT		432	// number of raids performed
+#define FACT_NIGHT_AMBUSH_TIME_LO	433	// last raid dispatch time, absolute hours (day*24+hour), low byte
+#define FACT_NIGHT_AMBUSH_TIME_HI	434	// last raid dispatch time, high byte
+
+// ambush placement radii (same values as the original garrison ambush code in Soldier Init List.cpp)
+#define AMBUSH_RING_INNER_RADIUS	( VISION_RANGE * 3 / 4 )					// enemies do not spawn closer than this
+#define AMBUSH_RING_OUTER_RADIUS	( VISION_RANGE + DAY_VISION_RANGE / 2 )		// enemies do not spawn farther than this
+
+// player mercs are teleported within this radius around the map center on ambush
+#define AMBUSH_MERC_CENTER_RADIUS	4
+
 typedef struct
 {
 	BOOLEAN	fGlobalLuaBool;

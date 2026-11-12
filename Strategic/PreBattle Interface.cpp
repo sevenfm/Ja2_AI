@@ -709,6 +709,14 @@ void InitPreBattleInterface( GROUP *pBattleGroup, BOOLEAN fPersistantPBI )
 				gubEnemyEncounterCode = ENEMY_INVASION_CODE;	
 			else
 				gubEnemyEncounterCode = ENEMY_ENCOUNTER_CODE;
+
+			// travnik: ONLY lua-created raid groups ambush the player's sector;
+			// random enemy patrols and regular invasions do not (player-initiated ambush case above is unchanged)
+			// travnik: scout prevents the raid ambush just like regular engine ambushes
+			if( gubEnemyEncounterCode == ENEMY_ENCOUNTER_CODE && gfHighPotentialForAmbush && !fScoutPresent )
+			{
+				gubEnemyEncounterCode = ENEMY_AMBUSH_CODE;
+			}
 		}
 	}
 

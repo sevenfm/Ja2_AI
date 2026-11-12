@@ -277,9 +277,19 @@ void HandleQuarterHourUpdate()
 
 void HourlyQuestUpdate()
 {	
-#ifdef LUA_HOURLY_QUEST_UPDATE
-	LetLuaHourlyQuestUpdate(0);
-#else
+	// travnik: HOURLY_QUEST_UPDATE_MODE (see HOURLY_QUEST_UPDATE_MODES in GameSettings.h)
+	UINT32 ubMode = gGameExternalOptions.ubHourlyQuestUpdateMode;
+
+	if ( ubMode != HOURLY_QUEST_CPP_ONLY )
+	{
+		BOOLEAN fLuaResult = LetLuaHourlyQuestUpdate(0);
+
+		if ( fLuaResult && ubMode == HOURLY_QUEST_LUA_ONLY )
+		{
+			return;
+		}
+	}
+
 	UINT32 uiHour = GetWorldHour();
 
 	DebugQuestInfo(String("HourlyQuestUpdate: hour %d", uiHour));
@@ -343,8 +353,6 @@ void HourlyQuestUpdate()
 		pProfile->ubLastDateSpokenTo = uiDay - 1;
 		DebugQuestInfo(String("reset day counter for Darren to allow starting boxing matches again, ubLastDateSpokenTo %d", pProfile->ubLastDateSpokenTo = uiDay));
 	}
-
-#endif
 }
 
 #define BAR_TEMPTATION 4
