@@ -4178,6 +4178,23 @@ STR16 pMoralStrings[] =
 	L"Mies",
 };
 
+// situational modifiers
+STR16 pSituationalStrings[] =
+{
+	L"Nervous alone",		// 0	//TODO.translate
+	L"Sociable alone",		// 1
+	L"Loner crowded",		// 2
+	L"Show off nearby",		// 3
+	L"Heat intolerant",		// 4
+	L"Claustrophobic",		// 5
+	L"Fear of insects",		// 6
+	L"Bloodlust",			// 7
+	L"Stunning looks",		// 8
+	L"Overweight",			// 9
+	L"Heavy overweight",		// 10
+};
+
+
 // Mercs equipment has now arrived and is now available in Omerta or Drassen.
 STR16 pLeftEquipmentString[] =
 { 
@@ -6995,6 +7012,23 @@ STR16 gzTransformationMessage[] =
 	L"Clean gun (%d AP)",
 };
 
+// MVP: craft recipes viewer (text output)
+STR16 gzCraftInfoMessage[] =
+{
+	// 0
+	L"===== %s (%d): CRAFT INFO =====",	//TODO.Translate
+	// 1
+	L"Used for: %s + %s = %s",
+	// 2
+	L"Created from: %s => %s",
+	// 3
+	L"Can be crafted from: %s => %s",
+	// 4
+	L"No craft recipes found for this item.",
+	// 5
+	L"View crafts (Text)",
+};
+
 // WANNE: These are the email texts Speck sends when one of the 4 new 1.13 MERC mercs have levelled up
 // INFO: Do not replace the ± characters. They indicate the <B2> (-> Newline) from the edt files
 STR16	New113MERCMercMailTexts[] =
@@ -9174,4 +9208,15 @@ STR16 szIMPGearDropDownNoneText[] =	// TODO.Translate
 	L"No additional items",
 	L"No additional items",
 };
+// Flugente: gear templates
+STR16 szGearTemplateText[] =
+{
+	L"Enter Template Name",		//TODO.Translate
+	L"Not possible during combat.",
+	L"Selected mercenary is not in this sector.",
+	L"%s is not in that sector.",
+	L"%s could not equip %s.",
+	L"We cannot attach %s (item %d) as that might damage items.",
+};
+
 #endif //GERMAN

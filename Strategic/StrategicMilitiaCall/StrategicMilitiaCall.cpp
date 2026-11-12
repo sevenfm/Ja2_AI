@@ -1,4 +1,4 @@
-﻿#include "StrategicMilitiaCall.h"
+#include "StrategicMilitiaCall.h"
 #include "PopUpBox.h"
 #include "Font Control.h"
 #include "Assignments.h"

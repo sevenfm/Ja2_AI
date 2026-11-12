@@ -4242,6 +4242,22 @@ STR16 pDrugStrings[] =
 	L"Смертельный коллапс",
 };
 
+// situational modifiers
+STR16 pSituationalStrings[] =
+{
+	L"Нервный один",		// 0
+	L"Общительный один",		// 1
+	L"Одиночка в толпе",		// 2
+	L"Хвастун рядом",		// 3
+	L"Непереносимость жары",	// 4
+	L"Клаустрофобия",		// 5
+	L"Боится насекомых",		// 6
+	L"Жажда крови",			// 7
+	L"Ослепительный вид",		// 8
+	L"Перегруз",			// 9
+	L"Большой перегруз",		// 10
+};
+
 // Mercs equipment has now arrived and is now available in Omerta or Drassen.
 
 STR16 pLeftEquipmentString[] =

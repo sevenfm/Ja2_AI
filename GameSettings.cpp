@@ -1366,7 +1366,7 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.usSpotterPreparationTurns			= iniReader.ReadInteger("Tactical Gameplay Settings","SPOTTER_PREPARATIONTURNS", 2, 2,  4);
 	gGameExternalOptions.usSpotterRange						= iniReader.ReadInteger("Tactical Gameplay Settings","SPOTTER_RANGE",			10, 0,  30);
 	gGameExternalOptions.usSpotterMaxCTHBoost				= iniReader.ReadInteger("Tactical Gameplay Settings","SPOTTER_MAX_CTHBOOST",	50, 0, 100);
-
+		
 	gGameExternalOptions.ubExternalFeeding					= iniReader.ReadInteger("Tactical Gameplay Settings","EXTERNAL_FEEDING", 2, 0, 2);
 	
 	// WANNE: Externalized grid number of new merc when they arrive with the helicopter (by Jazz)
@@ -2387,6 +2387,8 @@ void LoadGameExternalOptions()
 
 	gGameExternalOptions.fWhiteNights = iniReader.ReadBoolean("Extended Options", "WHITE_NIGHTS", false, false);
 	gGameExternalOptions.fAlwaysCloudy = iniReader.ReadBoolean("Extended Options", "ALWAYS_CLOUDY", false, false);
+
+	gGameExternalOptions.fShowItemCraftInfo = iniReader.ReadBoolean("Extended Options", "SHOW_ITEM_CRAFT_INFO", false, false);
 
 	gGameExternalOptions.ubAPSharedAmongPassengersAndVehicleMode = iniReader.ReadInteger("Extended Options", "AP_SHARED_AMONG_PASSENGERS_AND_VEHICLE_MODE", 3, 0, 3);
 	gGameExternalOptions.ubAPSharedAmongPassengersAndVehicleScale = iniReader.ReadInteger("Extended Options", "AP_SHARED_AMONG_PASSENGERS_AND_VEHICLE_SCALE", 100, 0, 200);
