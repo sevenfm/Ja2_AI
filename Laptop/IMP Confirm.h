@@ -87,7 +87,11 @@ void ResetIMPCharactersEyesAndMouthOffsets( UINT8 ubMercProfileID );
 
 BOOLEAN ImpExists ( STR fileName );
 
-INT32 iGetProfileCost( void ); // added by SANDRO
+INT32 iGetProfileCost( BOOLEAN aWithGearCost = TRUE ); // added by SANDRO, extended by Flugente (IMP gear cost)
+
+INT32 GetEquippedGearCost( MERCPROFILESTRUCT *pProfile );
+
+void MakeProfileInvItemAnySlot( MERCPROFILESTRUCT *pProfile, UINT16 usItem, UINT8 ubStatus, UINT8 ubHowMany );
 
 #endif
 

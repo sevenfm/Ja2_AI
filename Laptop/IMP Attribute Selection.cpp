@@ -2,6 +2,8 @@
 	#include "Laptop All.h"
 	#include "IMP Skill Trait.h"
 	#include "GameSettings.h"
+	#include "CharProfile.h"		// added by Flugente - IMP gear selection
+	#include "IMP MainPage.h"		// added by Flugente - IMP gear selection
 #else
 	#include "CharProfile.h"
 	#include "IMP Attribute Selection.h"
@@ -1070,19 +1072,13 @@ void BtnIMPAttributeFinishCallback(GUI_BUTTON *btn,INT32 reason)
 	{
 		if (btn->uiFlags & BUTTON_CLICKED_ON)
 		{
-		btn->uiFlags&=~(BUTTON_CLICKED_ON);
+			btn->uiFlags&=~(BUTTON_CLICKED_ON);
 
 			//iCurrentImpPage = IMP_MAIN_PAGE;
 
-			// SANDRO WAS HERE - THE FINISH PAGE AFTER ATTRIBUTES IS WORTHLESS AND HAVE BEEN CUT OUT
-			//if ( fReviewStats == TRUE )
-			//{
-				iCurrentImpPage = IMP_FINISH;
-			//}
-			//else
-			//{
-				iCurrentProfileMode = IMP__FINISH; // All done
-			//}
+			// Flugente: we now select our gear next
+			iCurrentImpPage = IMP_GEAR_ENTRANCE;
+			fButtonPendingFlag = TRUE;
 
 			// SET ATTRIBUTES NOW
 			SetGeneratedCharacterAttributes( );

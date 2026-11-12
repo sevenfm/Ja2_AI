@@ -1,4 +1,4 @@
-﻿// WANNE: This pragma should not be needed anymore for Polish version, after we set the encoding to UTF8 
+// WANNE: This pragma should not be needed anymore for Polish version, after we set the encoding to UTF8 
 // WANNE: Yes we need this here exclusivly in Polish version, because we do not have a codepage in the code like for other versions.
 //#pragma setlocale("POLISH")
 
@@ -9300,4 +9300,76 @@ STR16 TalkCursorStr[] =
 	L"Bad",
 };
 
+
+STR16 szIMPGearWebSiteText[] =	// TODO.Translate
+{
+	// IMP Gear Entrance
+	L"How should gear be selected?",
+	L"Old method: Random gear according to your choices",
+	L"New method: Free selection of gear",
+	L"Old method",
+	L"New method",
+
+	// IMP Gear Entrance
+	L"I.M.P. Equipment",
+	L"Additional Cost: %d$ (%d$ prepaid)",
+};
+
+STR16 szIMPGearDropDownText[] =	// TODO.Translate
+{
+	L"Select LBE vest",
+	L"Select LBE combat pack",
+	L"Select LBE backpack",
+	L"Select LBE holster",
+	L"Select LBE holster",
+
+	L"Select main gun",
+	L"Select ammo",
+	L"Select sidearm",
+	L"Select additional ammo",
+	L"Select melee weapon",
+
+	L"Select helmet",
+	L"Select vest",
+	L"Select pants",
+	L"Select face gear",
+	L"Select face gear",
+
+	L"Select additional items",
+	L"Select additional items",
+	L"Select additional items",
+	L"Select additional items",
+	L"Select additional items",
+	L"Select additional items",
+	L"Select additional items",
+};
+
+STR16 szIMPGearDropDownNoneText[] =	// TODO.Translate
+{
+	L"No LBE vest",
+	L"No LBE combat pack",
+	L"No LBE backpack",
+	L"No LBE holster",
+	L"No LBE holster",
+
+	L"No gun",
+	L"No ammo",
+	L"No gun",
+	L"No ammo",
+	L"No weapon",
+
+	L"No helmet",
+	L"No vest",
+	L"No pants",
+	L"No face gear",
+	L"No face gear",
+
+	L"No additional items",
+	L"No additional items",
+	L"No additional items",
+	L"No additional items",
+	L"No additional items",
+	L"No additional items",
+	L"No additional items",
+};
 #endif //POLISH
