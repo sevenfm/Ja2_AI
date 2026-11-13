@@ -2726,6 +2726,15 @@ void LoadSkillTraitsExternalSettings()
 	gSkillTraitValues.sVOArtilleryAmmoCostProgress[3]	= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_MILITIA_ARTILLERY_MUSTARDGAS_COST_PROGRESS",	100, -100, 1000);
 	gSkillTraitValues.sVOArtilleryAmmoCostProgress[4]	= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_MILITIA_ARTILLERY_NAPALM_COST_PROGRESS",		100, -100, 1000);
 
+	// travnik: artillery strike via captured SAM site
+	gSkillTraitValues.fROSAMArtillery				= iniReader.ReadBoolean("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY",					TRUE, false);
+	gSkillTraitValues.ubVOSAMArtilleryAmmoType		= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY_AMMO_TYPE",			0, 0, 4);
+	gSkillTraitValues.ubVOSAMArtilleryMortars		= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY_MORTARS",			4, 1, 4);
+	gSkillTraitValues.usVOSAMArtilleryWaves			= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY_WAVES",				3, 1, 20);
+	gSkillTraitValues.usVOSAMArtilleryCost			= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY_COST",				2000, 0, 1000000);
+	gSkillTraitValues.ubVOSAMArtilleryMinProgress	= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY_MIN_PROGRESS",		0, 0, 100);
+	gSkillTraitValues.sVOSAMArtilleryCostProgress	= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_SAM_ARTILLERY_COST_PROGRESS",		100, -100, 1000);
+
 	gSkillTraitValues.sVOScanAssignmentBaseRange		= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_ASSIGNMENT_SCAN_BASE_RANGE",	 5, 0, 20);
 	gSkillTraitValues.sVOListeningHearingBonus			= iniReader.ReadInteger("Radio Operator","RADIO_OPERATOR_LISTENING_HEARING_BONUS",		20, 0, 100);
 	gSkillTraitValues.fVOJammingBlocksRemoteBombs		= iniReader.ReadBoolean("Radio Operator","RADIO_OPERATOR_JAMMING_BLOCKSRADIOBOMBS",		FALSE);

@@ -2392,6 +2392,7 @@ STR16 pSkillMenuStrings[] =	// TODO.Translate
 	L"Tear gas shell ($%d)",
 	L"Mustard gas shell ($%d)",
 	L"Napalm shell ($%d)",
+	L"SAM site artillery",	// travnik: artillery strike via captured SAM site
 };
 
 // TODO.Translate
@@ -6931,6 +6932,8 @@ STR16 New113Message[] =
 	L"Disarming of bomb failed. Resulting explosion damages %s's inventory and health",	//TODO.Translate	MSG113_DISARM_FAILED
 	L"Selected artillery ammo is not available.",	// MSG113_ARTILLERY_AMMO_UNAVAILABLE
 	L"Not enough money to call artillery.",	// MSG113_ARTILLERY_NOT_ENOUGH_MONEY
+	L"No operational SAM site under our control in its engagement zone.",	// MSG113_SAM_ARTILLERY_UNAVAILABLE
+	L"SAM site is not ready for another artillery strike yet.",	// MSG113_ARTILLERY_NOT_READY_YET
 };
 
 STR16 New113HAMMessage[] = 

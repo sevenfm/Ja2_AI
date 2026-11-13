@@ -1982,6 +1982,14 @@ typedef struct
 	UINT32 usVOArtilleryAmmoCost[5];
 	UINT8 ubVOArtilleryAmmoMinProgress[5];
 	INT32 sVOArtilleryAmmoCostProgress[5];
+	// travnik: artillery strike via captured SAM site
+	BOOLEAN fROSAMArtillery;						// SAM artillery enabled at all
+	UINT8 ubVOSAMArtilleryAmmoType;					// shell type, see ARTILLERY_AMMO_* enum
+	UINT8 ubVOSAMArtilleryMortars;					// number of mortars (1-4), determines wave size
+	UINT16 usVOSAMArtilleryWaves;					// number of waves
+	UINT32 usVOSAMArtilleryCost;					// base cost for player strikes
+	UINT8 ubVOSAMArtilleryMinProgress;				// min player progress for player strikes
+	INT32 sVOSAMArtilleryCostProgress;				// cost change in % of base cost at 100% progress
 	INT8  sVOScanAssignmentBaseRange;
 	INT8  sVOListeningHearingBonus;
 	BOOLEAN fVOJammingBlocksRemoteBombs;

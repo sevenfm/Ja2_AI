@@ -84,6 +84,7 @@
     <ClInclude Include="ShopKeeper Quotes.h" />
     <ClInclude Include="SkillCheck.h" />
     <ClInclude Include="SkillMenu.h" />
+    <ClInclude Include="ArtillerySAM.h" />
     <ClInclude Include="Soldier Add.h" />
     <ClInclude Include="Soldier Ani.h" />
     <ClInclude Include="Soldier Control.h" />

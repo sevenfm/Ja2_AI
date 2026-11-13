@@ -124,6 +124,9 @@
 #include "finances.h"
 #include "LaptopSave.h"
 
+// travnik: artillery strike via captured SAM site
+#include "ArtillerySAM.h"
+
 //forward declarations of common classes to eliminate includes
 class OBJECTTYPE;
 class SOLDIERTYPE;
@@ -19184,6 +19187,9 @@ BOOLEAN	SOLDIERTYPE::CanUseSkill(INT8 iSkill, BOOLEAN fAPCheck, INT32 sGridNo, I
 				UINT32 sector = 0;
 				if (this->CanAnyArtilleryStrikeBeOrdered(&sector))
 					canuse = TRUE;
+				// travnik: a captured SAM site covering our sector can also direct a strike
+				else if (SAMArtillery::CanTeamOrderSAMArtilleryStrike(this->sSectorX, this->sSectorY, this->bTeam))
+					canuse = TRUE;
 			}
 			break;
 
@@ -19447,6 +19453,11 @@ BOOLEAN SOLDIERTYPE::UseSkill(UINT8 iSkill, INT32 usMapPos, INT8 bLevel, UINT32 
 			if ( this->CanAnyArtilleryStrikeBeOrdered(&sector) )
 			{
 				return OrderArtilleryStrike(sector, usMapPos, this->bTeam );
+			}
+			// travnik: fallback - artillery strike via a captured SAM site covering this sector
+			else if ( SAMArtillery::CanTeamOrderSAMArtilleryStrike( this->sSectorX, this->sSectorY, this->bTeam ) )
+			{
+				return OrderSAMArtilleryStrike( usMapPos );
 			}
 		}
 		break;
@@ -20639,6 +20650,143 @@ BOOLEAN SOLDIERTYPE::OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridN
 	else
 		gCurrentIncident.usIncidentFlags |= INCIDENT_ARTILLERY_PLAYERSIDE;
 	
+	return TRUE;
+}
+
+// travnik: artillery strike guided by a captured SAM site - see ArtillerySAM.h for the rules
+BOOLEAN SOLDIERTYPE::OrderSAMArtilleryStrike( INT32 sTargetGridNo )
+{
+	// travnik: механика должна быть включена настройкой
+	if ( !SAMArtillery::IsEnabled() )
+		return FALSE;
+
+	// travnik: налёты возможны только на поверхности
+	if ( this->bSectorZ > 0 )
+		return FALSE;
+
+	// travnik: определить работающую ПВО нашей стороны в зоне поражения, которой находится сектор радиста
+	INT8 ubSamId = SAMArtillery::FindOperationalSAMIdForTeamAtSector( this->bTeam, this->sSectorX, this->sSectorY );
+	if ( ubSamId <= 0 )
+	{
+		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_SAM_ARTILLERY_UNAVAILABLE ] );
+		return FALSE;
+	}
+
+	// travnik: цель должна быть задана
+	if ( TileIsOutOfBounds(sTargetGridNo) )
+		return FALSE;
+
+	// travnik: частота налётов ограничена настройкой (единый таймер артиллерии сектора)
+	SECTORINFO *pSector = &SectorInfo[ SECTOR( this->sSectorX, this->sSectorY ) ];
+	if ( GetWorldTotalMin() < pSector->uiTimeAIArtillerywasOrdered + gSkillTraitValues.bVOArtillerySectorFrequency )
+	{
+		// travnik: игроку сообщаем о неготовности, AI просто не может вызвать налёт
+		if ( this->bTeam == gbPlayerNum )
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_ARTILLERY_NOT_READY_YET ] );
+
+		return FALSE;
+	}
+
+	// travnik: проверить, что боеприпас доступен и денег хватает (без списания)
+	if ( !SAMArtillery::VerifyCost( this->bTeam ) )
+		return FALSE;
+
+	// travnik: использовать радио (анимация, батареи)
+	if ( !UseRadio(SKILLS_RADIO_ARTILLERY) )
+		return FALSE;
+
+	// travnik: остановить прочую радиоактивность
+	SwitchOffRadio();
+
+	// travnik: предмет снаряда из настроек
+	UINT16 usMortarItem = SAMArtillery::GetShellItem();
+	if ( usMortarItem == 0 || !ItemIsMortarShell(usMortarItem) )
+	{
+		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, New113Message[ MSG113_NO_MORTAR_SHELL ] );
+		return FALSE;
+	}
+
+	// travnik: нужен сигнальный снаряд - он первым прилетает в зону вызова и обозначает цель
+	static UINT16 usSignalShellIndex = 1700;
+	if ( !HasItemFlag(usSignalShellIndex, SIGNAL_SHELL) && !GetFirstItemWithFlag(&usSignalShellIndex, SIGNAL_SHELL) )
+	{
+		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, New113Message[ MSG113_NO_SIGNAL_SHELL ] );
+		return FALSE;
+	}
+
+	// travnik: снаряды прилетают от края карты со стороны базы ПВО
+	INT32 sStartingGridNo = SAMArtillery::GetLaunchGridNoTowardsSAM( this, ubSamId );
+	if ( TileIsOutOfBounds(sStartingGridNo) )
+	{
+		ScreenMsg( FONT_ORANGE, MSG_INTERFACE, New113Message[ MSG113_INCORRECT_GRIDNO_ARTILLERY ] );
+		return FALSE;
+	}
+
+	// travnik: параметры залпа
+	INT16 sNumMortars = 0;
+	INT16 sNumWaves = 0;
+	SAMArtillery::GetStrikeParams( &sNumMortars, &sNumWaves );
+
+	// travnik: при распределении по ходам не выходить за длительность дымовой завесы сигнального снаряда
+	if ( gSkillTraitValues.fROArtilleryDistributedOverTurns )
+	{
+		INT16 numwavesMax = (INT16)Explosive[Item[usSignalShellIndex].ubClassIndex].ubDuration;
+		sNumWaves = min( sNumWaves, numwavesMax );
+	}
+
+	// travnik: все проверки пройдены, налёт точно состоится - списываем деньги
+	SAMArtillery::ChargeCost( this->bTeam );
+
+	// travnik: сначала пускаем сигнальный снаряд, как при налёте ополчения.
+	// Он прилетает в точку вызова и помечает зону, по которой затем бьёт артиллерия.
+	ArtilleryStrike( usSignalShellIndex, this->ubID + 2, sStartingGridNo, sTargetGridNo );
+
+	// travnik: создать боеприпас
+	OBJECTTYPE shellobj;
+	CreateItem( usMortarItem, 100, &shellobj );
+
+	shellobj.fFlags |= OBJECT_ARMED_BOMB;
+	shellobj[0]->data.misc.bDetonatorType = BOMB_TIMED;
+	shellobj[0]->data.misc.usBombItem = shellobj.usItem;
+	shellobj[0]->data.misc.ubBombOwner = this->ubID + 2;
+
+	// travnik: задержка как у обычного артналёта
+	shellobj[0]->data.misc.bDelay = 1;
+	if ( this->bTeam == ENEMY_TEAM ||
+		!(gTacticalStatus.uiFlags & TURNBASED && gTacticalStatus.uiFlags & INCOMBAT) ||
+		(gTacticalStatus.ubTopMessageType == COMPUTER_INTERRUPT_MESSAGE || gTacticalStatus.ubTopMessageType == PLAYER_INTERRUPT_MESSAGE || gTacticalStatus.ubTopMessageType == MILITIA_INTERRUPT_MESSAGE) )
+	{
+		shellobj[0]->data.misc.bDelay += 1;
+	}
+
+	// travnik: число миномётов определяет размер волны
+	SAMArtillery::SetShellCountFlags( &shellobj, sNumMortars );
+
+	// travnik: выложить волны
+	for ( INT16 i = 0; i < sNumWaves; ++i )
+	{
+		AddItemToPool( sStartingGridNo, &shellobj, HIDDEN_ITEM, 1, WORLD_ITEM_ARMED_BOMB, 0 );
+
+		// travnik: если включено распределение по ходам, каждая следующая волна задерживается на ход
+		if ( gSkillTraitValues.fROArtilleryDistributedOverTurns )
+			shellobj[0]->data.misc.bDelay += 1;
+	}
+
+	// travnik: обновить таймер артиллерии в секторе
+	pSector->uiTimeAIArtillerywasOrdered = GetWorldTotalMin();
+
+	// travnik: пометить инцидент как артналёт
+	if ( this->bTeam == ENEMY_TEAM )
+		gCurrentIncident.usIncidentFlags |= INCIDENT_ARTILLERY_ENEMY;
+	else
+		gCurrentIncident.usIncidentFlags |= INCIDENT_ARTILLERY_PLAYERSIDE;
+
+	// travnik: дополнительный опыт за вызов налёта
+	StatChange( this, EXPERAMT, 10, TRUE );
+
+	// travnik: задержка между налётами этого радиста (как у AI)
+	this->usSkillCounter[SOLDIER_COUNTER_RADIO_ARTILLERY] = 2;
+
 	return TRUE;
 }
 

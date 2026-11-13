@@ -208,6 +208,8 @@ extern SkillSelection	gSkillSelection;
 extern ArtillerySector	gArtillerySector;
 extern ArtilleryTeam	gArtilleryTeam;
 extern ArtilleryAmmo	gArtilleryAmmo;
+// travnik: SAM artillery menu
+extern ArtillerySAM		gArtillerySAM;
 extern ReinforcementSector	gReinforcementSector;
 extern ReinforcementNumber	gReinforcementNumber;
 extern SoldierSelection	gSoldierSelection;
@@ -2258,6 +2260,12 @@ void GetKeyboardInput( UINT32 *puiNewEvent )
 			else if (gArtilleryAmmo.Active())
 			{
 				gArtilleryAmmo.Cancel();
+				continue;
+			}
+			// travnik: SAM artillery menu
+			else if (gArtillerySAM.Active())
+			{
+				gArtillerySAM.Cancel();
 				continue;
 			}
 			else if (gArtilleryTeam.Active())

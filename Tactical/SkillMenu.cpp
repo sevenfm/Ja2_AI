@@ -14,9 +14,10 @@
 #include "Handle Items.h"
 
 #include "Map Screen Interface.h"
-#include "GearTemplate.h" // Подключаем новый класс
+#include "GearTemplate.h"// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+#include "message.h"
 
- // Переменную gTemplateVector оставляем здесь, так как она используется в функциях этого файла
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ gTemplateVector пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 std::vector<std::string> gTemplateVector;
 
 extern INT8 bSelectedInfoChar;
@@ -25,6 +26,10 @@ extern INT8 bSelectedInfoChar;
 #include "Cheats.h"
 #include "HelpScreen.h"
 #include "LaptopSave.h"
+
+// travnik: SAM-site artillery
+#include "ArtillerySAM.h"
+#include "strategicmap.h"
 //#include "renderworld.h"
 
 // sevenfm: need this for correct calculation of traits menu position
@@ -115,6 +120,15 @@ ArtilleryAmmo	gArtilleryAmmo;
 void Wrapper_Function_ArtilleryAmmo( UINT32 aVal)		{	gArtilleryAmmo.Functions(aVal);	}
 void Wrapper_Cancel_ArtilleryAmmo( UINT32 aVal )		{	gArtilleryAmmo.Cancel();	}
 /////////////////////////////// Artillery Ammo Selection ////////////////////////////////////////////
+
+/////////////////////////////// Artillery SAM Selection ////////////////////////////////////////////
+// travnik: SAM-site artillery menu
+ArtillerySAM	gArtillerySAM;
+
+void Wrapper_Function_ArtillerySAM( UINT32 aVal)		{	gArtillerySAM.Functions(aVal);	}
+void Wrapper_Setup_ArtillerySAM( UINT32 aVal)			{	gArtillerySAM.Setup(aVal);	}
+void Wrapper_Cancel_ArtillerySAM( UINT32 aVal )		{	gArtillerySAM.Cancel();	}
+/////////////////////////////// Artillery SAM Selection ////////////////////////////////////////////
 
 /////////////////////////////// Reinforcement Sector Selection ////////////////////////////////////////////
 ReinforcementSector	gReinforcementSector;
@@ -656,6 +670,19 @@ ArtillerySector::Setup( UINT32 aVal )
 			GetPopup()->addOption( *pOption );
 		}
 
+		// travnik: separate menu item for artillery strikes directed by a captured SAM site.
+		// The submenu lists the sectors that host SAM sites, so the player picks the base itself.
+		swprintf( pStr, pSkillMenuStrings[SKILLMENU_SAM_SITE] );
+
+		pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void, UINT32>( &Wrapper_Setup_ArtillerySAM, 0 ) );
+
+		// travnik: grey out if no operational SAM site of ours can reach the radio operator's sector
+		if ( !SAMArtillery::CanTeamOrderSAMArtilleryStrike( pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam ) )
+		{
+			pOption->setAvail(new popupCallbackFunction<bool,void*>( &Popup_OptionOff, NULL ));
+		}
+		GetPopup()->addOption( *pOption );
+
 		// cancel option
 		swprintf( pStr, pSkillMenuStrings[SKILLMENU_CANCEL] );
 		pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void,UINT32>( &Wrapper_Cancel_ArtillerySector, 0 ) );
@@ -725,7 +752,7 @@ ArtilleryTeam::Setup( UINT32 aVal )
 			pOption->setAvail(new popupCallbackFunction<bool,void*>( &Popup_OptionOff, NULL ));
 		}
 		GetPopup()->addOption( *pOption );
-		
+
 		// cancel option
 		swprintf( pStr, pSkillMenuStrings[SKILLMENU_CANCEL] );
 		pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void,UINT32>( &Wrapper_Cancel_ArtilleryTeam, 0 ) );
@@ -844,6 +871,105 @@ ArtilleryAmmo::Functions( UINT32 aVal )
 	gTraitSelection.Cancel();
 }
 /////////////////////////////// Artillery Ammo Selection ////////////////////////////////////////////
+
+/////////////////////////////// Artillery SAM Selection ////////////////////////////////////////////
+// travnik: menu for ordering an artillery strike through a captured SAM site
+void
+ArtillerySAM::Setup( UINT32 aVal )
+{
+	// travnik: the SAM sector menu does not need any input value
+	(void)aVal;
+
+	Destroy();
+
+	SOLDIERTYPE * pSoldier = NULL;
+
+	GetSoldier( &pSoldier, gusSelectedSoldier );
+
+	if ( pSoldier == NULL )
+		return;
+
+	if ( pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, TRUE) && pSoldier->bSectorZ == 0 )
+	{
+		SetupPopup("ArtillerySAM");
+
+		POPUP_OPTION *pOption;
+
+		CHAR16 pStr[300];
+
+		// travnik: list the sectors that host SAM sites under our control, so the player picks the base itself
+		for ( INT8 ubSamId = 1; ubSamId <= NUMBER_OF_SAMS; ++ubSamId )
+		{
+			if ( !SAMArtillery::IsSAMSiteControlledByTeam(ubSamId, pSoldier->bTeam) )
+				continue;
+
+			// travnik: option caption - SAM base sector coordinates and cost for player teams
+			INT16 sSamX = gpSamSectorX[ubSamId - 1];
+			INT16 sSamY = gpSamSectorY[ubSamId - 1];
+
+			if ( pSoldier->bTeam == gbPlayerNum )
+				swprintf( pStr, L"%c%d ($%d)", sSamY + 'A' - 1, sSamX, SAMArtillery::GetSAMArtilleryCost() );
+			else
+				swprintf( pStr, L"%c%d", sSamY + 'A' - 1, sSamX );
+
+			pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void, UINT32>( &Wrapper_Function_ArtillerySAM, ubSamId ) );
+
+			// travnik: grey out if the computer is destroyed, the radio operator's sector is out of range or the player cannot afford it
+			if ( !SAMArtillery::IsSAMSiteOperationalForTeam( ubSamId, pSoldier->bTeam ) ||
+				!SAMArtillery::IsSectorInSAMRange( ubSamId, pSoldier->sSectorX, pSoldier->sSectorY ) ||
+				( pSoldier->bTeam == gbPlayerNum && LaptopSaveInfo.iCurrentBalance < (INT32)SAMArtillery::GetSAMArtilleryCost() ) )
+			{
+				pOption->setAvail(new popupCallbackFunction<bool,void*>( &Popup_OptionOff, NULL ));
+			}
+			GetPopup()->addOption( *pOption );
+		}
+
+		// cancel option
+		swprintf( pStr, pSkillMenuStrings[SKILLMENU_CANCEL] );
+		pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void,UINT32>( &Wrapper_Cancel_ArtillerySAM, 0 ) );
+		GetPopup()->addOption( *pOption );
+
+		SetTraitToDisplay(RADIO_OPERATOR_NT);
+		SetGridNoForTraitDisplay(sTraitsMenuTargetGridNo);
+		ToggleTraitRangeView(FALSE);
+	}
+
+	// same y, different x - this submenu opens from the artillery sector menu
+	SetPos(gArtillerySector.GetMaxPosX(), usTraitMenuPosY);
+}
+
+void
+ArtillerySAM::Functions( UINT32 aVal )
+{
+	Cancel();
+
+	SOLDIERTYPE * pSoldier = NULL;
+
+	GetSoldier( &pSoldier, gusSelectedSoldier );
+
+	if ( pSoldier == NULL || !pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, TRUE) )
+		return;
+
+	// travnik: aVal is the SAM site id chosen in the menu
+	INT8 ubSamId = (INT8)aVal;
+
+	// travnik: validate the SAM site choice once more before executing
+	if ( !SAMArtillery::IsSAMSiteOperationalForTeam( ubSamId, pSoldier->bTeam ) ||
+		!SAMArtillery::IsSectorInSAMRange( ubSamId, pSoldier->sSectorX, pSoldier->sSectorY ) )
+	{
+		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_SAM_ARTILLERY_UNAVAILABLE ] );
+		return;
+	}
+
+	// travnik: execute the strike directed by the chosen SAM site
+	pSoldier->OrderSAMArtilleryStrike( sTraitsMenuTargetGridNo );
+
+	Cancel();
+	gArtillerySector.Cancel();
+	gSkillSelection.Cancel();
+	gTraitSelection.Cancel();
+}
+/////////////////////////////// Artillery SAM Selection ////////////////////////////////////////////
 
 /////////////////////////////// Reinforcement Sector Selection ////////////////////////////////////////////
 extern UINT8 CountAllMilitiaInSector(INT16 sMapX, INT16 sMapY);
@@ -1596,7 +1722,7 @@ void EquipmentSelection::Functions(UINT32 aVal)
 		if (pSoldier)
 		{
 			std::string name = gTemplateVector[aVal];
-			// Используем объектно-ориентированный подход нового класса
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			GearTemplateManager gearManager;
 			gearManager.ApplyToSoldier(pSoldier, name);
 		}
