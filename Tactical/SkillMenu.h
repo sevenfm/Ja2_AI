@@ -142,6 +142,16 @@ private:
 	UINT32 usSector;
 };
 
+// travnik: select the sector with the SAM site we request artillery from
+class ArtillerySAM : public SkillMenuItem
+{
+public:
+	ArtillerySAM()	{}
+
+	void Setup( UINT32 aVal );
+	void Functions( UINT32 aVal );
+};
+
 // select the sector we call reinforcements from
 class ReinforcementSector : public SkillMenuItem
 {

@@ -2389,6 +2389,7 @@ STR16 pSkillMenuStrings[] =
 	L"Снаряд со слезоточивым газом ($%d)",
 	L"Снаряд с горчичным газом ($%d)",
 	L"Напалмовый снаряд ($%d)",
+	L"Артналёт от базы ПВО",	// travnik: artillery strike via captured SAM site
 };
 
 STR16 pRadioMenuStrings[] =
@@ -7114,6 +7115,8 @@ STR16 New113Message[] =
 	L"Не удалось обезвредить бомбу. Взрыв повредил инвентарь и здоровье %s",	// MSG113_DISARM_FAILED
 	L"Выбранный боеприпас для артналёта недоступен.",	// MSG113_ARTILLERY_AMMO_UNAVAILABLE
 	L"Недостаточно денег для вызова артналёта.",	// MSG113_ARTILLERY_NOT_ENOUGH_MONEY
+	L"Нет работающей базы ПВО под нашим контролем в зоне поражения.",	// MSG113_SAM_ARTILLERY_UNAVAILABLE
+	L"База ПВО ещё не готова к новому артналёту.",	// MSG113_ARTILLERY_NOT_READY_YET
 };
 
 STR16 New113HAMMessage[] = 
