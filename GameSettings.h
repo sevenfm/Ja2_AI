@@ -317,6 +317,8 @@ typedef struct
 
 	// SANDRO was here - some changes done
 	INT32 iIMPProfileCost;
+	// travnik: бюджет снаряжения IMP в магазине (0 = равен цене профиля)
+	INT32 iIMPShopGearBudget;
 	BOOLEAN fDynamicIMPProfileCost;
 	INT32 iMinAttribute;
 	INT32 iMaxAttribute;

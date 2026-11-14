@@ -4,6 +4,7 @@
 */
 
 #include "IMP Gear.h"
+#include "IMP Shop Assortment.h"
 #include "IMP Skill Trait.h"
 #include "Button System.h"
 #include "utilities.h"
@@ -29,6 +30,7 @@
 #include "IMP Skill Trait.h"
 #include "IMP Minor Trait.h"
 #include "IMP Gear Entrance.h"
+#include "LaptopSave.h"
 
 extern BOOLEAN gfGlowTimerExpired;
 BOOLEAN fShowIMPItemHighLight = FALSE;
@@ -102,6 +104,8 @@ INT16 gIMPGearGun3 = -1;
 
 // a set of all items that we can choose from
 std::set<UINT16> gIMPGearPossibleItems;
+// travnik: набор активных категорий IMPItemChoices - нужен для привязки предметов из IMPShopItems.xml
+std::set<UINT8> gIMPActiveItemCategories;
 // a map with all items we have selected, and how many we want
 std::map<UINT16, UINT8> gIMPGearSelectedItems;
 
@@ -123,6 +127,8 @@ extern BOOLEAN fNewIMPGearMethodUsed;
 //*******************************************************************
 void		IMPGearDisplay( );
 void		BtnIMPGearFinishCallback( GUI_BUTTON *btn, INT32 reason );
+// travnik: подтверждение доплаты за снаряжение сверх бюджета
+void		BtnIMPGearPayConfirmCallback( UINT8 bExitValue );
 // determine all items that are selectable according to xml and choices
 void		CalculatePossibleItems();
 // store the selected gear
@@ -430,6 +436,8 @@ void IMPGearDisplay( )
 
 
 	gIMPGearCost = 0;
+	// travnik: сколько копий каждого предмета уже оплачено - нужно для лимитов ubMaxAmount
+	std::map<UINT16, UINT32> chargedAmounts;
 	// Draw selected gear and silhouettes for empty pockets
 	for (const auto& kv : gIMPPocketSelectedItems) {
 		UINT16 x = 0;
@@ -453,7 +461,23 @@ void IMPGearDisplay( )
 		if (sItem > 0)
 		{
 			DisplayGear((UINT16)sItem, x, y, FALSE, amount, FALSE);
-			gIMPGearCost += amount * Item[sItem].usPrice;
+			// travnik: цена берётся с учётом переопределения из IMPShopItems.xml,
+			// travnik: а количество ограничивается лимитом ubMaxAmount
+			UINT8 ubChargedAmount = amount;
+			UINT8 ubMaxAmount = IMPShopAssortment::Instance().GetMaxAmount( (UINT16)sItem );
+
+			if ( ubMaxAmount > 0 )
+			{
+				UINT32 uiAlreadyCharged = chargedAmounts[(UINT16)sItem];
+
+				if ( uiAlreadyCharged >= ubMaxAmount )
+					ubChargedAmount = 0;
+				else if ( (UINT32)amount > ubMaxAmount - uiAlreadyCharged )
+					ubChargedAmount = (UINT8)( ubMaxAmount - uiAlreadyCharged );
+			}
+
+			chargedAmounts[(UINT16)sItem] += ubChargedAmount;
+			gIMPGearCost += ubChargedAmount * IMPShopAssortment::Instance().GetPrice( (UINT16)sItem );
 		}
 		else // Render silhouette if no item
 		{
@@ -503,12 +527,17 @@ void IMPGearDisplay( )
 		}
 	}
 
-	// Display extra cost
-	if ( gIMPGearCost > gGameExternalOptions.iIMPProfileCost )
+	// travnik: всегда показываем израсходованный бюджет и доплату за снаряжение
 	{
-		CHAR16 wTemp[50];
-		swprintf( wTemp, szIMPGearWebSiteText[6], GetIMPGearCost(), gGameExternalOptions.iIMPProfileCost );
-		DrawTextToScreen( wTemp, LAPTOP_SCREEN_UL_X + 100, LAPTOP_SCREEN_WEB_UL_Y + 360, LAPTOP_TEXT_WIDTH, FONT12ARIAL, IMP_GEAR__COLOR, FONT_MCOLOR_BLACK, FALSE, LEFT_JUSTIFIED );
+		CHAR16 wTemp[128];
+		const INT32 iGearBudget = GetIMPShopGearBudget();
+		const INT32 iExtraCost = GetIMPGearCost();
+
+		swprintf( wTemp, szIMPGearWebSiteText[8], gIMPGearCost, iGearBudget, iExtraCost );
+
+		// travnik: при выходе за бюджет сумма доплаты выделяется красным
+		UINT16 usColor = ( iExtraCost > 0 ) ? FONT_MCOLOR_DKRED : IMP_GEAR__COLOR;
+		DrawTextToScreen( wTemp, LAPTOP_SCREEN_UL_X + 100, LAPTOP_SCREEN_WEB_UL_Y + 360, LAPTOP_TEXT_WIDTH, FONT12ARIAL, usColor, FONT_MCOLOR_BLACK, FALSE, LEFT_JUSTIFIED );
 	}
 }
 
@@ -575,6 +604,26 @@ void BtnIMPGearFinishCallback( GUI_BUTTON *btn, INT32 reason )
 	{
 		btn->uiFlags |= (BUTTON_CLICKED_ON);
 
+		// travnik: если снаряжение выходит за бюджет, сначала подтверждаем доплату
+		const INT32 iExtraCost = GetIMPGearCost();
+		const INT32 iTotalCost = iGetProfileCost( TRUE );
+
+		if ( iExtraCost > 0 )
+		{
+			// travnik: на счету должно хватать на профиль и доплату
+			if ( LaptopSaveInfo.iCurrentBalance < iTotalCost )
+			{
+				DoLapTopMessageBox( MSG_BOX_IMP_STYLE, pImpPopUpStrings[3], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, BtnIMPGearPayConfirmCallback );
+				return;
+			}
+
+			CHAR16 wConfirmText[256];
+			swprintf( wConfirmText, szIMPGearWebSiteText[9], iExtraCost, iTotalCost );
+
+			DoLapTopMessageBox( MSG_BOX_IMP_STYLE, wConfirmText, LAPTOP_SCREEN, MSG_BOX_FLAG_YESNO, BtnIMPGearPayConfirmCallback );
+			return;
+		}
+
 		iCurrentImpPage = IMP_FINISH;
 		iCurrentProfileMode = IMP__FINISH;
 		fShowIMPItemHighLight = FALSE;
@@ -582,10 +631,40 @@ void BtnIMPGearFinishCallback( GUI_BUTTON *btn, INT32 reason )
 }
 
 
+// travnik: игрок подтвердил доплату за снаряжение сверх бюджета
+void BtnIMPGearPayConfirmCallback( UINT8 bExitValue )
+{
+	if ( bExitValue == MSG_BOX_RETURN_YES )
+	{
+		iCurrentImpPage = IMP_FINISH;
+		iCurrentProfileMode = IMP__FINISH;
+		fShowIMPItemHighLight = FALSE;
+	}
+	else
+	{
+		// travnik: отмена - снимаем состояние "нажата", чтобы кнопку можно было нажать снова
+		GUI_BUTTON* pButton = GetButtonPtr( giIMPGearFinishButton );
+
+		if ( pButton )
+			pButton->uiFlags &= ~(BUTTON_CLICKED_ON);
+	}
+}
+
+
+// travnik: бюджет снаряжения IMP; 0 в настройках - использовать цену профиля как раньше
+INT32	GetIMPShopGearBudget( void )
+{
+	if ( gGameExternalOptions.iIMPShopGearBudget > 0 )
+		return gGameExternalOptions.iIMPShopGearBudget;
+
+	return gGameExternalOptions.iIMPProfileCost;
+}
+
+
 INT32	GetIMPGearCost( )
 {
 	if ( IsIMPGearUsed( ) )
-		return max( 0, gIMPGearCost - gGameExternalOptions.iIMPProfileCost );
+		return max( 0, gIMPGearCost - GetIMPShopGearBudget() );
 
 	return 0;
 }
@@ -593,6 +672,9 @@ INT32	GetIMPGearCost( )
 
 void AddItemCategoryToPossibleGear(UINT8 aCategory)
 {
+	// travnik: запоминаем активную категорию для привязки предметов из IMPShopItems.xml
+	gIMPActiveItemCategories.insert( aCategory );
+
 	for ( int j = 0; j < 50; ++j )
 	{
 		UINT16 usItem = gIMPItemChoices[aCategory].bItemNo[j];
@@ -607,6 +689,7 @@ void AddItemCategoryToPossibleGear(UINT8 aCategory)
 void CalculatePossibleItems()
 {
 	gIMPGearPossibleItems.clear( );
+	gIMPActiveItemCategories.clear( );
 
 	for ( int i = 0; i < IMP_AUTO_WEAPONS; ++i )
 	{
@@ -740,6 +823,9 @@ void CalculatePossibleItems()
 			}
 		}
 	}
+
+	// travnik: дополняем ассортимент записями из IMPShopItems.xml (цена, крутость, привязка к набору)
+	IMPShopAssortment::Instance().ApplyToPool( gIMPGearPossibleItems, gIMPActiveItemCategories );
 }
 
 // store the selected gear
@@ -757,6 +843,15 @@ void StoreSelectedIMPGear()
 			// add item (make sure it is at least 1)
 			gIMPGearSelectedItems[sItem] = max( 1, gIMPGearSelectedItems[sItem] + amount );
 		}
+	}
+
+	// travnik: ограничиваем количество копий, если лимит задан в IMPShopItems.xml
+	for (auto& kv : gIMPGearSelectedItems)
+	{
+		UINT8 ubMaxAmount = IMPShopAssortment::Instance().GetMaxAmount( kv.first );
+
+		if ( ubMaxAmount > 0 && kv.second > ubMaxAmount )
+			kv.second = ubMaxAmount;
 	}
 }
 
@@ -1226,6 +1321,14 @@ void RenderImpGearSelectionChoices(UINT32 pocket)
 			extern void GetHelpTextForItemInLaptop(STR16 pzStr, UINT16 usItemNumber);
 			GetHelpTextForItemInLaptop(tooltipText, itemIndex);
 
+			// travnik: показываем цену и крутость предмета в магазине IMP
+			CHAR16 wPriceText[128];
+			swprintf(wPriceText, szIMPGearWebSiteText[7],
+				IMPShopAssortment::Instance().GetPrice(itemIndex),
+				IMPShopAssortment::Instance().GetCoolness(itemIndex));
+
+			wcscat(tooltipText, L"\n");
+			wcscat(tooltipText, wPriceText);
 			wcscat(tooltipText, L"\n");
 			wcscat(tooltipText, szIMPGearPocketText[55]);
 			SetRegionFastHelpText(&gIMPGearInvPoolRegion[i - pageShift], tooltipText);

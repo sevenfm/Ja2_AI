@@ -41,6 +41,7 @@
 
 #include "IMP Gear Entrance.h"		// added by Flugente
 #include "IMP Gear.h"				// added by Flugente
+#include "IMP Shop Assortment.h"	// travnik: внешний ассортимент магазина снаряжения IMP
 
 #include "SaveLoadGame.h"
 
@@ -678,7 +679,8 @@ INT32 GetEquippedGearCost( MERCPROFILESTRUCT *pProfile )
 	{
 		if ( pProfile->inv[i] != NOTHING )
 		{
-			cost += pProfile->bInvNumber[i] * Item[pProfile->inv[i]].usPrice;
+			// travnik: цена берётся с учётом переопределения из IMPShopItems.xml
+			cost += pProfile->bInvNumber[i] * IMPShopAssortment::Instance().GetPrice( pProfile->inv[i] );
 		}
 	}
 
@@ -1641,7 +1643,8 @@ BOOLEAN LoadImpCharacter( STR nickName )
 		INT32 iIMPCost = iGetProfileCost( FALSE );
 
 		// Flugente: as we do not store the cost of the gear in the IMP file, we have to determine the cost here
-		iIMPCost += max(0, GetEquippedGearCost( &gMercProfiles[iProfileId] ) - gGameExternalOptions.iIMPProfileCost );
+		// travnik: доплата считается от отдельного бюджета снаряжения, а не от цены профиля
+		iIMPCost += max(0, GetEquippedGearCost( &gMercProfiles[iProfileId] ) - GetIMPShopGearBudget() );
 
 		// Changed to find actual IMP cost - SANDRO
 		if( LaptopSaveInfo.iCurrentBalance < iIMPCost )

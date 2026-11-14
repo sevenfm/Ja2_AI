@@ -1,4 +1,4 @@
-// WANNE: This pragma should not be needed anymore for Polish version, after we set the encoding to UTF8 
+﻿// WANNE: This pragma should not be needed anymore for Polish version, after we set the encoding to UTF8 
 // WANNE: Yes we need this here exclusivly in Polish version, because we do not have a codepage in the code like for other versions.
 //#pragma setlocale("POLISH")
 
@@ -9349,6 +9349,14 @@ STR16 szIMPGearWebSiteText[] =	// TODO.Translate
 	// IMP Gear Entrance
 	L"I.M.P. Equipment",
 	L"Additional Cost: %d$ (%d$ prepaid)",
+
+	// travnik: цена и крутость предмета в магазине IMP
+	L"Price: %d$  Coolness: %d",
+
+	// travnik: бюджет снаряжения на экране выбора
+	L"Gear: %d / %d $   Extra: %d $",
+	// travnik: подтверждение доплаты за снаряжение сверх бюджета
+	L"Gear exceeds the budget by %d$. Total to pay: %d$. Continue?",
 };
 
 STR16 szIMPGearPocketText[] =	// TODO.Translate

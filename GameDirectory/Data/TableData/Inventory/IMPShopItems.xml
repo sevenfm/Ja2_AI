@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	IMPShopItems.xml - ассортимент магазина снаряжения IMP для мода Vanilla (Data).
+
+	Файл дополняет пул предметов, который собирается из IMPItemChoices.xml.
+	Подробное описание формата - docs/wiki_imp_shop_assortment.md.
+
+	Правила, по которым заполнен файл:
+		- крутость (ubCoolness) у всех предметов 1..4, endgame-снаряжение не добавлено;
+		- цена не переопределяется (usPrice = 0): берётся цена из Items.xml,
+		  поэтому доплата за снаряжение сверх IMP_PROFILE_COST остаётся прежней;
+		- fForceAvailable = 0: продолжают действовать ItemIsLegal (Tons of Guns,
+		  Sci-Fi, система инвентаря и т.д.);
+		- ubMaxAmount ограничивает копии: броня и разгрузка - 1, медицина и граны - 2;
+		- ubKit привязывает специализированные вещи к набору трейта
+		  (24 = Night Ops, 31 = Lockpicking, 33 = Camouflage, 51 = Vox Operator),
+		  остальное доступно всем (255);
+		- патроны не добавлены: магазины подбираются автоматически при выборе оружия.
+-->
+<IMPSHOPITEMS>
+
+	<fRespectCoolness>0</fRespectCoolness>
+
+	<!-- Пистолеты и револьверы -->
+	<!-- 1: Glock 17 (крутость 2, 796$) -->
+	<IMPSHOPITEM>
+		<uiIndex>1</uiIndex>
+		<usItem>1</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Glock 17</szComment>
+	</IMPSHOPITEM>
+	<!-- 2: Glock 18 (крутость 2, 1185$) -->
+	<IMPSHOPITEM>
+		<uiIndex>2</uiIndex>
+		<usItem>2</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Glock 18</szComment>
+	</IMPSHOPITEM>
+	<!-- 3: Beretta 92F (крутость 2, 763$) -->
+	<IMPSHOPITEM>
+		<uiIndex>3</uiIndex>
+		<usItem>3</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Beretta 92F</szComment>
+	</IMPSHOPITEM>
+	<!-- 8: M1911A1 (крутость 2, 700$) -->
+	<IMPSHOPITEM>
+		<uiIndex>4</uiIndex>
+		<usItem>8</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>M1911A1</szComment>
+	</IMPSHOPITEM>
+	<!-- 7: Desert Eagle .357 (крутость 2, 678$) -->
+	<IMPSHOPITEM>
+		<uiIndex>5</uiIndex>
+		<usItem>7</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Desert Eagle .357</szComment>
+	</IMPSHOPITEM>
+	<!-- 6: Barracuda (крутость 2, 665$) -->
+	<IMPSHOPITEM>
+		<uiIndex>6</uiIndex>
+		<usItem>6</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Barracuda</szComment>
+	</IMPSHOPITEM>
+	<!-- 56: Automag III (крутость 3, 813$) -->
+	<IMPSHOPITEM>
+		<uiIndex>7</uiIndex>
+		<usItem>56</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Automag III</szComment>
+	</IMPSHOPITEM>
+	<!-- 5: .38 Special (крутость 1, 633$) -->
+	<IMPSHOPITEM>
+		<uiIndex>8</uiIndex>
+		<usItem>5</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>1</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>.38 Special</szComment>
+	</IMPSHOPITEM>
+
+	<!-- Пистолеты-пулемёты и дробовики -->
+	<!-- 9: MP5KA4 (крутость 3, 1309$) -->
+	<IMPSHOPITEM>
+		<uiIndex>9</uiIndex>
+		<usItem>9</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>MP5KA4</szComment>
+	</IMPSHOPITEM>
+	<!-- 10: MAC-10 (крутость 3, 1101$) -->
+	<IMPSHOPITEM>
+		<uiIndex>10</uiIndex>
+		<usItem>10</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>MAC-10</szComment>
+	</IMPSHOPITEM>
+	<!-- 330: Micro-Uzi (крутость 2, 1227$) -->
+	<IMPSHOPITEM>
+		<uiIndex>11</uiIndex>
+		<usItem>330</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Micro-Uzi</szComment>
+	</IMPSHOPITEM>
+	<!-- 11: Thompson M1A1 (крутость 4, 1173$) -->
+	<IMPSHOPITEM>
+		<uiIndex>12</uiIndex>
+		<usItem>11</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Thompson M1A1</szComment>
+	</IMPSHOPITEM>
+	<!-- 13: HK 53A3 (крутость 4, 1602$) -->
+	<IMPSHOPITEM>
+		<uiIndex>13</uiIndex>
+		<usItem>13</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>HK 53A3</szComment>
+	</IMPSHOPITEM>
+	<!-- 31: M870 (крутость 4, 822$) -->
+	<IMPSHOPITEM>
+		<uiIndex>14</uiIndex>
+		<usItem>31</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>M870</szComment>
+	</IMPSHOPITEM>
+
+	<!-- Винтовки -->
+	<!-- 22: Mini-14 (крутость 4, 718$) -->
+	<IMPSHOPITEM>
+		<uiIndex>15</uiIndex>
+		<usItem>22</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Mini-14</szComment>
+	</IMPSHOPITEM>
+	<!-- 17: SKS (крутость 4, 870$) -->
+	<IMPSHOPITEM>
+		<uiIndex>16</uiIndex>
+		<usItem>17</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>SKS</szComment>
+	</IMPSHOPITEM>
+	<!-- 16: Type 85 (крутость 3, 1273$) -->
+	<IMPSHOPITEM>
+		<uiIndex>17</uiIndex>
+		<usItem>16</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Type 85</szComment>
+	</IMPSHOPITEM>
+	<!-- 14: AKS-74U (крутость 4, 1475$) -->
+	<IMPSHOPITEM>
+		<uiIndex>18</uiIndex>
+		<usItem>14</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>AKS-74U</szComment>
+	</IMPSHOPITEM>
+
+	<!-- Броня -->
+	<!-- 176: Steel Helmet (крутость 2, 100$) -->
+	<IMPSHOPITEM>
+		<uiIndex>19</uiIndex>
+		<usItem>176</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Steel Helmet</szComment>
+	</IMPSHOPITEM>
+	<!-- 177: Kevlar Helmet (крутость 4, 400$) -->
+	<IMPSHOPITEM>
+		<uiIndex>20</uiIndex>
+		<usItem>177</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Kevlar Helmet</szComment>
+	</IMPSHOPITEM>
+	<!-- 188: Leather Jacket (крутость 2, 200$) -->
+	<IMPSHOPITEM>
+		<uiIndex>21</uiIndex>
+		<usItem>188</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Leather Jacket</szComment>
+	</IMPSHOPITEM>
+	<!-- 161: Flak Jacket (крутость 2, 600$) -->
+	<IMPSHOPITEM>
+		<uiIndex>22</uiIndex>
+		<usItem>161</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Flak Jacket</szComment>
+	</IMPSHOPITEM>
+	<!-- 164: Kevlar Vest (крутость 4, 1000$) -->
+	<IMPSHOPITEM>
+		<uiIndex>23</uiIndex>
+		<usItem>164</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Kevlar Vest</szComment>
+	</IMPSHOPITEM>
+	<!-- 189: Kvlr Leather (крутость 3, 950$) -->
+	<IMPSHOPITEM>
+		<uiIndex>24</uiIndex>
+		<usItem>189</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Kvlr Leather</szComment>
+	</IMPSHOPITEM>
+
+	<!-- Медицина и инструменты -->
+	<!-- 201: 1st Aid Kit (крутость 1, 100$) -->
+	<IMPSHOPITEM>
+		<uiIndex>25</uiIndex>
+		<usItem>201</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>1</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>2</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>1st Aid Kit</szComment>
+	</IMPSHOPITEM>
+	<!-- 202: Med Kit (крутость 1, 300$) -->
+	<IMPSHOPITEM>
+		<uiIndex>26</uiIndex>
+		<usItem>202</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>1</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Med Kit</szComment>
+	</IMPSHOPITEM>
+	<!-- 203: Tool Kit (крутость 1, 500$) -->
+	<IMPSHOPITEM>
+		<uiIndex>27</uiIndex>
+		<usItem>203</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>1</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Tool Kit</szComment>
+	</IMPSHOPITEM>
+	<!-- 204: Locksmith Kit (крутость 3, 250$) -->
+	<IMPSHOPITEM>
+		<uiIndex>28</uiIndex>
+		<usItem>204</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>31</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Locksmith Kit</szComment>
+	</IMPSHOPITEM>
+
+	<!-- Лицевое снаряжение -->
+	<!-- 211: NVG I (крутость 3, 500$) -->
+	<IMPSHOPITEM>
+		<uiIndex>29</uiIndex>
+		<usItem>211</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>24</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>NVG I</szComment>
+	</IMPSHOPITEM>
+	<!-- 213: Gas Mask (крутость 4, 300$) -->
+	<IMPSHOPITEM>
+		<uiIndex>30</uiIndex>
+		<usItem>213</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Gas Mask</szComment>
+	</IMPSHOPITEM>
+	<!-- 212: Sun Goggles (крутость 2, 200$) -->
+	<IMPSHOPITEM>
+		<uiIndex>31</uiIndex>
+		<usItem>212</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>2</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>1</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Sun Goggles</szComment>
+	</IMPSHOPITEM>
+
+	<!-- Граны -->
+	<!-- 134: Mini Grenade (крутость 3, 150$) -->
+	<IMPSHOPITEM>
+		<uiIndex>32</uiIndex>
+		<usItem>134</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>2</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Mini Grenade</szComment>
+	</IMPSHOPITEM>
+	<!-- 131: Stun Grenade (крутость 3, 100$) -->
+	<IMPSHOPITEM>
+		<uiIndex>33</uiIndex>
+		<usItem>131</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>2</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Stun Grenade</szComment>
+	</IMPSHOPITEM>
+	<!-- 151: Smoke Grenade (крутость 3, 50$) -->
+	<IMPSHOPITEM>
+		<uiIndex>34</uiIndex>
+		<usItem>151</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>3</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>2</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Smoke Grenade</szComment>
+	</IMPSHOPITEM>
+	<!-- 135: Frag Grenade (крутость 4, 200$) -->
+	<IMPSHOPITEM>
+		<uiIndex>35</uiIndex>
+		<usItem>135</usItem>
+		<usPrice>0</usPrice>
+		<ubCoolness>4</ubCoolness>
+		<ubKit>255</ubKit>
+		<ubMaxAmount>2</ubMaxAmount>
+		<fForceAvailable>0</fForceAvailable>
+		<fRemove>0</fRemove>
+		<szComment>Frag Grenade</szComment>
+	</IMPSHOPITEM>
+
+</IMPSHOPITEMS>

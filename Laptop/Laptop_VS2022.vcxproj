@@ -83,6 +83,7 @@
     <ClInclude Include="IMP Portraits.h" />
     <ClInclude Include="IMP Prejudice.h" />
     <ClInclude Include="IMP Gear.h" />
+    <ClInclude Include="IMP Shop Assortment.h" />
     <ClInclude Include="IMP Gear Entrance.h" />
     <ClInclude Include="IMP Skill Trait.h" />
     <ClInclude Include="IMP Text System.h" />
@@ -166,6 +167,7 @@
     <ClCompile Include="IMP Portraits.cpp" />
     <ClCompile Include="IMP Prejudice.cpp" />
     <ClCompile Include="IMP Gear.cpp" />
+    <ClCompile Include="IMP Shop Assortment.cpp" />
     <ClCompile Include="IMP Gear Entrance.cpp" />
     <ClCompile Include="IMP Skill Trait.cpp" />
     <ClCompile Include="IMP Text System.cpp" />

@@ -93,6 +93,8 @@ typedef PARSE_STAGE;
 #define ITEMCHOICESFILENAME_MILITIA_REGULAR		"Inventory\\ItemChoices_Militia_Regular.xml"
 #define ITEMCHOICESFILENAME_MILITIA_ELITE		"Inventory\\ItemChoices_Militia_Elite.xml"
 #define	IMPITEMCHOICESFILENAME					"Inventory\\IMPItemChoices.xml"
+// travnik: необязательный XML, расширяющий ассортимент магазина снаряжения IMP
+#define	IMPSHOPITEMSXMLFILENAME					"Inventory\\IMPShopItems.xml"
 #define MERCSTARTINGGEARFILENAME				"Inventory\\MercStartingGear.xml"
 #define ENEMYWEAPONDROPSFILENAME				"Inventory\\EnemyWeaponDrops.xml"
 #define ENEMYAMMODROPSFILENAME					"Inventory\\EnemyAmmoDrops.xml"

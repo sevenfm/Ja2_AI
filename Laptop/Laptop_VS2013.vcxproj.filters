@@ -12,6 +12,9 @@
     <ClInclude Include="aim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IMP Shop Assortment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="AimArchives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -252,6 +255,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IMP Shop Assortment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AimArchives.cpp">

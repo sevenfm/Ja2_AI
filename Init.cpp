@@ -77,6 +77,8 @@
 #endif
 
 #include "ub_config.h"
+// travnik: внешний ассортимент магазина снаряжения IMP
+#include "IMP Shop Assortment.h"
 
 
 #include "Civ Quotes.h"
@@ -579,6 +581,15 @@ BOOLEAN LoadExternalGameplayData(STR directoryName, BOOLEAN isMultiplayer)
 	strcpy(fileName, directoryName);
 	strcat(fileName, IMPITEMCHOICESFILENAME);
 	SGP_THROW_IFFALSE(ReadInIMPItemChoicesStats(fileName),IMPITEMCHOICESFILENAME);
+
+	// travnik: необязательный XML, расширяющий ассортимент магазина снаряжения IMP
+	strcpy(fileName, directoryName);
+	strcat(fileName, IMPSHOPITEMSXMLFILENAME);
+	if (FileExists(fileName))
+	{
+		DebugMsg (TOPIC_JA2,DBG_LEVEL_3,String("LoadExternalGameplayData, fileName = %s", fileName));
+		IMPShopAssortment::Instance().Load(fileName);
+	}
 
 	// Flugente 2012-12-19: merchant data has been externalized - see XML_Merchants.cpp
 	/*std::copy(DefaultarmsDealerInfo, 
