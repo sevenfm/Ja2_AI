@@ -117,6 +117,9 @@ HEADER = """<?xml version="1.0" encoding="utf-8"?>
 \t\t  (24 = Night Ops, 31 = Lockpicking, 33 = Camouflage, 51 = Vox Operator),
 \t\t  остальное доступно всем (255);
 \t\t- патроны не добавлены: магазины подбираются автоматически при выборе оружия.
+
+\tЗадаваемое корневое поле:
+\t\tfRespectCoolness - дополнительный фильтр записей XML по абсолютному прогрессу.
 -->
 <IMPSHOPITEMS>
 

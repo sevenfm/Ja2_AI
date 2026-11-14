@@ -941,6 +941,9 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.iIMPProfileCost				 = iniReader.ReadInteger("Recruitment Settings","IMP_PROFILE_COST",3000, 0, 500000);
 	// travnik: бюджет снаряжения IMP; 0 - использовать цену профиля как раньше
 	gGameExternalOptions.iIMPShopGearBudget			 = iniReader.ReadInteger("Recruitment Settings","IMP_SHOP_GEAR_BUDGET",5000, 0, 500000);
+	// travnik: режим ассортимента IMP; 0 - только IMPShopItems.xml,
+	// 1..10 - дополнительно предметы Items.xml с крутостью не выше значения
+	gGameExternalOptions.iIMPShopCoolness				 = iniReader.ReadInteger("Recruitment Settings","IMP_SHOP_COOLNESS",0, 0, 10);
 	gGameExternalOptions.fDynamicIMPProfileCost			 = iniReader.ReadBoolean("Recruitment Settings","DYNAMIC_IMP_PROFILE_COST",FALSE);
 	gGameExternalOptions.iImpAttributePoints				= iniReader.ReadInteger("Recruitment Settings","IMP_INITIAL_POINTS",500, 1, 5000);
 	gGameExternalOptions.iMinAttribute						= iniReader.ReadInteger("Recruitment Settings","IMP_MIN_ATTRIBUTE",35, 1, 99);

@@ -824,8 +824,21 @@ void CalculatePossibleItems()
 		}
 	}
 
-	// travnik: дополняем ассортимент записями из IMPShopItems.xml (цена, крутость, привязка к набору)
-	IMPShopAssortment::Instance().ApplyToPool( gIMPGearPossibleItems, gIMPActiveItemCategories );
+	// travnik: дополняем пул магазина в зависимости от режима IMP_SHOP_COOLNESS
+	if ( IMPShopAssortment::Instance().IsCatalogMode() )
+	{
+		// travnik: IMP_SHOP_COOLNESS > 0 - добавляем предметы Items.xml до указанной крутости
+		IMPShopAssortment::Instance().BuildCatalogPool( gIMPGearPossibleItems );
+	}
+	else
+	{
+		// travnik: IMP_SHOP_COOLNESS = 0 - прежняя логика IMPShopItems.xml
+		// (цена, крутость, привязка к набору, лимит количества)
+		IMPShopAssortment::Instance().ApplyToPool( gIMPGearPossibleItems, gIMPActiveItemCategories );
+	}
+
+	// travnik: случайные предметы (randomitem) в магазине не показываем
+	IMPShopAssortment::Instance().RemoveRandomItems( gIMPGearPossibleItems );
 }
 
 // store the selected gear
