@@ -1,6 +1,7 @@
 #ifndef __IMP_MAINPAGE_H
 #define __IMP_MAINPAGE_H
 #include "types.h"
+#include "IMP Voices.h"
 
 void RenderIMPMainPage( void );
 void ExitIMPMainPage( void );
@@ -29,11 +30,6 @@ INT32 GetFirstMaleSlot();
 INT32 GetLastMaleSlot();
 INT32 GetFirstFemaleSlot();
 INT32 GetLastFemaleSlot();
-
-// This returns a count of how any slots along we are in the potential
-// slot list.	Usable for displaying on the "Voice" button in the interface
-// and probably not much else.
-INT32 GetVoiceCountFromVoiceSlot(INT32 iSlot);
 
 // Given an IMP slot # (0 to NUM_PROFILES-1) return MALE or FEMALE
 INT32 GetSexOfIMP(INT32 iIMPId);

@@ -127,7 +127,11 @@ void CreateACharacterFromPlayerEnteredStats( void )
 	// of changes and revisions that have been made to personalities and attitudes.
 	CreatePlayersPersonalitySkillsAndAttitude();
 
-	//LaptopSaveInfo.iIMPIndex = GetFreeIMPSlot(-1);
+	// travnik: the voice set is no longer identical to the profile slot, so determine a free slot here
+	INT32 impslot = fCharacterIsMale ? GetFirstMaleSlot( ) : GetFirstFemaleSlot( );
+	INT32 impid = gGameExternalOptions.iaIMPSlots[impslot];
+
+	LaptopSaveInfo.iIMPIndex = GetFreeIMPSlot( impid, -1 );
 
 	//shadooow: fixes many old values and items remaining when replacing dead/pow IMP
 	gMercProfiles[LaptopSaveInfo.iIMPIndex].initialize();
@@ -189,7 +193,10 @@ void CreateACharacterFromPlayerEnteredStats( void )
 	gMercProfiles[ LaptopSaveInfo.iIMPIndex ].bHatedNationalityCareLevel	= ( INT8 )bHatedNationalityCareLevel;
 	gMercProfiles[ LaptopSaveInfo.iIMPIndex ].bRacist						= ( INT8 )bRacist;
 	gMercProfiles[ LaptopSaveInfo.iIMPIndex ].bSexist						= ( UINT8 )bSexist;
-	
+
+	// travnik: voice set used (selected on the IMP voice page, defined in IMPVoices.xml)
+	gMercProfiles[LaptopSaveInfo.iIMPIndex].SetVoiceIndex( iSelectedIMPVoiceSet );
+
 	//gMercProfiles[LaptopSaveInfo.iIMPIndex].Type = PROFILETYPE_IMP;
 	gMercProfiles[LaptopSaveInfo.iIMPIndex].ubNeedForSleep = IMP_NEED_FOR_SLEEP;
 

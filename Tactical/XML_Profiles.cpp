@@ -86,6 +86,7 @@ profileStartElementHandle(void *userData, const XML_Char *name, const XML_Char *
 				strcmp(name, "bSex") == 0 ||
 				strcmp(name, "ubBodyType") == 0 ||
 				strcmp(name, "uiBodyTypeSubFlags") == 0 ||
+				strcmp(name, "usVoiceIndex") == 0 ||
 				strcmp(name, "bAttitude") == 0 ||
 				strcmp(name, "bCharacterTrait") == 0 || // added by SANDRO
 				strcmp(name, "bDisability") == 0 ||
@@ -262,6 +263,7 @@ profileEndElementHandle(void *userData, const XML_Char *name)
 					tempProfiles[pData->curIndex].bSex = pData->curProfile.bSex;
 					tempProfiles[pData->curIndex].ubBodyType = pData->curProfile.ubBodyType;
 					tempProfiles[pData->curIndex].uiBodyTypeSubFlags = pData->curProfile.uiBodyTypeSubFlags;
+					tempProfiles[pData->curIndex].usVoiceIndex = pData->curProfile.usVoiceIndex;
 
 					tempProfiles[pData->curIndex].bAttitude = pData->curProfile.bAttitude;
 					tempProfiles[pData->curIndex].bCharacterTrait = pData->curProfile.bCharacterTrait; // added by SANDRO
@@ -481,6 +483,12 @@ profileEndElementHandle(void *userData, const XML_Char *name)
 		{
 			pData->curElement = ELEMENT;
 			pData->curProfile.uiBodyTypeSubFlags = (UINT32) strtoul(pData->szCharData, NULL, 0);
+		}
+
+		else if(strcmp(name, "usVoiceIndex") == 0)
+		{
+			pData->curElement = ELEMENT;
+			pData->curProfile.usVoiceIndex = (UINT32) strtoul(pData->szCharData, NULL, 0);
 		}
 
 		else if(strcmp(name, "bAttitude") == 0)
@@ -1556,6 +1564,7 @@ BOOLEAN WriteMercProfiles()
 			FilePrintf(hFile,"\t\t<bSex>%d</bSex>\r\n", gMercProfiles[ cnt ].bSex);
 			FilePrintf(hFile,"\t\t<ubBodyType>%d</ubBodyType>\r\n", gMercProfiles[ cnt ].ubBodyType);
 			FilePrintf(hFile,"\t\t<uiBodyTypeSubFlags>%d</uiBodyTypeSubFlags>\r\n", gMercProfiles[ cnt ].uiBodyTypeSubFlags);
+			FilePrintf(hFile,"\t\t<usVoiceIndex>%d</usVoiceIndex>\r\n", gMercProfiles[ cnt ].GetVoiceIndex());
 
 			FilePrintf(hFile,"\t\t<bAttitude>%d</bAttitude>\r\n", gMercProfiles[ cnt ].bAttitude);
 			// Added by SANDRO

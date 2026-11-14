@@ -1171,6 +1171,12 @@ BOOLEAN LoadExternalGameplayData(STR directoryName, BOOLEAN isMultiplayer)
 		}
 #endif
 
+	// travnik: IMP voices (voicesets are no longer tied to a profile slot)
+	strcpy(fileName, directoryName);
+	strcat(fileName, IMPVOICES);
+	DebugMsg (TOPIC_JA2,DBG_LEVEL_3,String("LoadExternalGameplayData, fileName = %s", fileName));
+	SGP_THROW_IFFALSE(ReadInIMPVoices(fileName), IMPVOICES);
+
 	// Flugente: soldier profiles
 	if (!is_networked)
 	{

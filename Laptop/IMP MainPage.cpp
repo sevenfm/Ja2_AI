@@ -244,13 +244,7 @@ INT32 GetLastFemaleSlot() {
 	return idx;
 }
 
-INT32 GetVoiceCountFromVoiceSlot(INT32 iSlot) {
-	if (iSlot <= GetLastMaleSlot())
-		return iSlot - GetFirstMaleSlot() + 1;
-	else
-		return iSlot - GetFirstFemaleSlot() + 1;
-}
-
+// travnik: GetVoiceCountFromVoiceSlot removed - voices are defined in IMPVoices.xml, not by IMP slots
 
 BOOLEAN IsIMPSlotFree(INT32 iIMPId)
 {
