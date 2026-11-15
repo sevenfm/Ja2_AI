@@ -176,7 +176,142 @@ UINT32 MapUtilScreenHandle(void)
 			return(MAPUTILITY_SCREEN);
 		}
 		sprintf(zFilename, "%s", FListNode->FileInfo.zFileName);
-		// OK, load maps and do overhead shrinkage of them... //dnl ch79 301113
+	}
+
+	BOOLEAN fIsBigMaps = (_stricmp(gzCommandLine, "-DOMAPSBIG") == 0);
+	gfSkipMapErrorsOnAssert = fIsBigMaps;
+
+	if(fIsBigMaps)
+	{
+		BOOLEAN fMapSuccess = FALSE;
+		RGBValues *pBig24Bit = NULL;
+		UINT8 *pBig8Bit = NULL;
+		__try
+		{
+			BOOLEAN fLoaded = TRUE;
+			if(!(fEditModeFirstTime == FALSE && gfWorldLoaded && FListNode == NULL))
+			{
+				fLoaded = LoadWorld(zFilename, &dMajorMapVersion, &ubMinorMapVersion);
+				if(fLoaded)
+				{
+					LightReset();
+					LightSpriteRenderAll();
+				}
+			}
+			if(fLoaded)
+			{
+				INT16 sMapWidth = (INT16)(640 * WORLD_COLS / OLD_WORLD_COLS);
+				INT16 sMapHeight = (INT16)(320 * WORLD_ROWS / OLD_WORLD_ROWS);
+
+				iOffsetHorizontal = iOffsetVertical = 0;
+				MapUtilScreenInit();
+				InitNewOverheadDB((UINT8)giCurrentTilesetID);
+				gfOverheadMapDirty = TRUE;
+				RenderOverheadMap(0, (WORLD_COLS/2), iOffsetHorizontal, iOffsetVertical, iOffsetHorizontal + sMapWidth, iOffsetVertical + sMapHeight, guiBigMap);
+				TrashOverheadMap();
+
+				// Remove extension
+				for(cnt=strlen(zFilename)-1; cnt>=0; cnt--)
+					if(zFilename[cnt] == '.')
+						zFilename[cnt] = '\0';
+
+				sprintf(zFilename2, "RADARMAPS\\BIG\\%s.STI", zFilename);
+
+				pBig24Bit = (RGBValues*)MemAlloc(sMapWidth * sMapHeight * sizeof(RGBValues));
+				pBig8Bit = (UINT8*)MemAlloc(sMapWidth * sMapHeight);
+				pSrcBuf = (UINT16*)LockVideoSurface(guiBigMap, &uiSrcPitchBYTES);
+
+				if(pSrcBuf && pBig24Bit && pBig8Bit)
+				{
+					for(INT32 y = 0; y < sMapHeight; y++)
+					{
+						for(INT32 x = 0; x < sMapWidth; x++)
+						{
+							UINT16 s16BPPSrc = pSrcBuf[(y * (uiSrcPitchBYTES / 2)) + x];
+							UINT32 uiRGBColor = GetRGBColor(s16BPPSrc);
+							INT32 idx = (y * sMapWidth) + x;
+							pBig24Bit[idx].r = (INT8)SGPGetRValue(uiRGBColor);
+							pBig24Bit[idx].g = (INT8)SGPGetGValue(uiRGBColor);
+							pBig24Bit[idx].b = (INT8)SGPGetBValue(uiRGBColor);
+						}
+					}
+					UnLockVideoSurface(guiBigMap);
+
+					QuantizeImage(pBig8Bit, (UINT8*)pBig24Bit, sMapWidth, sMapHeight, pPalette);
+					WriteSTIFile((INT8*)pBig8Bit, pPalette, sMapWidth, sMapHeight, (STR)zFilename2, CONVERT_ETRLE_COMPRESS, 0);
+
+					fMapSuccess = TRUE;
+				}
+				else if(pSrcBuf)
+				{
+					UnLockVideoSurface(guiBigMap);
+				}
+			}
+		}
+		__except(EXCEPTION_EXECUTE_HANDLER)
+		{
+			fMapSuccess = FALSE;
+		}
+
+		if(pBig24Bit)
+		{
+			MemFree(pBig24Bit);
+			pBig24Bit = NULL;
+		}
+		if(pBig8Bit)
+		{
+			MemFree(pBig8Bit);
+			pBig8Bit = NULL;
+		}
+
+		if(!fMapSuccess)
+		{
+			TrashOverheadMap();
+			TrashWorld();
+			SetFont(TINYFONT1);
+			SetFontBackground(FONT_MCOLOR_BLACK);
+			SetFontForeground(FONT_MCOLOR_DKGRAY);
+			mprintf(iOffsetHorizontal+10, iOffsetVertical+330, L"SKIPPED map %S (failed to load/render)", zFilename);
+			InvalidateScreen();
+			if(FListNode)
+				FListNode = FListNode->pNext;
+			if(fEditModeFirstTime == FALSE && FListNode == NULL)
+			{
+				if(gfWorldLoaded)
+				{
+					gfMapUtilityWindowActive = TRUE;
+					return(MAPUTILITY_SCREEN);
+				}
+				else
+					return(EDIT_SCREEN);
+			}
+			return(MAPUTILITY_SCREEN);
+		}
+
+		SetFont(TINYFONT1);
+		SetFontBackground(FONT_MCOLOR_BLACK);
+		SetFontForeground(FONT_MCOLOR_DKGRAY);
+		mprintf(iOffsetHorizontal+10, iOffsetVertical+330, L"Writing radar image %S", zFilename2);
+		mprintf(iOffsetHorizontal+10, iOffsetVertical+340, L"Using tileset %s", gTilesets[giCurrentTilesetID].zName);
+		InvalidateScreen();
+		if(FListNode)
+			FListNode = FListNode->pNext;
+		if(fEditModeFirstTime == FALSE && FListNode == NULL)
+		{
+			if(gfWorldLoaded)
+			{
+				gfMapUtilityWindowActive = TRUE;
+				return(MAPUTILITY_SCREEN);
+			}
+			else
+				return(EDIT_SCREEN);
+		}
+		return(MAPUTILITY_SCREEN);
+	}
+
+	// OK, load maps and do overhead shrinkage of them... //dnl ch79 301113
+	if(!(fEditModeFirstTime == FALSE && gfWorldLoaded && FListNode == NULL))
+	{
 		if(!LoadWorld(zFilename, &dMajorMapVersion, &ubMinorMapVersion))
 			return(ERROR_SCREEN);
 		if(strcmp(gzCommandLine, "-DOMAPSCNV") == 0)
@@ -339,6 +474,7 @@ UINT32 MapUtilScreenHandle(void)
 
 UINT32 MapUtilScreenShutdown(void)
 {
+	gfSkipMapErrorsOnAssert = FALSE;
 	TrashFDlgList(FileList);
 	MemFree(p24BitValues);
 	return(TRUE);

@@ -32,6 +32,7 @@ extern "C" {
 
 extern BOOLEAN	gfRecordToFile;
 extern BOOLEAN	gfRecordToDebugger;
+extern BOOLEAN	gfSkipMapErrorsOnAssert;
 extern UINT32	guiProfileStart, guiExecutions, guiProfileTime;
 extern INT32	giProfileCount;
 

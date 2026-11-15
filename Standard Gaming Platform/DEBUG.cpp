@@ -400,9 +400,20 @@ void	DbgShutdown() {};
 
 extern HVOBJECT FontObjs[25];
 
+BOOLEAN gfSkipMapErrorsOnAssert = FALSE;
+
 #include <vfs/Core/vfs_os_functions.h>
 void _FailMessage(const char* message, unsigned lineNum, const char * functionName, const char* sourceFileName)
 {
+	if (gfSkipMapErrorsOnAssert)
+	{
+		char buf[512];
+		sprintf(buf, "Assertion skipped in -DOMAPSBIG: %s (line %u in %s)\n", message ? message : "", lineNum, sourceFileName ? sourceFileName : "");
+		OutputDebugStringA(buf);
+		RaiseException(0xE0000001, 0, 0, NULL);
+		return;
+	}
+
 	// This function shouldn't recurse
 	static bool alreadyInThisFunction = false;
 	if (alreadyInThisFunction)
