@@ -633,25 +633,25 @@ void HandleEndTurnDrugAdjustments( SOLDIERTYPE *pSoldier )
 
 	// Flugente: always do the following checks. Thereby, if the effect runs out, our stats will be back to normal
 	//////////////// STRENGTH ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_STRENGTH] >= 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_STRENGTH] > 0)
 		pSoldier->bExtraStrength = pSoldier->drugs.bDrugEffect[ DRUG_TYPE_STRENGTH ];
 	else
 		pSoldier->bExtraStrength = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_STRENGTH];
 
 	//////////////// DEXTERITY ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_DEXTERITY] >= 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_DEXTERITY] > 0)
 		pSoldier->bExtraDexterity = pSoldier->drugs.bDrugEffect[ DRUG_TYPE_DEXTERITY ];
 	else
 		pSoldier->bExtraDexterity = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_DEXTERITY];
 
 	//////////////// AGILITY ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_AGILITY] >= 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_AGILITY] > 0)
 		pSoldier->bExtraAgility	= pSoldier->drugs.bDrugEffect[ DRUG_TYPE_AGILITY ];
 	else
 		pSoldier->bExtraAgility = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_AGILITY];
 
 	//////////////// WISDOM ////////////////
-	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_WISDOM] >= 0)
+	if (pSoldier->drugs.bDrugEffect[DRUG_TYPE_WISDOM] > 0)
 		pSoldier->bExtraWisdom = pSoldier->drugs.bDrugEffect[DRUG_TYPE_WISDOM];
 	else
 		pSoldier->bExtraWisdom = -pSoldier->drugs.bDrugSideEffect[DRUG_TYPE_WISDOM];
