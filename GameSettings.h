@@ -319,6 +319,8 @@ typedef struct
 	INT32 iIMPProfileCost;
 	// travnik: бюджет снаряжения IMP в магазине (0 = равен цене профиля)
 	INT32 iIMPShopGearBudget;
+	// travnik: режим ассортимента IMP (0 = IMPShopItems.xml, 1..10 = дополнительно Items.xml)
+	INT32 iIMPShopCoolness;
 	BOOLEAN fDynamicIMPProfileCost;
 	INT32 iMinAttribute;
 	INT32 iMaxAttribute;

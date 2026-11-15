@@ -8,6 +8,11 @@
 * Файл дополняет пул предметов, который собирается из IMPItemChoices.xml:
 * позволяет добавить в магазин любой предмет, задать ему цену, крутость,
 * привязку к набору и лимит количества, а также исключить предмет из ассортимента.
+*
+* При IMP_SHOP_COOLNESS = 0 работает прежняя логика: ассортимент собирается
+* из наборов IMPItemChoices.xml и дополняется записями этого файла.
+* При IMP_SHOP_COOLNESS > 0 пул из IMPItemChoices.xml дополняется предметами
+* Items.xml, крутость которых не выше значения настройки.
 */
 
 #include "Types.h"
@@ -49,6 +54,13 @@ public:
 
 	// travnik: дополнить пул предметов магазина записями из XML
 	void ApplyToPool( std::set<UINT16>& pool, const std::set<UINT8>& activeKits ) const;
+
+	// travnik: TRUE - пул дополняется предметами Items.xml (IMP_SHOP_COOLNESS > 0)
+	BOOLEAN IsCatalogMode() const;
+	// travnik: дополнить пул предметами Items.xml с крутостью не выше IMP_SHOP_COOLNESS
+	void BuildCatalogPool( std::set<UINT16>& pool ) const;
+	// travnik: убрать из пула случайные предметы (randomitem)
+	void RemoveRandomItems( std::set<UINT16>& pool ) const;
 
 	// travnik: цена предмета для магазина IMP (с учётом переопределения из XML)
 	INT32 GetPrice( UINT16 usItem ) const;

@@ -103,6 +103,7 @@ iIMPCost += max( 0, GetEquippedGearCost( &gMercProfiles[iProfileId] )
 |----------|:---:|-----------|
 | `IMP_PROFILE_COST` | 3000 | Стоимость профиля IMP (деньги) |
 | `IMP_SHOP_GEAR_BUDGET` | 5000 | Бюджет снаряжения в магазине IMP; `0` — брать `IMP_PROFILE_COST` |
+| `IMP_SHOP_COOLNESS` | 0 | `0` — прежняя логика `IMPShopItems.xml`; `1..10` — дополнительно предметы `Items.xml` с крутостью не выше значения |
 | `DYNAMIC_IMP_PROFILE_COST` | FALSE | Цена профиля растёт с каждым занятым IMP-слотом |
 
 ### XML
@@ -196,6 +197,31 @@ iIMPCost += max( 0, GetEquippedGearCost( &gMercProfiles[iProfileId] )
     <szComment>1st Aid Kit</szComment>
 </IMPSHOPITEM>
 ```
+
+### Режимы ассортимента
+
+Настройка `IMP_SHOP_COOLNESS` управляет дополнительным наполнением магазина.
+
+**`0` (по умолчанию) — без изменений.**
+Пул собирается из `IMPItemChoices.xml` по категориям и трейтам и дополняется
+записями `IMPShopItems.xml`: цена, крутость, `ubKit`, `ubMaxAmount`,
+`fRespectCoolness`. Никакого нового ограничения по прогрессу кампании нет.
+
+**`1..10` — дополнение из `Items.xml`.**
+К пулу из `IMPItemChoices.xml` добавляются предметы `Items.xml`, у которых
+`ubCoolness` (значение из самого `Items.xml`) не превышает настройку.
+`IMPShopItems.xml` в этом режиме не применяется: цена и крутость берутся
+из `Items.xml`, лимиты `ubMaxAmount` не действуют. Включаются только
+легальные предметы (`ItemIsLegal`); квестовые и служебные (`NotBuyable`),
+деньги и случайные предметы исключаются.
+
+Пример: `IMP_SHOP_COOLNESS = 4` — к обычному ассортименту добавляется всё
+оружие и снаряжение крутости 1–4; `6` — включая более редкое. Крутость
+фиксирована настройкой и по ходу кампании не меняется. Бюджет
+`IMP_SHOP_GEAR_BUDGET` действует в обоих режимах.
+
+В обоих режимах из магазина исключаются случайные предметы
+(`<randomitem>` / класс `IC_RANDOMITEM`).
 
 ### Готовые файлы по модам
 

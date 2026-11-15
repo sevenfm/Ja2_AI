@@ -20,6 +20,7 @@
 	#include "Item Types.h"
 	#include "Items.h"
 	#include "Campaign.h"
+	#include "GameSettings.h"
 #endif
 
 #include "XML.h"
@@ -345,10 +346,74 @@ const IMP_SHOP_ITEM* IMPShopAssortment::Find( UINT16 usItem ) const
 }
 
 
+// travnik: TRUE - пул дополняется предметами Items.xml (IMP_SHOP_COOLNESS > 0)
+BOOLEAN IMPShopAssortment::IsCatalogMode() const
+{
+	return ( gGameExternalOptions.iIMPShopCoolness > 0 );
+}
+
+
+// travnik: дополнить пул предметами Items.xml с крутостью не выше настройки
+void IMPShopAssortment::BuildCatalogPool( std::set<UINT16>& pool ) const
+{
+	const INT32 iMaxCoolness = gGameExternalOptions.iIMPShopCoolness;
+
+	if ( iMaxCoolness <= 0 )
+		return;
+
+	for ( UINT32 usItem = 1; usItem < gMAXITEMS_READ; ++usItem )
+	{
+		const INVTYPE& item = Item[usItem];
+
+		if ( item.ubCoolness == 0 || item.ubCoolness > iMaxCoolness )
+			continue;
+
+		// travnik: квестовые и служебные предметы в магазине IMP не продаются
+		if ( item.notbuyable )
+			continue;
+
+		// travnik: пропускаем пустые, денежные и случайные классы предметов
+		if ( item.usItemClass == IC_NONE || ( item.usItemClass & ( IC_MONEY | IC_RANDOMITEM ) ) != 0 )
+			continue;
+
+		if ( !ItemIsLegal( (UINT16)usItem ) )
+			continue;
+
+		pool.insert( (UINT16)usItem );
+	}
+}
+
+
+// travnik: случайные предметы (randomitem) в магазине IMP не показываем
+void IMPShopAssortment::RemoveRandomItems( std::set<UINT16>& pool ) const
+{
+	for ( std::set<UINT16>::iterator it = pool.begin(); it != pool.end(); )
+	{
+		const UINT16 usItem = *it;
+
+		if ( usItem == 0 || usItem >= gMAXITEMS_READ )
+		{
+			it = pool.erase( it );
+			continue;
+		}
+
+		// travnik: randomitem - ссылка на RandomItemsClass.xml, класс IC_RANDOMITEM
+		if ( Item[usItem].randomitem > 0 || ( Item[usItem].usItemClass & IC_RANDOMITEM ) != 0 )
+			it = pool.erase( it );
+		else
+			++it;
+	}
+}
+
+
 INT32 IMPShopAssortment::GetPrice( UINT16 usItem ) const
 {
 	if ( usItem >= MAXITEMS )
 		return 0;
+
+	// travnik: в режиме каталога цена берётся только из Items.xml
+	if ( IsCatalogMode() )
+		return (INT32)Item[usItem].usPrice;
 
 	const IMP_SHOP_ITEM* entry = Find( usItem );
 
@@ -364,6 +429,10 @@ UINT8 IMPShopAssortment::GetCoolness( UINT16 usItem ) const
 	if ( usItem >= MAXITEMS )
 		return 0;
 
+	// travnik: в режиме каталога крутость берётся только из Items.xml
+	if ( IsCatalogMode() )
+		return Item[usItem].ubCoolness;
+
 	const IMP_SHOP_ITEM* entry = Find( usItem );
 
 	if ( entry && entry->ubCoolness > 0 )
@@ -375,6 +444,10 @@ UINT8 IMPShopAssortment::GetCoolness( UINT16 usItem ) const
 
 UINT8 IMPShopAssortment::GetMaxAmount( UINT16 usItem ) const
 {
+	// travnik: в режиме каталога лимиты из IMPShopItems.xml не действуют
+	if ( IsCatalogMode() )
+		return 0;
+
 	const IMP_SHOP_ITEM* entry = Find( usItem );
 
 	if ( entry )
