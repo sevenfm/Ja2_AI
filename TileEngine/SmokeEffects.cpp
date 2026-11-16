@@ -68,7 +68,7 @@ INT32 GetFreeSmokeEffect( void )
 			return( (INT32)uiCount );
 	}
 
-	if( guiNumSmokeEffects < NUM_SMOKE_EFFECT_SLOTS )
+if( guiNumSmokeEffects < NUM_SMOKE_EFFECT_SLOTS )
 		return( (INT32) guiNumSmokeEffects++ );
 
 	return( -1 );

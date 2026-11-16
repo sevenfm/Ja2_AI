@@ -554,8 +554,16 @@ void HandleSoldierAI( SOLDIERTYPE *pSoldier ) // FIXME - this function is named 
 				LiveMessage("Breaking Deadlock");
 
 				ScreenMsg(FONT_MCOLOR_LTRED, MSG_INTERFACE, L"Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, gStrAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData);
-				DebugAI(String("Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, szAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData));
-				DebugAI(AI_MSG_INFO, pSoldier, String("Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, szAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData));
+				if (pSoldier->aiData.bAction >= AI_ACTION_NONE && pSoldier->aiData.bAction <= AI_ACTION_LAST)
+				{
+					DebugAI(String("Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, szAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData));
+					DebugAI(AI_MSG_INFO, pSoldier, String("Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, szAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData));
+				}
+				else
+				{
+					DebugAI(String("Aborting AI deadlock for [%d] data %d", pSoldier->ubID, pSoldier->aiData.usActionData));
+					DebugAI(AI_MSG_INFO, pSoldier, String("Aborting AI deadlock for [%d] data %d", pSoldier->ubID, pSoldier->aiData.usActionData));
+				}
 
 #ifdef JA2TESTVERSION
 				// display deadlock message
@@ -2536,7 +2544,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 					ScreenMsg(FONT_LTBLUE, MSG_INTERFACE, L"%s: %s", pSoldier->GetName(), pTraitSkillsMenuStrings[pSoldier->ubAISkillUse]);
 				}
 
-				if(pSoldier->ubAISkillUse <= SKILLS_MAX)
+				if(pSoldier->ubAISkillUse < SKILLS_MAX)
 					DebugAI(AI_MSG_INFO, pSoldier, String("UseSkill %d %s action data %d target level %d", pSoldier->ubAISkillUse, szSkillName[pSoldier->ubAISkillUse], pSoldier->aiData.usActionData, pSoldier->bTargetLevel));
 				else
 					DebugAI(AI_MSG_INFO, pSoldier, String("UseSkill %d action data %d target level %d", pSoldier->ubAISkillUse, pSoldier->aiData.usActionData, pSoldier->bTargetLevel));

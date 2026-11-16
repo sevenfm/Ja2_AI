@@ -4195,7 +4195,7 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 					pTeamSoldier->bActive &&
 					pTeamSoldier->bInSector &&
 					pTeamSoldier->Bloodlustlevel() > 0 &&
-					pTeamSoldier->ubLastTargetID == pKillerSoldier->ubLastTargetID)
+					pTeamSoldier->ubLastTargetID == pSoldier->ubID)
 				{
 					if (pTeamSoldier->ubID != pKillerSoldier->ubID)
 					{

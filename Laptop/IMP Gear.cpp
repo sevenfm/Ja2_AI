@@ -138,7 +138,7 @@ void		RenderImpGearSelectionChoices(UINT32 userData);
 void		DisplayPagesForImpInventoryPool(void);
 void		DistributePossibleItemsToVectors(void);
 void		DrawImpGearInventoryPool(void);
-void SetChoiceForPocket(INT32 pocket, INT32 index, UINT8 amount);
+BOOLEAN SetChoiceForPocket(INT32 pocket, INT32 index, UINT8 amount);
 void IMPInvMoveCallback(MOUSE_REGION* pRegion, INT32 iReason);
 void IMPInventoryPoolSelectCallback(MOUSE_REGION* pRegion, INT32 iReason);
 extern void HandleCommonGlowTimer();
@@ -1009,16 +1009,25 @@ void IMPInventoryPoolSelectCallback(MOUSE_REGION* pRegion, INT32 iReason)
 	}
 	if (iReason & MSYS_CALLBACK_REASON_LBUTTON_UP)
 	{
-		PlayButtonSound(giIMPGearFinishButton, BUTTON_SOUND_CLICKED_OFF);
 		INT32 slot = MSYS_GetRegionUserData(pRegion, 0);
 
 		INT32 itemIndex = slot + gIMPCurrentInventoryPoolPage * 25;
 		if (itemIndex < gIMPPossibleItems[gCurrentImpGearChoices].size())
 		{
-			SetChoiceForPocket(gCurrentImpGearChoices, itemIndex, 1);
-
-			// Redraw and enable glow
-			DrawImpGearInventoryPool();
+			if (SetChoiceForPocket(gCurrentImpGearChoices, itemIndex, 1))
+			{
+				PlayButtonSound(giIMPGearFinishButton, BUTTON_SOUND_CLICKED_OFF);
+				// Redraw and enable glow
+				DrawImpGearInventoryPool();
+			}
+			else
+			{
+				PlayButtonSound(giIMPGearFinishButton, BUTTON_SOUND_DISABLED_CLICK);
+			}
+		}
+		else
+		{
+			PlayButtonSound(giIMPGearFinishButton, BUTTON_SOUND_CLICKED_OFF);
 		}
 	}
 	if (iReason & MSYS_CALLBACK_REASON_RBUTTON_UP)
@@ -1370,12 +1379,37 @@ void DrawImpGearInventoryPool(void)
 
 
 
-void SetChoiceForPocket(INT32 pocket, INT32 index, UINT8 amount)
+BOOLEAN SetChoiceForPocket(INT32 pocket, INT32 index, UINT8 amount)
 {
-	if (gIMPPossibleItems[pocket].size() > index)
+	if (gIMPPossibleItems[pocket].size() > (size_t)index)
 	{
-		gIMPPocketSelectedItems[pocket] = std::make_pair(gIMPPossibleItems[pocket][index].first, amount);
+		INT16 sItem = gIMPPossibleItems[pocket][index].first;
+		if (sItem > 0)
+		{
+			UINT8 ubMaxAmount = IMPShopAssortment::Instance().GetMaxAmount((UINT16)sItem);
+			if (ubMaxAmount > 0)
+			{
+				UINT32 uiCountOtherPockets = 0;
+				for (const auto& kv : gIMPPocketSelectedItems)
+				{
+					if (kv.first != (UINT16)pocket && kv.second.first == sItem)
+					{
+						uiCountOtherPockets += max(1, (INT32)kv.second.second);
+					}
+				}
+
+				if (uiCountOtherPockets + amount > ubMaxAmount)
+				{
+					return FALSE;
+				}
+			}
+		}
+
+		gIMPPocketSelectedItems[pocket] = std::make_pair(sItem, amount);
+		return TRUE;
 	}
+
+	return FALSE;
 }
 
 

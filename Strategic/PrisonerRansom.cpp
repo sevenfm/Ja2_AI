@@ -28,6 +28,9 @@ FLOAT CPrisonerRansom::GetProgressMultiplier()
 // администраторы, регул€рные, элита, офицеры
 UINT8 CPrisonerRansom::GetPrisonerTypeByProcessedIndex(UINT32 uiProcessedIndex, const UINT8* pubInterrogatedPrisoners)
 {
+	if ( !pubInterrogatedPrisoners )
+		return PRISONER_ADMIN;
+
 	UINT32 uiBoundary = 0;
 
 	for ( UINT8 ubPrisonerType = PRISONER_ADMIN; ubPrisonerType < PRISONER_MAX; ++ubPrisonerType )
@@ -50,6 +53,9 @@ UINT32 CPrisonerRansom::GetRansomMoney(UINT8 ubPrisonerType)
 
 UINT32 CPrisonerRansom::GetRansomMoneyByProcessedIndex(UINT32 uiProcessedIndex, const UINT8* pubInterrogatedPrisoners)
 {
+	if ( !pubInterrogatedPrisoners )
+		return 0;
+
 	UINT8 ubPrisonerType = GetPrisonerTypeByProcessedIndex( uiProcessedIndex, pubInterrogatedPrisoners );
 
 	return GetRansomMoney( ubPrisonerType );
