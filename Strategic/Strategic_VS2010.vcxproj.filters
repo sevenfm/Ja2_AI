@@ -84,6 +84,9 @@
     <ClInclude Include="PreBattle Interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PrisonerRansom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Queen Command.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -234,6 +237,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PreBattle Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrisonerRansom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Queen Command.cpp">

@@ -1372,6 +1372,11 @@ typedef struct
 	UINT8	ubPrisonerProcessInfoDirectionChance;
 	UINT8	ubPrisonerProcessRansomBaseChance;
 	UINT16	ubPrisonerInterrogationPoints[4];		// points needed to interrogate a prisoner of a specific type
+
+	// travnik: денежный выкуп за военнопленных разных типов (PRISONER_ADMIN, PRISONER_REGULAR, PRISONER_ELITE, PRISONER_OFFICER)
+	UINT32	usPrisonerRansomMoney[4];
+	// travnik: прирост выкупа за каждые 100% прогресса игры (1.0 = удвоение к финалу кампании)
+	FLOAT	fPrisonerRansomProgressCoefficient;
 	
 	// Flugente: sexism/racism/etc.
 	INT8	sMoraleModAppearance;

@@ -1878,6 +1878,15 @@ void LoadGameExternalOptions()
 	gGameExternalOptions.ubPrisonerInterrogationPoints[PRISONER_REGULAR]	= iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_INTERROGATION_POINTS_REGULAR", 100, gGameExternalOptions.ubPrisonerInterrogationPoints[PRISONER_ADMIN], 1000);
 	gGameExternalOptions.ubPrisonerInterrogationPoints[PRISONER_ELITE]		= iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_INTERROGATION_POINTS_ELITE",   100, gGameExternalOptions.ubPrisonerInterrogationPoints[PRISONER_REGULAR], 1000);
 	gGameExternalOptions.ubPrisonerInterrogationPoints[PRISONER_OFFICER]    = iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_INTERROGATION_POINTS_OFFICER", 100, gGameExternalOptions.ubPrisonerInterrogationPoints[PRISONER_ELITE], 1000 );
+
+	// travnik: базовые суммы выкупа за военнопленных разных типов
+	gGameExternalOptions.usPrisonerRansomMoney[PRISONER_ADMIN]		= iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_RANSOM_MONEY_ADMIN",	100, 0, 1000000);
+	gGameExternalOptions.usPrisonerRansomMoney[PRISONER_REGULAR]	= iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_RANSOM_MONEY_REGULAR",	200, 0, 1000000);
+	gGameExternalOptions.usPrisonerRansomMoney[PRISONER_ELITE]		= iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_RANSOM_MONEY_ELITE",	300, 0, 1000000);
+	gGameExternalOptions.usPrisonerRansomMoney[PRISONER_OFFICER]	= iniReader.ReadInteger("Strategic Gameplay Settings","PRISONER_RANSOM_MONEY_OFFICER",	500, 0, 1000000);
+
+	// travnik: коэффициент увеличения выкупа в зависимости от прогресса игры
+	gGameExternalOptions.fPrisonerRansomProgressCoefficient			= iniReader.ReadFloat("Strategic Gameplay Settings","PRISONER_RANSOM_PROGRESS_COEFFICIENT", 1.0f, 0.0f, 10.0f);
 		
 	// CHRISL: Determine how Skyrider should handle landing in enemy occupied sectors
 	gGameExternalOptions.ubSkyriderHotLZ					= iniReader.ReadInteger("Strategic Gameplay Settings", "ALLOW_SKYRIDER_HOT_LZ", 0, 0, 3);
