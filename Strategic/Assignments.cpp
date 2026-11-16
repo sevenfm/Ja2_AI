@@ -82,6 +82,9 @@ class SOLDIERTYPE;
 // HEADROCK HAM 3.5: Include Facility data
 #include "Facilities.h"
 
+// travnik: расчет выкупа за военнопленных
+#include "PrisonerRansom.h"
+
 #include "Vehicles.h"
 
 #ifdef JA2UB
@@ -6767,7 +6770,8 @@ void HandlePrisonerProcessingInSector( INT16 sMapX, INT16 sMapY, INT8 bZ )
 		// chance prisoner will grant us ransom money
 		else if ( result < gGameExternalOptions.ubPrisonerProcessDefectChance + gGameExternalOptions.ubPrisonerProcessInfoBaseChance + gGameExternalOptions.ubPrisonerProcessRansomBaseChance )
 		{
-			ransommoney += (Random(5) + 1) * 100;
+			// travnik: сумма выкупа зависит от типа военнопленного и прогресса игры
+			ransommoney += CPrisonerRansom::GetRansomMoneyByProcessedIndex( i, interrogatedprisoners );
 
 			++ransomscollected;
 		}

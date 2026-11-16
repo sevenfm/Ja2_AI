@@ -51,6 +51,7 @@
     <ClInclude Include="MilitiaSquads.h" />
     <ClInclude Include="Player Command.h" />
     <ClInclude Include="PreBattle Interface.h" />
+    <ClInclude Include="PrisonerRansom.h" />
     <ClInclude Include="Queen Command.h" />
     <ClInclude Include="Quest Debug System.h" />
     <ClInclude Include="Quests.h" />
@@ -105,6 +106,7 @@
     <ClCompile Include="MilitiaSquads.cpp" />
     <ClCompile Include="Player Command.cpp" />
     <ClCompile Include="PreBattle Interface.cpp" />
+    <ClCompile Include="PrisonerRansom.cpp" />
     <ClCompile Include="Queen Command.cpp" />
     <ClCompile Include="Quest Debug System.cpp" />
     <ClCompile Include="Quests.cpp" />
