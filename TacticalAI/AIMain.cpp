@@ -91,6 +91,7 @@ UINT8 gubAICounter;
 
 extern STR16 gStrAction[];
 extern STR szAction[];
+extern STR szSkillName[];
 
 //
 // Commented out/ to fix:
@@ -554,6 +555,7 @@ void HandleSoldierAI( SOLDIERTYPE *pSoldier ) // FIXME - this function is named 
 
 				ScreenMsg(FONT_MCOLOR_LTRED, MSG_INTERFACE, L"Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, gStrAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData);
 				DebugAI(String("Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, szAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData));
+				DebugAI(AI_MSG_INFO, pSoldier, String("Aborting AI deadlock for [%d] %s data %d", pSoldier->ubID, szAction[pSoldier->aiData.bAction], pSoldier->aiData.usActionData));
 
 #ifdef JA2TESTVERSION
 				// display deadlock message
@@ -2534,6 +2536,11 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 					ScreenMsg(FONT_LTBLUE, MSG_INTERFACE, L"%s: %s", pSoldier->GetName(), pTraitSkillsMenuStrings[pSoldier->ubAISkillUse]);
 				}
 
+				if(pSoldier->ubAISkillUse <= SKILLS_MAX)
+					DebugAI(AI_MSG_INFO, pSoldier, String("UseSkill %d %s action data %d target level %d", pSoldier->ubAISkillUse, szSkillName[pSoldier->ubAISkillUse], pSoldier->aiData.usActionData, pSoldier->bTargetLevel));
+				else
+					DebugAI(AI_MSG_INFO, pSoldier, String("UseSkill %d action data %d target level %d", pSoldier->ubAISkillUse, pSoldier->aiData.usActionData, pSoldier->bTargetLevel));
+
 				pSoldier->UseSkill(pSoldier->ubAISkillUse, pSoldier->aiData.usActionData, pSoldier->bTargetLevel, ubID);
 				ActionDone(pSoldier);
 			}
@@ -3265,6 +3272,80 @@ STR szAction[] = {
 	"AI_ACTION_HANDLE_ITEM",
 	"AI_ACTION_PLANT_BOMB",
 	"AI_ACTION_STOP_FOCUS"
+};
+
+STR szSkillName[] = {
+	// radio operator
+	"SKILLS_RADIO_ARTILLERY",
+	"SKILLS_RADIO_JAM",
+	"SKILLS_RADIO_SCAN_FOR_JAM",
+	"SKILLS_RADIO_LISTEN",
+	"SKILLS_RADIO_CALLREINFORCEMENTS",
+	"SKILLS_RADIO_DEMANDSURRENDER",
+	"SKILLS_RADIO_TURNOFF",
+	// various
+	"SKILLS_SPOTTER",
+	"SKILLS_DRAG",
+	"SKILLS_FOCUS",
+	"SKILLS_COVERT",
+	"SKILLS_DRIVER",
+	"SKILLS_OFFICER",
+	// action
+	"SKILLS_ACTION_COWER",
+	"SKILLS_ACTION_STOP_COWERING",
+	"SKILLS_ACTION_DRINK_CANTEEN",
+	"SKILLS_ACTION_CLIMB",
+	"SKILLS_ACTION_JUMP",
+	"SKILLS_ACTION_BREAK_WINDOW",
+	"SKILLS_ACTION_DRAG",
+	"SKILLS_ACTION_STOP_DRAGGING",
+	"SKILLS_ACTION_DROP_BACKPACK",
+	"SKILLS_ACTION_PICKUP_BACKPACK",
+	"SKILLS_ACTION_CLEAN_GUN",
+	// weapon
+	"SKILLS_WEAPON_FIRE_MODE",
+	"SKILLS_WEAPON_SCOPE_MODE",
+	"SKILLS_WEAPON_RELOAD",
+	"SKILLS_WEAPON_UNJAM",
+	"SKILLS_WEAPON_TRANSFORM",
+	"SKILLS_WEAPON_SWITCH_LASER",
+	"SKILLS_WEAPON_SWITCH_FLASHLIGHT",
+	"SKILLS_WEAPON_SWITCH_SCOPE",
+	"SKILLS_WEAPON_SWITCH_STOCK",
+	// squad
+	"SKILLS_SQUAD_TOGGLE_STEALTH",
+	"SKILLS_SQUAD_DROP_BACKPACKS",
+	"SKILLS_SQUAD_PICKUP_BACKPACKS",
+	// sector
+	"SKILLS_SECTOR_AUTO_BANDAGE",
+	"SKILLS_SECTOR_DROP_BACKPACKS",
+	"SKILLS_SECTOR_PICKUP_BACKPCAKS",
+	"SKILLS_SECTOR_RELOAD_ALL",
+	"SKILLS_SECTOR_SWAP_GOGGLES",
+	"SKILLS_SECTOR_REFILL_BAD_WATER",
+	"SKILLS_SECTOR_REFILL_WATER_DRUM",
+	"SKILLS_SECTOR_CLEAN_ALL_GUNS",
+	"SKILLS_SECTOR_MILITIA_DROP_GEAR",
+	"SKILLS_SECTOR_MILITIA_TAKE_GEAR",
+	// inventory
+	"SKILLS_INVENTORY_MOVE_ITEMS",
+	"SKILLS_INVENTORY_SORT_ITEMS",
+	"SKILLS_INVENTORY_MERGE_ITEMS",
+	"SKILLS_INVENTORY_REMOVE_UNLOAD",
+	"SKILLS_INVENTORY_ORGANIZE_ITEMS",
+	"SKILLS_INVENTORY_AMMO_BOXES",
+	"SKILLS_INVENTORY_AMMO_CRATES",
+	// display
+	"SKILLS_DISPLAY_OFF",
+	"SKILLS_DISPLAY_MERC_VIEW",
+	"SKILLS_DISPLAY_ENEMY_VIEW",
+	"SKILLS_DISPLAY_TRAPS",
+	"SKILLS_DISPLAY_DETECTOR",
+	"SKILLS_DISPLAY_NETWORK",
+	"SKILLS_DISPLAY_NETWORK_A",
+	"SKILLS_DISPLAY_NETWORK_B",
+	"SKILLS_DISPLAY_NETWORK_C",
+	"SKILLS_DISPLAY_NETWORK_D"
 };
 
 // sevenfm

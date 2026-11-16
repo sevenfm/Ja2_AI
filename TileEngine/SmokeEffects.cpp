@@ -39,6 +39,8 @@
 class OBJECTTYPE;
 class SOLDIERTYPE;
 
+extern void DebugAI(STR szOutput);
+
 
 
 INT8 FromWorldFlagsToSmokeType( UINT16 ubWorldFlags );
@@ -530,6 +532,8 @@ void DecaySmokeEffects( UINT32 uiTime )
 	INT8	bLevel;
 	UINT16	usNumUpdates = 1;
 
+	DebugAI(String("DecaySmokeEffects: starting, num effects = %d", guiNumSmokeEffects));
+
 	for ( cnt = 0; cnt < guiNumMercSlots; ++cnt )
 	{
 		if ( MercSlots[ cnt ] )
@@ -551,6 +555,12 @@ void DecaySmokeEffects( UINT32 uiTime )
 
 		if ( pSmoke->fAllocated )
 		{
+			if ( pSmoke->usItem >= MAXITEMS || Item[ pSmoke->usItem ].ubClassIndex > MAXITEMS )
+			{
+				pSmoke->fAllocated = FALSE;
+				continue;
+			}
+
 			if ( pSmoke->bFlags & SMOKE_EFFECT_ON_ROOF )
 			{
 				bLevel = 1;
@@ -638,6 +648,12 @@ void DecaySmokeEffects( UINT32 uiTime )
 
 		if ( pSmoke->fAllocated )
 		{
+			if ( pSmoke->usItem >= MAXITEMS || Item[ pSmoke->usItem ].ubClassIndex > MAXITEMS )
+			{
+				pSmoke->fAllocated = FALSE;
+				continue;
+			}
+
 			// if this cloud remains effective (duration not reached)
 			if ((pSmoke->bFlags & SMOKE_EFFECT_MARK_FOR_UPDATE))
 			{
@@ -656,6 +672,8 @@ void DecaySmokeEffects( UINT32 uiTime )
 			}
 		}
 	}
+
+	DebugAI(String("DecaySmokeEffects: finished"));
 
 	AllTeamsLookForAll( TRUE );
 }

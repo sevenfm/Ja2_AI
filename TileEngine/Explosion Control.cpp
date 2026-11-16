@@ -772,7 +772,13 @@ BOOLEAN ExplosiveDamageStructureAtGridNo( STRUCTURE * pCurrent, STRUCTURE **ppNe
 		if( fFire )
 		{
 			// sevenfm: remove corpse
-			VaporizeCorpse( sGridNo, bLevel, pCurrent->usStructureID, FALSE );
+			UINT16 usCorpseStructureID = pCurrent->usStructureID;
+			VaporizeCorpse( sGridNo, bLevel, usCorpseStructureID, FALSE );
+			while ( (*ppNextCurrent) != NULL && (*ppNextCurrent)->usStructureID == usCorpseStructureID )
+			{
+				(*ppNextCurrent) = (*ppNextCurrent)->pNext;
+			}
+			return( 1 );
 		}
 		else if ( uiDist <= 1 )
 		{
@@ -782,7 +788,13 @@ BOOLEAN ExplosiveDamageStructureAtGridNo( STRUCTURE * pCurrent, STRUCTURE **ppNe
 				//ScreenMsg(FONT_LTGREEN, MSG_INTERFACE, L"sWoundAmt %d ubHitPoints %d", sWoundAmt, pBase->ubHitPoints);
 				if (sWoundAmt > 20 || pBase->ubHitPoints <= 1)
 				{
-					VaporizeCorpse(sGridNo, bLevel, pCurrent->usStructureID, gGameSettings.fOptions[TOPTION_BLOOD_N_GORE]);
+					UINT16 usCorpseStructureID = pCurrent->usStructureID;
+					VaporizeCorpse(sGridNo, bLevel, usCorpseStructureID, gGameSettings.fOptions[TOPTION_BLOOD_N_GORE]);
+					while ( (*ppNextCurrent) != NULL && (*ppNextCurrent)->usStructureID == usCorpseStructureID )
+					{
+						(*ppNextCurrent) = (*ppNextCurrent)->pNext;
+					}
+					return( 1 );
 				}
 				else
 				{
@@ -790,8 +802,8 @@ BOOLEAN ExplosiveDamageStructureAtGridNo( STRUCTURE * pCurrent, STRUCTURE **ppNe
 					pBase->ubHitPoints = max(1, pBase->ubHitPoints - min(pBase->ubHitPoints, 1 + Random(sWoundAmt / 4)));
 				}
 			}
-			
 		}
+		return( 1 );
 	}
 	else if ( !( pCurrent->fFlags & STRUCTURE_PERSON ) )
 	{
@@ -808,6 +820,10 @@ BOOLEAN ExplosiveDamageStructureAtGridNo( STRUCTURE * pCurrent, STRUCTURE **ppNe
 			}
 #endif
 			pBase = FindBaseStructure( pCurrent );
+			if ( !pBase )
+			{
+				return( 1 );
+			}
 
 			sBaseGridNo = pBase->sGridNo;
 
@@ -821,11 +837,19 @@ BOOLEAN ExplosiveDamageStructureAtGridNo( STRUCTURE * pCurrent, STRUCTURE **ppNe
 
 			// Get LEVELNODE for struct and remove!
 			pNode = FindLevelNodeBasedOnStructure( pBase->sGridNo, pBase );
+			if ( !pNode )
+			{
+				return( 1 );
+			}
 
 			// DSM fix
 			GetTileType(pNode->usIndex, &uiTileType);
 
 			std::string tilesestr = GetNameToTileSet(uiTileType);
+			if ( !pBase->pDBStructureRef || !pBase->pDBStructureRef->pDBStructure )
+			{
+				return( 1 );
+			}
 			UINT16 usTilesetIndex = pBase->pDBStructureRef->pDBStructure->usStructureNumber;
 
 			// ATE: if we have completely destroyed a structure,
@@ -1478,38 +1502,47 @@ void ExplosiveDamageGridNo( INT32 sGridNo, INT16 sWoundAmt, UINT32 uiDist, BOOLE
 		// Check level!
 		if (pCurrent->sCubeOffset == sDesiredLevel )
 		{			
-			switch( pCurrent->pDBStructureRef->pDBStructure->ubArmour )
+			if (pCurrent->pDBStructureRef && pCurrent->pDBStructureRef->pDBStructure)
 			{
-			case MATERIAL_WOOD_WALL:		// dry timber; wood wall +1/2
-			case MATERIAL_PLYWOOD_WALL:		// furniture wood (thin!) or plywood wall +1/2
-			case MATERIAL_LIVE_WOOD:		// wood (live); 1.5x timber
-			case MATERIAL_LIGHT_VEGETATION:		// light vegetation
-			case MATERIAL_FURNITURE:		// upholstered furniture
-			case MATERIAL_CACTUS:		// cactus, hay, bamboo
-			case MATERIAL_RUBBER:	// rubber - tires
-			case MATERIAL_CLOTH:	// cloth
-				fFireCanDamage = TRUE; 
-				break;
-			default: 
-				fFireCanDamage = FALSE;				
-			}
+				switch( pCurrent->pDBStructureRef->pDBStructure->ubArmour )
+				{
+				case MATERIAL_WOOD_WALL:		// dry timber; wood wall +1/2
+				case MATERIAL_PLYWOOD_WALL:		// furniture wood (thin!) or plywood wall +1/2
+				case MATERIAL_LIVE_WOOD:		// wood (live); 1.5x timber
+				case MATERIAL_LIGHT_VEGETATION:		// light vegetation
+				case MATERIAL_FURNITURE:		// upholstered furniture
+				case MATERIAL_CACTUS:		// cactus, hay, bamboo
+				case MATERIAL_RUBBER:	// rubber - tires
+				case MATERIAL_CLOTH:	// cloth
+					fFireCanDamage = TRUE; 
+					break;
+				default: 
+					fFireCanDamage = FALSE;				
+				}
 
-			switch( pCurrent->pDBStructureRef->pDBStructure->ubArmour )
-			{			
-			case MATERIAL_PLYWOOD_WALL:		// furniture wood (thin!) or plywood wall +1/2
-			case MATERIAL_LIGHT_VEGETATION:		// light vegetation
-			case MATERIAL_FURNITURE:		// upholstered furniture
-			case MATERIAL_CLOTH:	// cloth
-				fCanBurn = TRUE; 
-				break;
-			default: 
-				fCanBurn = FALSE;				
-			}
+				switch( pCurrent->pDBStructureRef->pDBStructure->ubArmour )
+				{			
+				case MATERIAL_PLYWOOD_WALL:		// furniture wood (thin!) or plywood wall +1/2
+				case MATERIAL_LIGHT_VEGETATION:		// light vegetation
+				case MATERIAL_FURNITURE:		// upholstered furniture
+				case MATERIAL_CLOTH:	// cloth
+					fCanBurn = TRUE; 
+					break;
+				default: 
+					fCanBurn = FALSE;				
+				}
 
-			if (pCurrent->pDBStructureRef->pDBStructure->ubArmour == 4)
-				fGrass = TRUE;
+				if (pCurrent->pDBStructureRef->pDBStructure->ubArmour == 4)
+					fGrass = TRUE;
+				else
+					fGrass = FALSE;
+			}
 			else
+			{
+				fFireCanDamage = FALSE;
+				fCanBurn = FALSE;
 				fGrass = FALSE;
+			}
 
 			if( guiEnvWeather & WEATHER_FORECAST_THUNDERSHOWERS || guiEnvWeather & WEATHER_FORECAST_SHOWERS)
 			{
@@ -1522,14 +1555,27 @@ void ExplosiveDamageGridNo( INT32 sGridNo, INT16 sWoundAmt, UINT32 uiDist, BOOLE
 				fRain = FALSE;
 			}
 
+			BOOLEAN fIsCorpse = ((pCurrent->fFlags & STRUCTURE_CORPSE) != 0);
+
 			//ScreenMsg(FONT_ORANGE, MSG_INTERFACE, L"gridno %d structure armour %d fire can damage %d sWoundAmt %d", sGridNo, pCurrent->pDBStructureRef->pDBStructure->ubArmour, fFireCanDamage, sWoundAmt);
-			if (!fFire || fFireCanDamage || pCurrent->fFlags & STRUCTURE_EXPLOSIVE || pCurrent->fFlags & STRUCTURE_CORPSE)
+			if (!fFire || fFireCanDamage || (pCurrent->fFlags & STRUCTURE_EXPLOSIVE) || fIsCorpse)
 			{
 				fExplodeDamageReturn = ExplosiveDamageStructureAtGridNo(pCurrent, &pNextCurrent, sGridNo, sWoundAmt, uiDist, pfRecompileMovementCosts, fOnlyWalls, 0, ubOwner, bLevel, fFire);
 
 				// sevenfm: DSM fix
 				if (*pfRecompileMovementCosts)
 					RecompileLocalMovementCosts(sGridNo);
+
+				if (fIsCorpse)
+				{
+					if ( pBaseStructure && ppTile )
+					{
+						MemFree( ppTile );
+						ppTile = NULL;
+					}
+					pCurrent = pNextCurrent;
+					continue;
+				}
 
 				if (fFire &&
 					fCanBurn && // || Chance(sWoundAmt / 10)) &&
@@ -1569,7 +1615,7 @@ void ExplosiveDamageGridNo( INT32 sGridNo, INT16 sWoundAmt, UINT32 uiDist, BOOLE
 			}
 			else
 			{
-				fExplodeDamageReturn = FALSE;
+				fExplodeDamageReturn = 1;
 			}			
 
 			// Are we overwriting damage due to multi-tile...?
@@ -1597,14 +1643,15 @@ void ExplosiveDamageGridNo( INT32 sGridNo, INT16 sWoundAmt, UINT32 uiDist, BOOLE
 
 			// OK, for multi-structs...
 			// AND we took damage...
-			if ( fMultiStructure && !fOnlyWalls && fExplodeDamageReturn == 0 )
+			if ( !fFire && fMultiStructure && !fOnlyWalls && fSubSequentMultiTilesTransitionDamage == 0 && fExplodeDamageReturn == 0 )
 			{
 				// ATE: Don't after first attack...
 				if ( uiDist > 1 )
 				{
-					if ( pBaseStructure )
+					if ( pBaseStructure && ppTile )
 					{
 						MemFree( ppTile );
+						ppTile = NULL;
 					}
 					return;
 				}
@@ -1645,14 +1692,20 @@ void ExplosiveDamageGridNo( INT32 sGridNo, INT16 sWoundAmt, UINT32 uiDist, BOOLE
 				}
 				if ( fToBreak )
 				{
+					if ( pBaseStructure && ppTile )
+					{
+						MemFree( ppTile );
+						ppTile = NULL;
+					}
 					break;
 				}
 			}
 		}
 
-		if ( pBaseStructure )
+		if ( pBaseStructure && ppTile )
 		{
 			MemFree( ppTile );
+			ppTile = NULL;
 		}
 
 		pCurrent = pNextCurrent;
@@ -1662,6 +1715,9 @@ void ExplosiveDamageGridNo( INT32 sGridNo, INT16 sWoundAmt, UINT32 uiDist, BOOLE
 
 BOOLEAN DamageSoldierFromBlast( UINT8 ubPerson, UINT8 ubOwner, INT32 sBombGridNo, INT16 sWoundAmt, INT16 sBreathAmt, UINT32 uiDist, UINT16 usItem, INT16 sSubsequent , BOOL fFromRemoteClient )
 {
+	if (ubPerson >= TOTAL_SOLDIERS)
+		return( FALSE );
+
 	// OJW - 20091028
 	if (is_networked && is_client)
 	{
@@ -1698,7 +1754,7 @@ BOOLEAN DamageSoldierFromBlast( UINT8 ubPerson, UINT8 ubOwner, INT32 sBombGridNo
 
 	pSoldier = MercPtrs[ ubPerson ];	// someone is here, and they're gonna get hurt
 
-	if (!pSoldier->bActive || !pSoldier->bInSector || !pSoldier->stats.bLife )
+	if (!pSoldier || !pSoldier->bActive || !pSoldier->bInSector || !pSoldier->stats.bLife )
 		return( FALSE );
 
 	if ( pSoldier->ubMiscSoldierFlags & SOLDIER_MISC_HURT_BY_EXPLOSION )
@@ -2019,6 +2075,8 @@ BOOLEAN DamageSoldierFromBlast( UINT8 ubPerson, UINT8 ubOwner, INT32 sBombGridNo
 
 BOOLEAN DishOutGasDamage( SOLDIERTYPE * pSoldier, EXPLOSIVETYPE * pExplosive, INT16 sSubsequent, BOOLEAN fRecompileMovementCosts, INT16 sWoundAmt, INT16 sBreathAmt, UINT8 ubOwner , BOOL fFromRemoteClient )
 {
+	if (!pSoldier || !pExplosive)
+		return fRecompileMovementCosts;
 					// OJW - 20091028
 	if (is_networked && is_client)
 	{
@@ -2600,7 +2658,8 @@ BOOLEAN ExpAffect( INT32 sBombGridNo, INT32 sGridNo, UINT32 uiDist, UINT16 usIte
 				sStructDmgAmt = sWoundAmt / 2;
 				//ScreenMsg(FONT_ORANGE, MSG_INTERFACE, L"Damage gridno %d, damage %d, dist %d", sGridNo, sStructDmgAmt, uiDist);
 				//pExplosive->ubDuration;
-				ExplosiveDamageGridNo( sGridNo, sStructDmgAmt, uiDist, &fRecompileMovementCosts, FALSE, -1, 0 , ubOwner, bLevel, TRUE, gSmokeEffectData[iSmokeEffectID].ubGeneration );
+				UINT8 ubGeneration = (iSmokeEffectID >= 0 && iSmokeEffectID < NUM_SMOKE_EFFECT_SLOTS) ? gSmokeEffectData[iSmokeEffectID].ubGeneration : 0;
+				ExplosiveDamageGridNo( sGridNo, sStructDmgAmt, uiDist, &fRecompileMovementCosts, FALSE, -1, 0 , ubOwner, bLevel, TRUE, ubGeneration );
 				// damage items on the ground
 				GetItemPool( sGridNo, &pItemPool, bLevel );
 
@@ -2638,6 +2697,10 @@ BOOLEAN ExpAffect( INT32 sBombGridNo, INT32 sGridNo, UINT32 uiDist, UINT16 usIte
 			}
 
 			pSoldier = MercPtrs[ ubPerson ];	// someone is here, and they're gonna get hurt
+			if (!pSoldier)
+			{
+				return( fRecompileMovementCosts );
+			}
 
 			// silversurfer: Gas now only has an effect when the container had time to emit some. Initially it will do nothing.
 			// This prevents the problem that we have to suffer two times without a chance to react (1st when the grenade hits our position, 2nd when our turn starts)
@@ -2701,7 +2764,7 @@ void GetRayStopInfo( UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN fSmokeE
 			// block completely!
 			fTravelCostObs = TRUE;
 		}
-		else if ( pBlockingStructure->pDBStructureRef->pDBStructure->ubDensity <= 15 )
+		else if ( pBlockingStructure->pDBStructureRef && pBlockingStructure->pDBStructureRef->pDBStructure && pBlockingStructure->pDBStructureRef->pDBStructure->ubDensity <= 15 )
 		{
 			// not stopped
 			fTravelCostObs = FALSE;
@@ -2802,7 +2865,7 @@ void GetRayStopInfo( UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN fSmokeE
 			 sNewGridNo = NewGridNo( uiNewSpot, DirectionInc( WEST ) );
 
 			 BlockingTemp = GetBlockingStructureInfo( sNewGridNo, ubDir, 0, bLevel, &bStructHeight, &pBlockingStructure , TRUE );
-			if ( pBlockingStructure && pBlockingStructure->pDBStructureRef->pDBStructure->ubDensity <= 15 )
+			if ( pBlockingStructure && pBlockingStructure->pDBStructureRef && pBlockingStructure->pDBStructureRef->pDBStructure && pBlockingStructure->pDBStructureRef->pDBStructure->ubDensity <= 15 )
 			{
 				fTravelCostObs = FALSE;
 				fReduceRay = FALSE;
@@ -2818,7 +2881,7 @@ void GetRayStopInfo( UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN fSmokeE
 			 sNewGridNo = NewGridNo( uiNewSpot, DirectionInc( NORTH ) );
 			 BlockingTemp = GetBlockingStructureInfo( sNewGridNo, ubDir, 0, bLevel, &bStructHeight, &pBlockingStructure, TRUE );
 
-			if ( pBlockingStructure && pBlockingStructure->pDBStructureRef->pDBStructure->ubDensity <= 15 )
+			if ( pBlockingStructure && pBlockingStructure->pDBStructureRef && pBlockingStructure->pDBStructureRef->pDBStructure && pBlockingStructure->pDBStructureRef->pDBStructure->ubDensity <= 15 )
 			{
 				fTravelCostObs = FALSE;
 				fReduceRay = FALSE;

@@ -1052,7 +1052,7 @@ BOOLEAN TurnSoldierIntoCorpse(SOLDIERTYPE *pSoldier, BOOLEAN fRemoveMerc, BOOLEA
 						if (pSoldier->bTeam == ENEMY_TEAM ||
 							gGameExternalOptions.fCiviliansDropAll && pSoldier->bTeam == CIV_TEAM ||
 							gGameExternalOptions.ubMilitiaDropEquipment == 2 && pSoldier->bTeam == MILITIA_TEAM ||
-							gGameExternalOptions.ubMilitiaDropEquipment == 1 && pSoldier->bTeam == MILITIA_TEAM && Menptr[pSoldier->ubAttackerID].bTeam != OUR_TEAM)
+							gGameExternalOptions.ubMilitiaDropEquipment == 1 && pSoldier->bTeam == MILITIA_TEAM && pSoldier->ubAttackerID < TOTAL_SOLDIERS && Menptr[pSoldier->ubAttackerID].bTeam != OUR_TEAM)
 						{
 							if (Item[pObj->usItem].damageable &&
 								gGameExternalOptions.ubDropDamage > DROP_DAMAGE_NONE &&
@@ -1134,7 +1134,7 @@ BOOLEAN TurnSoldierIntoCorpse(SOLDIERTYPE *pSoldier, BOOLEAN fRemoveMerc, BOOLEA
 
 						// HEADROCK HAM B2.8: Militia will drop items only if allowed.
 						if (!(gGameExternalOptions.ubMilitiaDropEquipment == 0 && pSoldier->bTeam == MILITIA_TEAM) &&
-							!(gGameExternalOptions.ubMilitiaDropEquipment == 1 && pSoldier->bTeam == MILITIA_TEAM && Menptr[pSoldier->ubAttackerID].bTeam == OUR_TEAM))
+							!(gGameExternalOptions.ubMilitiaDropEquipment == 1 && pSoldier->bTeam == MILITIA_TEAM && pSoldier->ubAttackerID < TOTAL_SOLDIERS && Menptr[pSoldier->ubAttackerID].bTeam == OUR_TEAM))
 						{
 							AddItemToPool(pSoldier->sGridNo, pObj, bItemsVisible, pSoldier->pathing.bLevel, usItemFlags, -1);
 						}
@@ -1609,6 +1609,9 @@ ROTTING_CORPSE  *FindCorpseBasedOnStructure(INT32 sGridNo, INT8 asLevel, STRUCTU
 	LEVELNODE					*pLevelNode;
 	ROTTING_CORPSE		*pCorpse = NULL;
 
+	if (TileIsOutOfBounds(sGridNo) || pStructure == NULL)
+		return NULL;
+
 	// Flugente: if the corpse is on a roof, search there
 	if (asLevel)
 		pLevelNode = gpWorldLevelData[sGridNo].pOnRoofHead;
@@ -1624,10 +1627,13 @@ ROTTING_CORPSE  *FindCorpseBasedOnStructure(INT32 sGridNo, INT8 asLevel, STRUCTU
 		pLevelNode = pLevelNode->pNext;
 	}
 
-	if (pLevelNode != NULL)
+	if (pLevelNode != NULL && pLevelNode->pAniTile != NULL)
 	{
-		// Get our corpse....
-		pCorpse = &(gRottingCorpse[pLevelNode->pAniTile->uiUserData]);
+		UINT32 uiUserData = pLevelNode->pAniTile->uiUserData;
+		if (uiUserData < (UINT32)giNumRottingCorpse)
+		{
+			pCorpse = &(gRottingCorpse[uiUserData]);
+		}
 	}
 
 	return(pCorpse);
@@ -1696,13 +1702,30 @@ void VaporizeCorpse(INT32 sGridNo, INT8 bLevel, UINT16 usStructureID, BOOLEAN fE
 	INT32			sBaseGridNo;
 	ANITILE_PARAMS	AniParams;
 
+	if (TileIsOutOfBounds(sGridNo))
+	{
+		return;
+	}
+
 	pStructure = FindStructureByID(sGridNo, usStructureID);
+	if (!pStructure)
+	{
+		return;
+	}
 
 	// Get base....
 	pBaseStructure = FindBaseStructure(pStructure);
+	if (!pBaseStructure)
+	{
+		return;
+	}
 
 	// Find base gridno...
 	sBaseGridNo = pBaseStructure->sGridNo;
+	if (TileIsOutOfBounds(sBaseGridNo))
+	{
+		return;
+	}
 
 	// Get corpse ID.....
 	pCorpse = FindCorpseBasedOnStructure(sBaseGridNo, bLevel, pBaseStructure);
@@ -1751,6 +1774,11 @@ void VaporizeCorpse(INT32 sGridNo, INT8 bLevel, UINT16 usStructureID, BOOLEAN fE
 			// Set some blood......
 			SpreadEffect(sBaseGridNo, (UINT8)((2)), 0, NOBODY, BLOOD_SPREAD_EFFECT, bLevel, -1);
 		}
+	}
+	else
+	{
+		// sevenfm: remove corpse even if off screen
+		RemoveCorpse(pCorpse->iID);
 	}
 
 	if (fExplode)

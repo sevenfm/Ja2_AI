@@ -3445,7 +3445,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 		{
 			return(AI_ACTION_LEAVE_WATER_GAS);
 		}
-	}	
+	}
 
 	DebugAI(AI_MSG_TOPIC, pSoldier, String("[raise alert for others]"));
 	if ((pSoldier->bTeam == ENEMY_TEAM || pSoldier->bTeam == CIV_TEAM && !pSoldier->aiData.bNeutral && pSoldier->ubCivilianGroup != NON_CIV_GROUP) &&

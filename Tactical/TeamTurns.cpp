@@ -449,7 +449,16 @@ void EndTurnEvents( void )
 	DecayBombTimers();
 
 	DecayLightEffects(GetWorldTotalSeconds());
-	DecaySmokeEffects( GetWorldTotalSeconds( ) );	
+	DebugAI(String("EndTurnEvents: DecaySmokeEffects"));
+	__try
+	{
+		DecaySmokeEffects( GetWorldTotalSeconds( ) );	
+	}
+	__except( EXCEPTION_EXECUTE_HANDLER )
+	{
+		DebugAI(String("EXCEPTION in DecaySmokeEffects! Code: 0x%08x", GetExceptionCode()));
+	}
+	DebugAI(String("EndTurnEvents: DecaySmokeEffects done"));
 
 	/*SOLDIERTYPE* pSoldier = NULL;
 	UINT32 cnt = gTacticalStatus.Team[ gbPlayerNum ].bFirstID;
@@ -602,6 +611,7 @@ void BeginTeamTurn( UINT8 ubTeam )
 			// ( they could have bled to death above )
 			if ( ( gTacticalStatus.uiFlags & INCOMBAT ) )
 			{
+				DebugAI(String("BeginTeamTurn: StartPlayerTeamTurn"));
 				StartPlayerTeamTurn( TRUE, FALSE );
 
 				if(is_server) 

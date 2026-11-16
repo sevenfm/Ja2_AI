@@ -4186,21 +4186,24 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 		}
 
 		// sevenfm: stop inspired
-		UINT8 ubID = gTacticalStatus.Team[gbPlayerNum].bFirstID;
-		for (SOLDIERTYPE *pTeamSoldier = MercPtrs[ubID]; ubID <= gTacticalStatus.Team[gbPlayerNum].bLastID; ubID++, pTeamSoldier++)
+		if (pKillerSoldier)
 		{
-			if (pTeamSoldier->stats.bLife >= OKLIFE &&
-				pTeamSoldier->bActive &&
-				pTeamSoldier->bInSector &&
-				pTeamSoldier->Bloodlustlevel() > 0 &&
-				pTeamSoldier->ubLastTargetID == pKillerSoldier->ubLastTargetID)
+			UINT8 ubID = gTacticalStatus.Team[gbPlayerNum].bFirstID;
+			for (SOLDIERTYPE *pTeamSoldier = MercPtrs[ubID]; ubID <= gTacticalStatus.Team[gbPlayerNum].bLastID; ubID++, pTeamSoldier++)
 			{
-				if (pTeamSoldier->ubID != pKillerSoldier->ubID)
+				if (pTeamSoldier->stats.bLife >= OKLIFE &&
+					pTeamSoldier->bActive &&
+					pTeamSoldier->bInSector &&
+					pTeamSoldier->Bloodlustlevel() > 0 &&
+					pTeamSoldier->ubLastTargetID == pKillerSoldier->ubLastTargetID)
 				{
-					// morale hit
-					HandleMoraleEvent(pTeamSoldier, MORALE_PSYCHO_UNABLE_TO_PSYCHO, pTeamSoldier->sSectorX, pTeamSoldier->sSectorY, pTeamSoldier->bSectorZ);
-					pTeamSoldier->DoMercBattleSound(BATTLE_SOUND_LOWMARALE_OK1);
-					pTeamSoldier->StopBloodlust();
+					if (pTeamSoldier->ubID != pKillerSoldier->ubID)
+					{
+						// morale hit
+						HandleMoraleEvent(pTeamSoldier, MORALE_PSYCHO_UNABLE_TO_PSYCHO, pTeamSoldier->sSectorX, pTeamSoldier->sSectorY, pTeamSoldier->bSectorZ);
+						pTeamSoldier->DoMercBattleSound(BATTLE_SOUND_LOWMARALE_OK1);
+						pTeamSoldier->StopBloodlust();
+					}
 				}
 			}
 		}

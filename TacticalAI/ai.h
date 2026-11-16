@@ -121,7 +121,7 @@ typedef enum
 	AI_ACTION_HANDLE_ITEM,			// sevenfm: use item in hand
 	AI_ACTION_PLANT_BOMB,			// sevenfm: plant bomb using item in hand
 	AI_ACTION_STOP_FOCUS,			// sevenfm: stop focusing
-	AI_ACTION_LAST = AI_ACTION_PLANT_BOMB
+	AI_ACTION_LAST = AI_ACTION_STOP_FOCUS
 } ActionType;
 
 
