@@ -121,7 +121,7 @@ INT8 SAMArtillery::FindOperationalSAMIdForTeamAtSector( UINT8 bTeam, INT16 sX, I
 	return 0;
 }
 
-BOOLEAN SAMArtillery::CanTeamOrderSAMArtilleryStrike( INT16 sRadioX, INT16 sRadioY, UINT8 bTeam )
+BOOLEAN SAMArtillery::CanTeamOrderSAMArtilleryStrike( INT16 sRadioX, INT16 sRadioY, UINT8 bTeam, const SOLDIERTYPE* pSoldier )
 {
 	if ( !IsEnabled() )
 		return FALSE;
@@ -131,13 +131,35 @@ BOOLEAN SAMArtillery::CanTeamOrderSAMArtilleryStrike( INT16 sRadioX, INT16 sRadi
 		return FALSE;
 
 	// travnik: игрок не может заказать налёт, если тип боеприпаса недоступен (нет снаряда/прогресс)
+	// или на счету не хватает денег - иначе пункт меню оставался бы активным, хотя налёт невозможен
 	if ( bTeam == OUR_TEAM || bTeam == MILITIA_TEAM )
 	{
 		if ( !IsSAMArtilleryAmmoAvailable() )
 			return FALSE;
+
+		UINT32 uiCost = GetSAMArtilleryCost();
+		if ( uiCost > 0 && LaptopSaveInfo.iCurrentBalance < (INT32)uiCost )
+			return FALSE;
 	}
 
-	return FindOperationalSAMIdForTeamAtSector( bTeam, sRadioX, sRadioY ) > 0;
+	// travnik: без сигнального снаряда налёт не состоится
+	if ( !IsSignalShellAvailable() )
+		return FALSE;
+
+	if ( FindOperationalSAMIdForTeamAtSector( bTeam, sRadioX, sRadioY ) <= 0 )
+		return FALSE;
+
+	// travnik: артиллерия сектора перезаряжается - тот же таймер, что и у налётов ополчения/противника.
+	// Проверяем здесь, чтобы ИИ не тратил ход на приказ, который всё равно будет отклонён в OrderSAMArtilleryStrike
+	const SECTORINFO* pSector = &SectorInfo[ SECTOR( sRadioX, sRadioY ) ];
+	if ( GetWorldTotalMin() < pSector->uiTimeAIArtillerywasOrdered + gSkillTraitValues.bVOArtillerySectorFrequency )
+		return FALSE;
+
+	// travnik: индивидуальный кулдаун радиста (только для AI) - как в CanAnyArtilleryStrikeBeOrdered
+	if ( pSoldier != NULL && bTeam != gbPlayerNum && pSoldier->usSkillCounter[SOLDIER_COUNTER_RADIO_ARTILLERY] )
+		return FALSE;
+
+	return TRUE;
 }
 
 UINT32 SAMArtillery::GetSAMArtilleryCost()
@@ -166,6 +188,20 @@ BOOLEAN SAMArtillery::IsSAMArtilleryAmmoAvailable()
 	UINT16 usItem = GetShellItem();
 
 	return usItem != 0 && ItemIsMortarShell( usItem );
+}
+
+BOOLEAN SAMArtillery::IsSignalShellAvailable()
+{
+	// travnik: ищем любой предмет с флагом SIGNAL_SHELL (как в OrderArtilleryStrike/OrderSAMArtilleryStrike).
+	// Таблица предметов не меняется во время игры, поэтому результат кэшируем, чтобы не сканировать её на каждом решении ИИ
+	static INT8 sSignalShellAvailable = -1;
+	if ( sSignalShellAvailable < 0 )
+	{
+		UINT16 usSignalShellIndex = 1700;
+		sSignalShellAvailable = ( HasItemFlag( usSignalShellIndex, SIGNAL_SHELL ) || GetFirstItemWithFlag( &usSignalShellIndex, SIGNAL_SHELL ) ) ? 1 : 0;
+	}
+
+	return sSignalShellAvailable != 0;
 }
 
 UINT16 SAMArtillery::GetShellItem()

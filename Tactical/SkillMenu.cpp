@@ -677,7 +677,7 @@ ArtillerySector::Setup( UINT32 aVal )
 		pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void, UINT32>( &Wrapper_Setup_ArtillerySAM, 0 ) );
 
 		// travnik: grey out if no operational SAM site of ours can reach the radio operator's sector
-		if ( !SAMArtillery::CanTeamOrderSAMArtilleryStrike( pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam ) )
+		if ( !SAMArtillery::CanTeamOrderSAMArtilleryStrike( pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam, pSoldier ) )
 		{
 			pOption->setAvail(new popupCallbackFunction<bool,void*>( &Popup_OptionOff, NULL ));
 		}
@@ -961,8 +961,8 @@ ArtillerySAM::Functions( UINT32 aVal )
 		return;
 	}
 
-	// travnik: execute the strike directed by the chosen SAM site
-	pSoldier->OrderSAMArtilleryStrike( sTraitsMenuTargetGridNo );
+	// travnik: передаём выбранную в меню базу ПВО, иначе налёт уйдёт из первой подходящей
+	pSoldier->OrderSAMArtilleryStrike( sTraitsMenuTargetGridNo, ubSamId );
 
 	Cancel();
 	gArtillerySector.Cancel();

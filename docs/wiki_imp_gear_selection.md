@@ -228,11 +228,11 @@ iIMPCost += max( 0, GetEquippedGearCost( &gMercProfiles[iProfileId] )
 | Папка | Записей | Цены, $ |
 |-------|--------:|---------|
 | `Data` | 35 | 50–1602 |
-| `Data-1.13` | 49 | 50–1760 |
-| `Data-AFS` | 43 | 50–4150 |
-| `Data-SDO` | 57 | 40–1500 |
+| `Data-1.13` | 67 | 20–1760 |
+| `Data-AFS` | 60 | 20–4150 |
+| `Data-SDO` | 67 | 40–1500 |
 
-Правила подбора: крутость только 1–4 (без endgame), цена не переопределяется,
+Правила подбора: крутость только 1–4 (без endgame; для разгрузки LBE — до 7), цена не переопределяется,
 `fForceAvailable = 0`; броня, разгрузка и оружие — 1 копия, медицина и граны — 2;
 специализированные вещи привязаны к трейтам (24 — Night Ops, 31 — Lockpicking,
 33 — Camouflage, 51 — Vox Operator).
@@ -255,7 +255,8 @@ python docs/imp_kits/generate_imp_shop.py --game-root D:\Projects\JA2_Game
 
 3. Для каждого мода скрипт:
    - читает `TableData\Items\Items.xml` и `TableData\Inventory\IMPItemChoices.xml`;
-   - проверяет, что предмет существует и его крутость в диапазоне 1–4;
+   - проверяет, что предмет существует и его крутость в диапазоне 1–4
+     (для разгрузки LBE — до 7);
    - проверяет, что категория `ubKit` есть в `IMPItemChoices.xml` этого мода;
    - записывает `GameDirectory\<мод>\TableData\Inventory\IMPShopItems.xml` (UTF-8, CRLF).
 4. Если проверка не прошла, файл этого мода не перезаписывается, а ошибки

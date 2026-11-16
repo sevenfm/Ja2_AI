@@ -2149,8 +2149,9 @@ public:
 	BOOLEAN GetSlotOfSignalShellIfMortar(UINT8* pbLoop); // if we have a mortar and a fitting signal shell, return the inventory slot it is in
 	BOOLEAN CanAnyArtilleryStrikeBeOrdered(UINT32* pSectorID);		// can any artillery strikes be ordered by this guy's team from the neighbouring sectors?
 	BOOLEAN OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridNo, UINT8 bTeam, INT8 bAmmoIndex = -1 );	// bAmmoIndex: militia shell type (see ARTILLERY_AMMO_*), -1 = random choice by progress
-	// travnik: artillery strike guided by a captured SAM site (radio operator skill, uses SAMArtillery helper)
-	BOOLEAN OrderSAMArtilleryStrike( INT32 sTargetGridNo );
+	// travnik: artillery strike guided by a captured SAM site (radio operator skill, uses SAMArtillery helper).
+	// ubSamId - выбранная игроком база ПВО (1..NUMBER_OF_SAMS); 0 = подобрать автоматически (AI/fallback)
+	BOOLEAN OrderSAMArtilleryStrike( INT32 sTargetGridNo, INT8 ubSamId = 0 );
 	BOOLEAN IsJamming();							// are we currently jamming communication frequencies?
 	BOOLEAN JamCommunications();
 	BOOLEAN IsScanning();
