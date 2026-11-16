@@ -484,8 +484,11 @@ BOOLEAN IMPShopAssortment::IsCoolnessAllowed( const IMP_SHOP_ITEM& entry ) const
 	if ( !m_fRespectCoolness || entry.ubCoolness == 0 )
 		return TRUE;
 
-	// travnik: крутость из XML переводится в процент прогресса кампании
-	return ( entry.ubCoolness * IMP_SHOP_COOLNESS_STEP <= CurrentPlayerProgressPercentage() );
+	// travnik: крутость 1 доступна с самого начала кампании (0% прогресса),
+	// каждая следующая ступень требует ещё IMP_SHOP_COOLNESS_STEP процентов прогресса.
+	// Раньше формула требовала прогресс уже для крутости 1, из-за чего в начале игры
+	// магазин оказывался пустым при включённой опции.
+	return ( ( entry.ubCoolness - 1 ) * IMP_SHOP_COOLNESS_STEP <= CurrentPlayerProgressPercentage() );
 }
 
 

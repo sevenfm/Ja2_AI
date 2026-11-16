@@ -19210,7 +19210,7 @@ BOOLEAN	SOLDIERTYPE::CanUseSkill(INT8 iSkill, BOOLEAN fAPCheck, INT32 sGridNo, I
 				if (this->CanAnyArtilleryStrikeBeOrdered(&sector))
 					canuse = TRUE;
 				// travnik: a captured SAM site covering our sector can also direct a strike
-				else if (SAMArtillery::CanTeamOrderSAMArtilleryStrike(this->sSectorX, this->sSectorY, this->bTeam))
+				else if (SAMArtillery::CanTeamOrderSAMArtilleryStrike(this->sSectorX, this->sSectorY, this->bTeam, this))
 					canuse = TRUE;
 			}
 			break;
@@ -19477,7 +19477,7 @@ BOOLEAN SOLDIERTYPE::UseSkill(UINT8 iSkill, INT32 usMapPos, INT8 bLevel, UINT32 
 				return OrderArtilleryStrike(sector, usMapPos, this->bTeam );
 			}
 			// travnik: fallback - artillery strike via a captured SAM site covering this sector
-			else if ( SAMArtillery::CanTeamOrderSAMArtilleryStrike( this->sSectorX, this->sSectorY, this->bTeam ) )
+			else if ( SAMArtillery::CanTeamOrderSAMArtilleryStrike( this->sSectorX, this->sSectorY, this->bTeam, this ) )
 			{
 				return OrderSAMArtilleryStrike( usMapPos );
 			}
@@ -20676,7 +20676,7 @@ BOOLEAN SOLDIERTYPE::OrderArtilleryStrike( UINT32 usSectorNr, INT32 sTargetGridN
 }
 
 // travnik: artillery strike guided by a captured SAM site - see ArtillerySAM.h for the rules
-BOOLEAN SOLDIERTYPE::OrderSAMArtilleryStrike( INT32 sTargetGridNo )
+BOOLEAN SOLDIERTYPE::OrderSAMArtilleryStrike( INT32 sTargetGridNo, INT8 ubSamId )
 {
 	// travnik: механика должна быть включена настройкой
 	if ( !SAMArtillery::IsEnabled() )
@@ -20686,12 +20686,30 @@ BOOLEAN SOLDIERTYPE::OrderSAMArtilleryStrike( INT32 sTargetGridNo )
 	if ( this->bSectorZ > 0 )
 		return FALSE;
 
-	// travnik: определить работающую ПВО нашей стороны в зоне поражения, которой находится сектор радиста
-	INT8 ubSamId = SAMArtillery::FindOperationalSAMIdForTeamAtSector( this->bTeam, this->sSectorX, this->sSectorY );
-	if ( ubSamId <= 0 )
-	{
-		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_SAM_ARTILLERY_UNAVAILABLE ] );
+	// travnik: ИИ не должен повторно вызывать налёт, пока не истёк индивидуальный кулдаун радиста
+	// (для игрока ограничением служит таймер перезарядки артиллерии сектора ниже)
+	if ( this->bTeam != gbPlayerNum && this->usSkillCounter[SOLDIER_COUNTER_RADIO_ARTILLERY] )
 		return FALSE;
+
+	if ( ubSamId > 0 )
+	{
+		// travnik: игрок выбрал конкретную базу ПВО в меню - используем именно её, а не первую подходящую
+		if ( !SAMArtillery::IsSAMSiteOperationalForTeam( ubSamId, this->bTeam ) ||
+			!SAMArtillery::IsSectorInSAMRange( ubSamId, this->sSectorX, this->sSectorY ) )
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_SAM_ARTILLERY_UNAVAILABLE ] );
+			return FALSE;
+		}
+	}
+	else
+	{
+		// travnik: заказ без указания базы (AI/fallback) - берём первую работающую ПВО, накрывающую сектор радиста
+		ubSamId = SAMArtillery::FindOperationalSAMIdForTeamAtSector( this->bTeam, this->sSectorX, this->sSectorY );
+		if ( ubSamId <= 0 )
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[ MSG113_SAM_ARTILLERY_UNAVAILABLE ] );
+			return FALSE;
+		}
 	}
 
 	// travnik: цель должна быть задана

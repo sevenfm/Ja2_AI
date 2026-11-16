@@ -42,8 +42,9 @@ public:
 	// travnik: найти индекс работающей ПВО стороны bTeam, контролирующей сектор (sX, sY); 0, если такой нет
 	static INT8 FindOperationalSAMIdForTeamAtSector( UINT8 bTeam, INT16 sX, INT16 sY );
 
-	// travnik: может ли сторона заказать артналёт через ПВО по сектору радиста (проверка вкл. настроек и боеприпаса для игрока)
-	static BOOLEAN CanTeamOrderSAMArtilleryStrike( INT16 sRadioX, INT16 sRadioY, UINT8 bTeam );
+	// travnik: может ли сторона заказать артналёт через ПВО по сектору радиста (проверка вкл. настроек и боеприпаса для игрока);
+	// pSoldier передаётся, чтобы учесть индивидуальный кулдаун радиста (для AI) и время перезарядки артиллерии сектора
+	static BOOLEAN CanTeamOrderSAMArtilleryStrike( INT16 sRadioX, INT16 sRadioY, UINT8 bTeam, const SOLDIERTYPE* pSoldier = NULL );
 
 	// travnik: стоимость вызова для игрока (учитывает прогресс игры)
 	static UINT32 GetSAMArtilleryCost();
@@ -53,6 +54,9 @@ public:
 
 	// travnik: разрешён ли настроенный тип боеприпаса и существует ли такой снаряд
 	static BOOLEAN IsSAMArtilleryAmmoAvailable();
+
+	// travnik: существует ли в игре сигнальный снаряд (без него налёт невозможен)
+	static BOOLEAN IsSignalShellAvailable();
 
 	// travnik: предмет снаряда для SAM-удара (с fallback на MORTAR_SHELL для фугаса)
 	static UINT16 GetShellItem();

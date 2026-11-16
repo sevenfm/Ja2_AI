@@ -4746,7 +4746,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier)
 		DebugAI(AI_MSG_INFO, pSoldier, String("fJamming %d fScanning %d fListening %d fSectorJammed %d fUsingRadio %d fTeamSawEnemy %d fPlayerCanCallArtillery %d fPlayerCanCallReinforcements %d fPlayerJamming %d", fJamming, fScanning, fListening, fSectorJammed, fUsingRadio, fTeamSawEnemy, fPlayerCanCallArtillery, fPlayerCanCallReinforcements, fPlayerJamming));
 
 		BOOLEAN fCanCallReinforcements = !fPlayerJamming;
-		BOOLEAN fCanCallArtillery = pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, FALSE) && ( pSoldier->CanAnyArtilleryStrikeBeOrdered(&tmp) || SAMArtillery::CanTeamOrderSAMArtilleryStrike(pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam) ); // travnik: SAM artillery counts as an artillery option too
+		BOOLEAN fCanCallArtillery = pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, FALSE) && ( pSoldier->CanAnyArtilleryStrikeBeOrdered(&tmp) || SAMArtillery::CanTeamOrderSAMArtilleryStrike(pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam, pSoldier) ); // travnik: SAM artillery counts as an artillery option too
 
 		BOOLEAN fCanScan = pSoldier->CanUseSkill(SKILLS_RADIO_SCAN_FOR_JAM, FALSE);
 		BOOLEAN fCanListen = pSoldier->CanUseSkill(SKILLS_RADIO_LISTEN, FALSE);
@@ -9537,7 +9537,7 @@ INT8 DecideActionBlack(SOLDIERTYPE *pSoldier)
 		DebugAI(AI_MSG_INFO, pSoldier, String("fJamming %d fScanning %d fListening %d fSectorJammed %d fUsingRadio %d fTeamSawEnemy %d fPlayerCanCallArtillery %d fPlayerCanCallReinforcements %d fPlayerJamming %d", fJamming, fScanning, fListening, fSectorJammed, fUsingRadio, fTeamSawEnemy, fPlayerCanCallArtillery, fPlayerCanCallReinforcements, fPlayerJamming));
 
 		BOOLEAN fCanCallReinforcements = !fPlayerJamming;
-		BOOLEAN fCanCallArtillery = pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, FALSE) && ( pSoldier->CanAnyArtilleryStrikeBeOrdered(&tmp) || SAMArtillery::CanTeamOrderSAMArtilleryStrike(pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam) ); // travnik: SAM artillery counts as an artillery option too
+		BOOLEAN fCanCallArtillery = pSoldier->CanUseSkill(SKILLS_RADIO_ARTILLERY, FALSE) && ( pSoldier->CanAnyArtilleryStrikeBeOrdered(&tmp) || SAMArtillery::CanTeamOrderSAMArtilleryStrike(pSoldier->sSectorX, pSoldier->sSectorY, pSoldier->bTeam, pSoldier) ); // travnik: SAM artillery counts as an artillery option too
 
 		BOOLEAN fCanScan = pSoldier->CanUseSkill(SKILLS_RADIO_SCAN_FOR_JAM, FALSE);
 		BOOLEAN fCanListen = pSoldier->CanUseSkill(SKILLS_RADIO_LISTEN, FALSE);
