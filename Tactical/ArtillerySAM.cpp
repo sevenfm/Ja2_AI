@@ -67,10 +67,11 @@ BOOLEAN SAMArtillery::IsSAMSiteControlledByTeam( INT8 ubSamId, UINT8 bTeam )
 	StrategicMapElement* pSAMStrategicMap = &(StrategicMap[CALCULATE_STRATEGIC_INDEX(sSamX, sSamY)]);
 
 	// travnik: база должна быть под контролем заказчика налёта
+	// (игрок или противник; ополчение налёты ПВО не заказывает)
 	if ( bTeam == ENEMY_TEAM )
 		return pSAMStrategicMap->fEnemyControlled;
 
-	if ( bTeam == OUR_TEAM || bTeam == MILITIA_TEAM )
+	if ( bTeam == OUR_TEAM )
 		return !pSAMStrategicMap->fEnemyControlled;
 
 	return FALSE;
@@ -130,9 +131,13 @@ BOOLEAN SAMArtillery::CanTeamOrderSAMArtilleryStrike( INT16 sRadioX, INT16 sRadi
 	if ( gbWorldSectorZ > 0 )
 		return FALSE;
 
+	// travnik: ополчение не заказывает налёты ПВО - только игрок и ИИ противника
+	if ( bTeam == MILITIA_TEAM )
+		return FALSE;
+
 	// travnik: игрок не может заказать налёт, если тип боеприпаса недоступен (нет снаряда/прогресс)
 	// или на счету не хватает денег - иначе пункт меню оставался бы активным, хотя налёт невозможен
-	if ( bTeam == OUR_TEAM || bTeam == MILITIA_TEAM )
+	if ( bTeam == OUR_TEAM )
 	{
 		if ( !IsSAMArtilleryAmmoAvailable() )
 			return FALSE;
@@ -253,8 +258,8 @@ void SAMArtillery::SetShellCountFlags( OBJECTTYPE* pShellObj, INT16 sNumMortars 
 
 BOOLEAN SAMArtillery::VerifyCost( UINT8 bTeam )
 {
-	// travnik: деньги платит только игрок (налёты ополчения, вызванные радистом игрока, тоже платные)
-	if ( bTeam != OUR_TEAM && bTeam != MILITIA_TEAM )
+	// travnik: деньги платит только игрок; ИИ противника налёты бесплатны
+	if ( bTeam != OUR_TEAM )
 		return TRUE;
 
 	// travnik: тип боеприпаса/прогресс/наличие снаряда
@@ -277,8 +282,8 @@ BOOLEAN SAMArtillery::VerifyCost( UINT8 bTeam )
 
 void SAMArtillery::ChargeCost( UINT8 bTeam )
 {
-	// travnik: деньги платит только игрок
-	if ( bTeam != OUR_TEAM && bTeam != MILITIA_TEAM )
+	// travnik: деньги платит только игрок; ИИ противника налёты бесплатны
+	if ( bTeam != OUR_TEAM )
 		return;
 
 	UINT32 uiCost = GetSAMArtilleryCost();
