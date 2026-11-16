@@ -20686,6 +20686,11 @@ BOOLEAN SOLDIERTYPE::OrderSAMArtilleryStrike( INT32 sTargetGridNo, INT8 ubSamId 
 	if ( this->bSectorZ > 0 )
 		return FALSE;
 
+	// travnik: ополчение не заказывает налёты ПВО - защита от прямого вызова
+	// в обход CanTeamOrderSAMArtilleryStrike
+	if ( this->bTeam == MILITIA_TEAM )
+		return FALSE;
+
 	// travnik: ИИ не должен повторно вызывать налёт, пока не истёк индивидуальный кулдаун радиста
 	// (для игрока ограничением служит таймер перезарядки артиллерии сектора ниже)
 	if ( this->bTeam != gbPlayerNum && this->usSkillCounter[SOLDIER_COUNTER_RADIO_ARTILLERY] )
