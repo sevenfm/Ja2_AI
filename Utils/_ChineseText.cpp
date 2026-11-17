@@ -2385,12 +2385,12 @@ STR16 pSkillMenuStrings[] =
 	L"无线电",	//L"Radio",
 
 	L"民兵部署",	//L"Militia placements",
-	L"HE shell ($%d)",
-	L"Smoke shell ($%d)",
-	L"Tear gas shell ($%d)",
-	L"Mustard gas shell ($%d)",
-	L"Napalm shell ($%d)",
-	L"SAM site artillery",	// travnik: artillery strike via captured SAM site
+	L"HE ($%d)",
+	L"Smoke ($%d)",
+	L"Tear gas ($%d)",
+	L"Mustard gas ($%d)",
+	L"Napalm ($%d)",
+	L"SAM site",	// travnik: artillery strike via captured SAM site
 };
 
 STR16 pRadioMenuStrings[] =

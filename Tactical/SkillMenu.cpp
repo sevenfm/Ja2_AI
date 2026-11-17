@@ -12,6 +12,7 @@
 #include "worldman.h"
 #include "Rotting Corpses.h"
 #include "Handle Items.h"
+#include "Items.h"
 
 #include "Map Screen Interface.h"
 #include "GearTemplate.h"// ���������� ����� �����
@@ -273,8 +274,14 @@ TraitSelection::Setup( UINT32 aVal )
 	usTraitMenuPosX = sX + 30;		
 	usTraitMenuPosY = sY;
 
+	// we want to display up to 5 menus, so we need some space. If we are too far to the right, shift to the left
 	if ( ( usTraitMenuPosX + 400 ) > SCREEN_WIDTH )
-		usTraitMenuPosX = SCREEN_WIDTH - 400;
+	{
+		if ( SCREEN_WIDTH > 400 )
+			usTraitMenuPosX = SCREEN_WIDTH - 400;
+		else
+			usTraitMenuPosX = 0;
+	}
 
 	if ( ( usTraitMenuPosY + 130 ) > SCREEN_HEIGHT )
 		usTraitMenuPosY = SCREEN_HEIGHT - 190;
@@ -693,10 +700,18 @@ ArtillerySector::Setup( UINT32 aVal )
 		SetGridNoForTraitDisplay(sTraitsMenuTargetGridNo);
 		// sevenfm: disable showing trait range
 		ToggleTraitRangeView(FALSE);
-	}
 
-	// same y, different x
-	SetPos(gSkillSelection.GetMaxPosX(), usTraitMenuPosY);
+		// same y, different x
+		SetPos(gSkillSelection.GetMaxPosX(), usTraitMenuPosY);
+	}
+}
+
+void
+ArtillerySector::Cancel()
+{
+	gArtilleryTeam.Cancel();
+	gArtillerySAM.Cancel();
+	SkillMenuItem::Cancel();
 }
 /////////////////////////////// Artillery Sector Selection ////////////////////////////////////////////
 
@@ -763,10 +778,17 @@ ArtilleryTeam::Setup( UINT32 aVal )
 		SetGridNoForTraitDisplay(sTraitsMenuTargetGridNo);
 		// sevenfm: disable showing trait range
 		ToggleTraitRangeView(FALSE);
-	}
 
-	// same y, different x
-	SetPos(gArtillerySector.GetMaxPosX(), usTraitMenuPosY);
+		// same y, different x
+		SetPos(gArtillerySector.GetMaxPosX(), usTraitMenuPosY);
+	}
+}
+
+void
+ArtilleryTeam::Cancel()
+{
+	gArtilleryAmmo.Cancel();
+	SkillMenuItem::Cancel();
 }
 
 void
@@ -824,7 +846,7 @@ ArtilleryAmmo::Setup( UINT32 aVal )
 		{
 			UINT32 uiCost = GetArtilleryAmmoCost( i );
 
-			swprintf( pStr, pSkillMenuStrings[SKILLMENU_ARTILLERY_HE + i], uiCost );
+				swprintf( pStr, pSkillMenuStrings[SKILLMENU_ARTILLERY_HE + i], uiCost );
 
 			pOption = new POPUP_OPTION(&std::wstring( pStr ), new popupCallbackFunction<void, UINT32>( &Wrapper_Function_ArtilleryAmmo, i ) );
 
@@ -844,10 +866,10 @@ ArtilleryAmmo::Setup( UINT32 aVal )
 		SetTraitToDisplay(RADIO_OPERATOR_NT);
 		SetGridNoForTraitDisplay(sTraitsMenuTargetGridNo);
 		ToggleTraitRangeView(FALSE);
-	}
 
-	// same y, different x
-	SetPos(gArtilleryTeam.GetMaxPosX(), usTraitMenuPosY);
+		// same y, different x
+		SetPos(gArtilleryTeam.GetMaxPosX(), usTraitMenuPosY);
+	}
 }
 
 void
@@ -932,10 +954,10 @@ ArtillerySAM::Setup( UINT32 aVal )
 		SetTraitToDisplay(RADIO_OPERATOR_NT);
 		SetGridNoForTraitDisplay(sTraitsMenuTargetGridNo);
 		ToggleTraitRangeView(FALSE);
-	}
 
-	// same y, different x - this submenu opens from the artillery sector menu
-	SetPos(gArtillerySector.GetMaxPosX(), usTraitMenuPosY);
+		// same y, different x - this submenu opens from the artillery sector menu
+		SetPos(gArtillerySector.GetMaxPosX(), usTraitMenuPosY);
+	}
 }
 
 void

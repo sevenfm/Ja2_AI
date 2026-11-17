@@ -54,7 +54,15 @@ public:
 	UINT16 GetMaxPosX()
 	{
 		if ( gPopup )
-			return (usPosX + gPopup->getBoxDimensions().iRight);
+			return (gPopup->getBoxPosition().iX + gPopup->getBoxDimensions().iRight);
+
+		return usPosX;
+	}
+
+	UINT16 GetMinPosX()
+	{
+		if ( gPopup )
+			return gPopup->getBoxPosition().iX;
 
 		return usPosX;
 	}
@@ -114,6 +122,7 @@ public:
 	ArtillerySector()	{}
 
 	void Setup( UINT32 aVal );
+	void Cancel();
 };
 
 // select team we request artillery from
@@ -124,6 +133,7 @@ public:
 
 	void Setup( UINT32 aVal );
 	void Functions( UINT32 aVal );
+	void Cancel();
 
 private:
 	UINT32 usSector;

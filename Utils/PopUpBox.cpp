@@ -1308,15 +1308,27 @@ BOOLEAN DrawBox(UINT32 uiCounter)
 	usHeight=((UINT16)(PopUpBoxList[uiCounter]->Dimensions.iBottom-PopUpBoxList[uiCounter]->Dimensions.iTop));
 
 	//CHRISL: Adjust position for screen limits
-	if((usTopX + usWidth) > SCREEN_WIDTH && usTopX > ((usTopX + usWidth) - SCREEN_WIDTH))
+	if ( (usTopX + usWidth) > SCREEN_WIDTH )
 	{
-		usTopX -= ((usTopX + usWidth) - SCREEN_WIDTH);
-		PopUpBoxList[uiCounter]->Position.iX -= (PopUpBoxList[uiCounter]->Position.iX - usTopX);
+		if ( usWidth <= SCREEN_WIDTH )
+			usTopX = SCREEN_WIDTH - usWidth;
+		else
+		{
+			usTopX = 0;
+			usWidth = SCREEN_WIDTH;
+		}
+		PopUpBoxList[uiCounter]->Position.iX = usTopX;
 	}
-	if((usTopY + usHeight) > SCREEN_HEIGHT && usTopY > ((usTopY + usHeight) - SCREEN_HEIGHT))
+	if ( (usTopY + usHeight) > SCREEN_HEIGHT )
 	{
-		usTopY -= ((usTopY + usHeight) - SCREEN_HEIGHT);
-		PopUpBoxList[uiCounter]->Position.iY -= (PopUpBoxList[uiCounter]->Position.iY - usTopY);
+		if ( usHeight <= SCREEN_HEIGHT )
+			usTopY = SCREEN_HEIGHT - usHeight;
+		else
+		{
+			usTopY = 0;
+			usHeight = SCREEN_HEIGHT;
+		}
+		PopUpBoxList[uiCounter]->Position.iY = usTopY;
 	}
 
 	// check if we have a min width, if so then update box for such
@@ -1330,8 +1342,8 @@ BOOLEAN DrawBox(UINT32 uiCounter)
 	Assert( usTopY + usHeight <= SCREEN_HEIGHT );
 
 	// subtract 4 because the 2 2-pixel corners are handled separately
-	uiNumTilesWide=((usWidth-4)/BORDER_WIDTH);
-	uiNumTilesHigh=((usHeight-4)/BORDER_HEIGHT);
+	uiNumTilesWide = ( usWidth >= 4 ) ? ((usWidth-4)/BORDER_WIDTH) : 0;
+	uiNumTilesHigh = ( usHeight >= 4 ) ? ((usHeight-4)/BORDER_HEIGHT) : 0;
 
 	clip.iLeft=0;
 	clip.iRight=clip.iLeft+usWidth;
@@ -1569,8 +1581,8 @@ void ResizeBoxToText(INT32 hBoxHandle)
 
 	// r8459
 	// Flugente we shouldn't have added more popup options than we can display anyway, but I have no idea where to stop that, so at least we can fix this
-	PopUpBoxList[hBoxHandle]->Dimensions.iBottom = min( iHeight, SCREEN_HEIGHT - PopUpBoxList[hBoxHandle]->Position.iY);
-	PopUpBoxList[hBoxHandle]->Dimensions.iRight  = min( iWidth, SCREEN_WIDTH - PopUpBoxList[hBoxHandle]->Position.iX );
+	PopUpBoxList[hBoxHandle]->Dimensions.iBottom = min( iHeight, (INT32)SCREEN_HEIGHT );
+	PopUpBoxList[hBoxHandle]->Dimensions.iRight  = min( iWidth, (INT32)SCREEN_WIDTH );
 }
 
 

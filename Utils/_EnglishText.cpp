@@ -1,4 +1,4 @@
-﻿// WANNE: Yes, this should be disabled, otherwise we get weird behavior when running the game with a VS 2005 build!
+// WANNE: Yes, this should be disabled, otherwise we get weird behavior when running the game with a VS 2005 build!
 //#pragma setlocale("ENGLISH")
 
 #ifdef PRECOMPILEDHEADERS
@@ -2385,12 +2385,12 @@ STR16 pSkillMenuStrings[] =
 	L"Radio",
 
 	L"Militia placements",
-	L"HE shell ($%d)",
-	L"Smoke shell ($%d)",
-	L"Tear gas shell ($%d)",
-	L"Mustard gas shell ($%d)",
-	L"Napalm shell ($%d)",
-	L"SAM site artillery",	// travnik: artillery strike via captured SAM site
+	L"HE ($%d)",
+	L"Smoke ($%d)",
+	L"Tear gas ($%d)",
+	L"Mustard gas ($%d)",
+	L"Napalm ($%d)",
+	L"SAM site",	// travnik: artillery strike via captured SAM site
 };
 
 STR16 pRadioMenuStrings[] =

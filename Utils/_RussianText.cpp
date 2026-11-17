@@ -2384,12 +2384,12 @@ STR16 pSkillMenuStrings[] =
 	L"Радио",
 
 	L"Позиции ополчения",
-	L"Фугасный снаряд ($%d)",
-	L"Дымовой снаряд ($%d)",
-	L"Снаряд со слезоточивым газом ($%d)",
-	L"Снаряд с горчичным газом ($%d)",
-	L"Напалмовый снаряд ($%d)",
-	L"Артналёт от базы ПВО",	// travnik: artillery strike via captured SAM site
+	L"Фугасный ($%d)",
+	L"Дымовой ($%d)",
+	L"Слезоточивый ($%d)",
+	L"Горчичный ($%d)",
+	L"Напалм ($%d)",
+	L"База ПВО",	// travnik: artillery strike via captured SAM site
 };
 
 STR16 pRadioMenuStrings[] =
