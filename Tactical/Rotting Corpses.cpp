@@ -723,14 +723,38 @@ void RemoveCorpse(INT32 iCorpseID)
 	// Remove!
 	gRottingCorpse[iCorpseID].fActivated = FALSE;
 
-	DeleteAniTile(gRottingCorpse[iCorpseID].pAniTile);
+	// travnik: структуру трупа удаляем по указателю из его level node и обнуляем ссылку,
+	// иначе DeleteAniTile удаляет её повторно (висячий указатель) и обход списка структур зависает
+	ANITILE* pAniTile = gRottingCorpse[iCorpseID].pAniTile;
+	LEVELNODE* pCorpseLevelNode = (pAniTile != NULL) ? pAniTile->pLevelNode : NULL;
+	BOOLEAN fStructureRemoved = FALSE;
+
+	if (pCorpseLevelNode != NULL && pCorpseLevelNode->pStructureData != NULL)
+	{
+		fStructureRemoved = DeleteStructureFromWorld(pCorpseLevelNode->pStructureData);
+		pCorpseLevelNode->pStructureData = NULL;
+	}
+
+	DeleteAniTile(pAniTile);
 
 	FreeCorpsePalettes(&(gRottingCorpse[iCorpseID]));
 
 	// remove corpse structure from world when removing corpse (by Asdow)
-	const auto sGridNo = gRottingCorpse[iCorpseID].def.sGridNo;
-	auto pStructure = FindLastStructure(sGridNo, STRUCTURE_CORPSE);
-	DeleteStructureFromWorld(pStructure);
+	// travnik: если структура не была привязана к level node, ищем corpse-структуру в тайле, как раньше
+	if (!fStructureRemoved)
+	{
+		const auto sGridNo = gRottingCorpse[iCorpseID].def.sGridNo;
+		auto pStructure = FindLastStructure(sGridNo, STRUCTURE_CORPSE);
+
+		if (pStructure != NULL)
+		{
+#ifdef _DEBUG
+			LogAssertDiagnostic( "RemoveCorpse: deleting loose structure" );
+#endif
+			DeleteStructureFromWorld(pStructure);
+		}
+	}
+
 }
 
 

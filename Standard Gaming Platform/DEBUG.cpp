@@ -402,6 +402,36 @@ extern HVOBJECT FontObjs[25];
 
 BOOLEAN gfSkipMapErrorsOnAssert = FALSE;
 
+// travnik: отдельный лог ассертов. Пишется всегда, независимо от уровней debug-topic'ов,
+// чтобы место падения (строка/файл/стек) можно было разобрать без отладчика.
+// Файл создаётся в Profiles\assert.log (перезаписывается при каждом запуске игры).
+static sgp::Logger_ID g_AssertLoggerId = (sgp::Logger_ID)-1;
+
+static sgp::Logger_ID GetAssertLoggerId()
+{
+	// travnik: логгер создаём лениво (при первом ассерте), чтобы не зависеть от порядка
+	// статической инициализации sgp::Logger и от готовности VFS на старте игры
+	if (g_AssertLoggerId == (sgp::Logger_ID)-1)
+	{
+		g_AssertLoggerId = sgp::Logger::instance().createLogger();
+#if defined(USE_VFS)
+		sgp::Logger::instance().connectFile(g_AssertLoggerId, L"assert.log", false, sgp::Logger::FLUSH_ON_ENDL);
+#endif
+	}
+	return g_AssertLoggerId;
+}
+
+// travnik: пишем диагностику в Profiles\assert.log (тот же лог, что и ассерты), не останавливая игру
+void LogAssertDiagnostic(const char* message)
+{
+	if (!message)
+		return;
+
+	sgp::Logger::LogInstance assertLog = SGP_LOG(GetAssertLoggerId());
+	assertLog << "{ " << GetTickCount() << " } DIAG: " << message << sgp::endl;
+}
+
+
 #include <vfs/Core/vfs_os_functions.h>
 void _FailMessage(const char* message, unsigned lineNum, const char * functionName, const char* sourceFileName)
 {
@@ -420,8 +450,7 @@ void _FailMessage(const char* message, unsigned lineNum, const char * functionNa
 		return;
 	alreadyInThisFunction = true;
 
-	sgp::dumpStackTrace(message);
-
+	// travnik: сначала собираем текст ассерта, чтобы он попал и в свой лог, и в шапку стек-трейса
 	std::stringstream basicInformation;
 	basicInformation << "Assertion Failure [Line " << lineNum;
 	if (functionName) {
@@ -429,14 +458,32 @@ void _FailMessage(const char* message, unsigned lineNum, const char * functionNa
 	}
 	basicInformation << " in file " << sourceFileName << "]";
 
+	// travnik: пишем ассерт в Profiles\assert.log (всегда) и стек вызова в Profiles\stack_trace.log
+	{
+		sgp::Logger::LogInstance assertLog = SGP_LOG(GetAssertLoggerId());
+		assertLog << "{ " << GetTickCount() << " } " << basicInformation.str() << sgp::endl;
+		if (message)
+		{
+			assertLog << "    message: " << message << sgp::endl;
+		}
+		if (functionName)
+		{
+			assertLog << "    function: " << functionName << sgp::endl;
+		}
+		assertLog << sgp::endl;
+	}
+	sgp::dumpStackTrace(basicInformation.str().c_str());
+
 	std::stringstream outputString;
 	outputString << "{ " << GetTickCount() << " } " << basicInformation.str();
 
 	//Build the output strings
 	if( message )
-		sprintf( gubAssertString, message );	
+		// travnik: сообщение нельзя передавать как format-string (в нём бывают '%'), иначе
+		// экран ассерта может прочитать мусор из стека или упасть внутри _FailMessage
+		snprintf( gubAssertString, sizeof(gubAssertString), "%s", message );
 	else
-		sprintf( gubAssertString, "" );
+		gubAssertString[0] = '\0';
 
 	//Output to debugger
 	if (gfRecordToDebugger)

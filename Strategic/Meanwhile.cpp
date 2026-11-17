@@ -907,6 +907,9 @@ void DoneFadeOutMeanwhileOnceDone( )
 	}
 	else
 	{
+		#ifdef _DEBUG
+			LogAssertDiagnostic( "TrashWorld call: Meanwhile done fade out" );
+		#endif
 		TrashWorld( );
 		// NB no world is loaded!
 		gWorldSectorX = 0;

@@ -267,6 +267,9 @@ UINT32 MapUtilScreenHandle(void)
 		if(!fMapSuccess)
 		{
 			TrashOverheadMap();
+			#ifdef _DEBUG
+				LogAssertDiagnostic( "TrashWorld call: MapUtility" );
+			#endif
 			TrashWorld();
 			SetFont(TINYFONT1);
 			SetFontBackground(FONT_MCOLOR_BLACK);

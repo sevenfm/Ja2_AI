@@ -301,6 +301,9 @@ ANITILE *CreateAnimationTile( ANITILE_PARAMS *pAniParams )
 	return( pNewAniNode );
 }
 
+// travnik: предел поиска ani-tile в связном списке - защита от зацикливания
+static const UINT32 MAX_ANI_TILE_SEARCH_STEPS = 100000u;
+
 // Loop throug all ani tiles and remove...
 void DeleteAniTiles( )
 {
@@ -330,8 +333,19 @@ void DeleteAniTile( ANITILE *pAniTile )
 
 	pAniNode = pAniTileHead;
 
+	// travnik: страховка от зацикленного списка ani-tile, иначе загрузка сектора зависает
+	UINT32 uiSearchGuard = 0;
+
 	while( pAniNode!= NULL )
 	{
+		if ( ++uiSearchGuard > MAX_ANI_TILE_SEARCH_STEPS )
+		{
+#ifdef _DEBUG
+			LogAssertDiagnostic( "DeleteAniTile: ANI TILE LIST LOOKS CYCLIC, aborting search" );
+#endif
+			return;
+		}
+
 		if ( pAniNode == pAniTile )
 		{
 			// OK, set links
@@ -469,7 +483,6 @@ void DeleteAniTile( ANITILE *pAniTile )
 		pAniNode		= pAniNode->pNext;
 
 	}
-
 
 }
 

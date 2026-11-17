@@ -134,6 +134,9 @@
 
 #include "sgp_logger.h"
 
+// travnik: нужен для сбора текста диагностического ассерта в AssertAllSoldiersPlacedInSector()
+#include <sstream>
+
 #include "Map Screen Interface Map Inventory.h"	// added by Flugente
 
 //forward declarations of common classes to eliminate includes
@@ -2094,8 +2097,166 @@ void HandleRPCDescriptionOfSector( INT16 sSectorX, INT16 sSectorY, INT16 sSector
 }
 
 
+// travnik: проверка «юнит, находящийся в секторе, имеет корректную клетку».
+// Вынесена из двух одинаковых Assert'ов SetCurrentWorldSector, чтобы в тексте ассерта
+// было видно, какой именно юнит его сломал (текст пишется на экран ошибки и в Profiles\assert.log).
+#ifdef _DEBUG
+static BOOLEAN IsSoldierGridNoValidInSector( const SOLDIERTYPE *pSoldier )
+{
+	// travnik: неактивные и не находящиеся в секторе юниты нас не интересуют
+	if ( !pSoldier->bActive || !pSoldier->bInSector )
+		return TRUE;
+
+	// travnik: мёртвых юнитов движок сам переносит в NOWHERE
+	if ( pSoldier->flags.uiStatusFlags & SOLDIER_DEAD )
+		return TRUE;
+
+	// travnik: пассажиры машин (в т.ч. вертолёта) сидят в NOWHERE - это нормальное состояние
+	if ( pSoldier->bAssignment == VEHICLE )
+		return TRUE;
+
+	return ( !TileIsOutOfBounds( pSoldier->sGridNo ) || pSoldier->bVehicleID == iHelicopterVehicleId );
+}
+
+// travnik: компактное описание состояния юнита для диагностических сообщений ассертов.
+// Собираем через std::ostringstream, а не printf: широкие строки (%S) с кириллицей ломаются
+// на текущей ANSI-locale и текст теряется. Имя берём как utf-8 (GetNameS), мелкие целые
+// приводим к INT32, иначе ostream печатает их как символы.
+static std::string GetSoldierStateText( SOLDIERTYPE *pSoldier )
+{
+	std::ostringstream state;
+	state << "id=" << (INT32)pSoldier->ubID
+		<< " name=" << pSoldier->GetNameS()
+		<< " profile=" << (INT32)pSoldier->ubProfile << "/" << (INT32)pSoldier->usSoldierProfile
+		<< " team=" << (INT32)pSoldier->bTeam
+		<< " assign=" << (INT32)pSoldier->bAssignment
+		<< " grp=" << (INT32)pSoldier->ubGroupID
+		<< " grid=" << pSoldier->sGridNo
+		<< " insCode=" << (INT32)pSoldier->ubStrategicInsertionCode
+		<< " insData=" << pSoldier->usStrategicInsertionData
+		<< " sector=" << pSoldier->sSectorX << "," << pSoldier->sSectorY << "," << (INT32)pSoldier->bSectorZ
+		<< " inSector=" << (INT32)pSoldier->bInSector
+		<< " flags=0x" << std::hex << pSoldier->flags.uiStatusFlags << std::dec
+		<< " life=" << (INT32)pSoldier->stats.bLife << "/" << (INT32)pSoldier->stats.bLifeMax;
+	return state.str();
+}
+#endif
+
+// travnik: единая точка проверки gridNo для всех юнитов после (пере)входа в сектор.
+// Проверяем только юнитов, реально относящихся к загружаемому сектору: у отрядов, оставшихся
+// в другом секторе, bInSector остаётся TRUE (устаревший флаг после RemoveMercsInSector()),
+// а gridNo уже сброшен - это нормальное состояние, а не ошибка размещения.
+static void AssertAllSoldiersPlacedInSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
+{
+#ifndef _DEBUG
+	// travnik: в Release ассерты выключены, проверка не нужна
+	(void)sMapX;
+	(void)sMapY;
+	(void)bMapZ;
+#else
+	std::ostringstream foreignSectorReport;
+	std::ostringstream problemReport;
+	BOOLEAN fFoundProblem = FALSE;
+
+	for ( int i = 0; i < TOTAL_SOLDIERS; ++i )
+	{
+		SOLDIERTYPE *pSoldier = MercPtrs[i];
+
+		if ( !pSoldier->bActive || !pSoldier->bInSector )
+			continue;
+
+		// travnik: если юнит не в том секторе, который грузим - bInSector у него устарел, пропускаем
+		if ( pSoldier->sSectorX != sMapX || pSoldier->sSectorY != sMapY || pSoldier->bSectorZ != bMapZ )
+		{
+			foreignSectorReport << "\n   " << GetSoldierStateText( pSoldier );
+			continue;
+		}
+
+		if ( IsSoldierGridNoValidInSector( pSoldier ) )
+			continue;
+
+		fFoundProblem = TRUE;
+		problemReport << "\n   " << GetSoldierStateText( pSoldier );
+	}
+
+	if ( !foreignSectorReport.str().empty() )
+	{
+		// travnik: это не ошибка, поэтому только пишем в Profiles\assert.log (без остановки игры)
+		std::ostringstream text;
+		text << "sector " << sMapX << "," << sMapY << "," << (INT32)bMapZ
+			<< " loaded, but these soldiers still have bInSector=1 from another sector:"
+			<< foreignSectorReport.str();
+		LogAssertDiagnostic( text.str().c_str() );
+	}
+
+	if ( fFoundProblem )
+	{
+		std::ostringstream text;
+		text << "Soldier in sector has invalid sGridNo: sector=" << sMapX << "," << sMapY << "," << (INT32)bMapZ
+			<< " world=" << gWorldSectorX << "," << gWorldSectorY << "," << (INT32)gbWorldSectorZ
+			<< problemReport.str();
+
+		// travnik: сообщение попадает на экран ошибки и в Profiles\assert.log
+		AssertMsg( 0, text.str().c_str() );
+	}
+#endif
+}
+
+
+// travnik: есть ли в секторе бойцы игрока, которые по данным стратегии в нём находятся,
+// но не выставлены на тактическую карту (sGridNo = NOWHERE). Такое бывает, когда отряд
+// остался в секторе, а его сняли с сетки при загрузке другого сектора (RemoveMercsInSector).
+// В этом случае нельзя использовать быстрый путь "сектор уже загружен" - он не расставляет бойцов.
+static BOOLEAN SectorHasUnplacedPlayerMercs( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
+{
+	for ( int i = 0; i < TOTAL_SOLDIERS; ++i )
+	{
+		SOLDIERTYPE *pSoldier = MercPtrs[i];
+
+		if ( !pSoldier->bActive || !pSoldier->bInSector || pSoldier->bTeam != gbPlayerNum )
+			continue;
+
+		if ( pSoldier->sSectorX != sMapX || pSoldier->sSectorY != sMapY || pSoldier->bSectorZ != bMapZ )
+			continue;
+
+		if ( pSoldier->flags.uiStatusFlags & SOLDIER_DEAD )
+			continue;
+
+		// travnik: пассажиры машин и вертолёта стоят в NOWHERE по правилам
+		if ( pSoldier->bAssignment == VEHICLE || pSoldier->bVehicleID == iHelicopterVehicleId )
+			continue;
+
+		if ( TileIsOutOfBounds( pSoldier->sGridNo ) )
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+
+// travnik: защита от рекурсивного входа в SetCurrentWorldSector. Загрузка сектора крутит
+// игровой цикл (экран загрузки), из-за чего карта стратегии может повторно запросить вход
+// в сектор прямо во время загрузки - второй вход открывал старый мир без бойцов.
+static BOOLEAN gfInSetCurrentWorldSector = FALSE;
+
+
 BOOLEAN	SetCurrentWorldSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
 {
+	if ( gfInSetCurrentWorldSector )
+	{
+#ifdef _DEBUG
+		LogAssertDiagnostic( "SetCurrentWorldSector: recursive call ignored" );
+#endif
+		return( FALSE );
+	}
+
+	// travnik: сбрасываем флаг на любом выходе из функции
+	struct SSetCurrentWorldSectorGuard
+	{
+		SSetCurrentWorldSectorGuard()	{ gfInSetCurrentWorldSector = TRUE; }
+		~SSetCurrentWorldSectorGuard()	{ gfInSetCurrentWorldSector = FALSE; }
+	} setCurrentWorldSectorGuard;
+
 	BOOLEAN									fChangeMusic = TRUE;
 
 #ifdef CRIPPLED_VERSION
@@ -2111,6 +2272,36 @@ BOOLEAN	SetCurrentWorldSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
 
 	SyncStrategicTurnTimes();
 
+#ifdef _DEBUG
+	// travnik: диагностика выбора сектора - видно, кто именно и что просит загрузить
+	{
+		std::ostringstream sectorText;
+		sectorText << "SetCurrentWorldSector: requested=" << sMapX << "," << sMapY << "," << (INT32)bMapZ
+			<< " selected=" << sSelMapX << "," << sSelMapY << "," << iCurrentMapSectorZ
+			<< " world=" << gWorldSectorX << "," << gWorldSectorY << "," << (INT32)gbWorldSectorZ;
+		LogAssertDiagnostic( sectorText.str().c_str() );
+	}
+#endif
+
+	// travnik: если сектор уже загружен, но в нём есть нерасставленные бойцы игрока,
+	// грузим сектор заново обычным путём - он их расставит (иначе сектор откроется пустым)
+	// travnik: быстрый путь только если мир действительно загружен (после неудачной загрузки
+	// gWorldSector* уже указывает на новый сектор, но мир при этом выгружен/старый)
+	BOOLEAN fRequestedSectorIsLoaded = gfWorldLoaded
+		&& ( gWorldSectorX == sMapX ) && ( sMapY == gWorldSectorY ) && ( bMapZ == gbWorldSectorZ );
+	if ( fRequestedSectorIsLoaded && SectorHasUnplacedPlayerMercs( sMapX, sMapY, bMapZ ) )
+	{
+#ifdef _DEBUG
+		{
+			std::ostringstream reloadText;
+			reloadText << "SetCurrentWorldSector: sector " << sMapX << "," << sMapY << "," << (INT32)bMapZ
+				<< " has unplaced player mercs, reloading sector";
+			LogAssertDiagnostic( reloadText.str().c_str() );
+		}
+#endif
+		fRequestedSectorIsLoaded = FALSE;
+	}
+
 #ifdef JA2BETAVERSION
 	if( gfOverrideSector )
 	{
@@ -2124,7 +2315,7 @@ BOOLEAN	SetCurrentWorldSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
 		gTacticalStatus.ubFlags &= ~TACTICAL_STATUS_BACKPACK_WARNING;
 		gTacticalStatus.ubFlags &= ~TACTICAL_STATUS_DEADLOCK_WARNING;
 		// is the sector already loaded?
-		if( ( gWorldSectorX == sMapX ) && ( sMapY == gWorldSectorY) && ( bMapZ == gbWorldSectorZ) )
+		if( fRequestedSectorIsLoaded )
 		{
 			//Inserts the enemies into the already loaded map based on the strategic information.
 			//Note, the flag will return TRUE only if enemies were added.  The game may wish to
@@ -2146,18 +2337,9 @@ BOOLEAN	SetCurrentWorldSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
 				}
 			}
 
-			for (int i=0; i<TOTAL_SOLDIERS; i++)
-			{
-				//CHRISL: We should only bother with this assertion if the soldier is alive.  Dead soliders are moved to
-				//	GridNo = NOWHERE, which causes this assertion to fail
-				//CHRISL: There's also an issue with vehicles.  Soldiers in any vehicle are considered to be in sGridNo = NOWHERE
-				//	This will result in an assertion error, so let's skip the assertion if the merc is assigned to a vehicle
-				if(!(MercPtrs[i]->flags.uiStatusFlags & SOLDIER_DEAD) && MercPtrs[i]->bAssignment != VEHICLE)
-				{
-					//Assert( !MercPtrs[i]->bActive || !MercPtrs[i]->bInSector || MercPtrs[i]->sGridNo != NOWHERE || MercPtrs[i]->bVehicleID == iHelicopterVehicleId );
-					Assert( !MercPtrs[i]->bActive || !MercPtrs[i]->bInSector || !TileIsOutOfBounds(MercPtrs[i]->sGridNo) || MercPtrs[i]->bVehicleID == iHelicopterVehicleId );
-				}
-			}
+			// travnik: проверка размещения юнитов вынесена в AssertAllSoldiersPlacedInSector()
+			// (там же исключения для мёртвых, пассажиров машин и отрядов из других секторов)
+			AssertAllSoldiersPlacedInSector( sMapX, sMapY, bMapZ );
 
 			if( gubNumCreaturesAttackingTown && !gbWorldSectorZ &&
 				gubSectorIDOfCreatureAttack == SECTOR( gWorldSectorX, gWorldSectorY ) )
@@ -2193,18 +2375,8 @@ BOOLEAN	SetCurrentWorldSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
 //			ResetMilitia();
 			AllTeamsLookForAll( TRUE );
 
-			for (int i=0; i<TOTAL_SOLDIERS; i++)
-			{
-				//CHRISL: We should only bother with this assertion if the soldier is alive.  Dead soliders are moved to
-				//	GridNo = NOWHERE, which causes this assertion to fail
-				//CHRISL: There's also an issue with vehicles.  Soldiers in any vehicle are considered to be in sGridNo = NOWHERE
-				//	This will result in an assertion error, so let's skip the assertion if the merc is assigned to a vehicle
-				if(!(MercPtrs[i]->flags.uiStatusFlags & SOLDIER_DEAD) && MercPtrs[i]->bAssignment != VEHICLE)
-				{
-					//Assert( !MercPtrs[i]->bActive || !MercPtrs[i]->bInSector || MercPtrs[i]->sGridNo != NOWHERE || MercPtrs[i]->bVehicleID == iHelicopterVehicleId );
-					Assert( !MercPtrs[i]->bActive || !MercPtrs[i]->bInSector || !TileIsOutOfBounds(MercPtrs[i]->sGridNo) || MercPtrs[i]->bVehicleID == iHelicopterVehicleId );
-				}
-			}
+			// travnik: повторная проверка после AllTeamsLookForAll() (см. AssertAllSoldiersPlacedInSector)
+			AssertAllSoldiersPlacedInSector( sMapX, sMapY, bMapZ );
 
 			return( TRUE );
 		}
@@ -2334,7 +2506,12 @@ BOOLEAN	SetCurrentWorldSector( INT16 sMapX, INT16 sMapY, INT8 bMapZ )
 			HandleHelicopterOnGroundGraphic( );
 		}
 		else
+		{
+#ifdef _DEBUG
+			LogAssertDiagnostic( "SetCurrentWorldSector: EnterSector FAILED" );
+#endif
 			return( FALSE );
+		}
 
 		if( !(gTacticalStatus.uiFlags & LOADING_SAVED_GAME ) )
 		{
@@ -2452,6 +2629,10 @@ void RemoveMercsInSector( )
 
 void PrepareLoadedSector()
 {
+#ifdef _DEBUG
+	LogAssertDiagnostic( "PrepareLoadedSector: begin" );
+#endif
+
 	BOOLEAN fEnemyPresenceInThisSector = FALSE;
 	BOOLEAN fAddCivs = TRUE;
 	INT8 bMineIndex = -1;
@@ -2970,6 +3151,18 @@ BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 
 	GetMapFileName( sSectorX, sSectorY, bSectorZ,  bFilename, TRUE, TRUE );
 
+#ifdef _DEBUG
+	// travnik: диагностика загрузки сектора - какой файл карты запрошен и существует ли он
+	{
+		std::ostringstream mapText;
+		mapText << "EnterSector: sector=" << sSectorX << "," << sSectorY << "," << (INT32)bSectorZ
+			<< " map=" << bFilename
+			<< " exists=" << ( MapExists( (UINT8 *)bFilename ) ? 1 : 0 )
+			<< " placeholder=" << ( MapExists( (UINT8 *)"Placeholder1.dat" ) ? 1 : 0 );
+		LogAssertDiagnostic( mapText.str().c_str() );
+	}
+#endif
+
 	//Load the placeholder map if the real map doesn't exist.
 	if( !MapExists((UINT8 *) bFilename ) )
 	{
@@ -2978,6 +3171,9 @@ BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 	}
 
 	CreateLoadingScreenProgressBar(TRUE);
+#ifdef _DEBUG
+	LogAssertDiagnostic( "EnterSector: progress bar created, calling LoadWorld" );
+#endif
 	#ifdef JA2BETAVERSION
 	//set the font
 	SetProgressBarMsgAttributes( 0, FONT12ARIAL, FONT_MCOLOR_WHITE, 0 );
@@ -2995,8 +3191,14 @@ BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 	//#endif
 	if( !LoadWorld(bFilename) )
 	{
+#ifdef _DEBUG
+		LogAssertDiagnostic( "EnterSector: LoadWorld FAILED" );
+#endif
 		return( FALSE );
 	}
+#ifdef _DEBUG
+	LogAssertDiagnostic( "EnterSector: LoadWorld ok" );
+#endif
 
 	// underground?
 	if( bSectorZ )
@@ -3018,6 +3220,9 @@ BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 		// Load the current sectors Information From the temporary files
 		if( !LoadCurrentSectorsInformationFromTempItemsFile() )
 		{ //The integrity of the temp files have been compromised.  Boot out of the game after warning message.
+#ifdef _DEBUG
+			LogAssertDiagnostic( "EnterSector: LoadCurrentSectorsInformationFromTempItemsFile FAILED (temp file integrity)" );
+#endif
 			InitExitGameDialogBecauseFileHackDetected();
 			return TRUE;
 		}
@@ -3056,6 +3261,10 @@ BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 	SaveWorldItemsToTempItemFile( sSectorX, sSectorY, (INT8)bSectorZ, guiNumWorldItems, gWorldItems );
 
 	DebugQuestInfo(String("--- Enter Sector %s%s Level %d ---", pVertStrings[sSectorY], pHortStrings[sSectorX], bSectorZ));
+
+#ifdef _DEBUG
+	LogAssertDiagnostic( "EnterSector: completed" );
+#endif
 
 	return TRUE; //because the map was loaded.
 }
@@ -6474,12 +6683,18 @@ BOOLEAN CheckAndHandleUnloadingOfCurrentWorld()
 			//complete, it'll delete the autoresolve soldiers properly.  As you can now see, the above if conditions
 			//don't change throughout this whole process which makes it necessary to do it this way.
 			guiCurrentScreen = MAP_SCREEN;
+			#ifdef _DEBUG
+				LogAssertDiagnostic( "TrashWorld call: CheckAndHandleUnloadingOfCurrentWorld autoresolve" );
+			#endif
 			TrashWorld();
 			guiCurrentScreen = AUTORESOLVE_SCREEN;
 		//}
 	}
 	else
 	{
+		#ifdef _DEBUG
+			LogAssertDiagnostic( "TrashWorld call: CheckAndHandleUnloadingOfCurrentWorld" );
+		#endif
 		TrashWorld();
 	}
 

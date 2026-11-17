@@ -4264,6 +4264,9 @@ BOOLEAN LoadSavedGame( int ubSavedGameID )
 	//Trash the existing world.	This is done to ensure that if we are loading a game that doesn't have 
 	//a world loaded, that we trash it beforehand -- else the player could theoretically enter that sector
 	//where it would be in a pre-load state.	
+	#ifdef _DEBUG
+		LogAssertDiagnostic( "TrashWorld call: LoadSavedGame" );
+	#endif
 	TrashWorld();
 
 	// Lesh: To kill memory leaks during re-loading a saved game

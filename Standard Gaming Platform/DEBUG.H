@@ -88,6 +88,10 @@ inline void _FailMessage(const char* message, unsigned lineNum, const char* sour
 #define Assert(a)										(a) ? _Null() : _FailMessage( NULL, __LINE__, __FILE__ )
 #define AssertMsg(a,b)							(a) ? _Null() : _FailMessage(	b, __LINE__, __FILE__ )
 
+// travnik: запись диагностических сообщений в тот же лог, что и ассерты (Profiles\assert.log),
+// без падения игры. Используется проверками движка, которые нашли подозрительное, но не смертельное состояние.
+extern void LogAssertDiagnostic(const char* message);
+
 extern CHAR8			gubAssertString[512];//for long filenames
 
 

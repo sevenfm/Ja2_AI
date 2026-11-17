@@ -1650,6 +1650,9 @@ BOOLEAN RemoveOnRoofAdjustSavefile( INT32 iMapIndex, UINT16 usIndex )
 	return(FALSE);
 }
 
+// travnik: предел поиска struct-ноды в связном списке - защита от зацикливания
+static const UINT32 MAX_LEVEL_NODE_SEARCH_STEPS = 100000u;
+
 BOOLEAN RemoveStructFromLevelNode( INT32 iMapIndex, LEVELNODE *pNode )
 {
 	LEVELNODE	*pStruct		= NULL;
@@ -1660,10 +1663,21 @@ BOOLEAN RemoveStructFromLevelNode( INT32 iMapIndex, LEVELNODE *pNode )
 
 	pStruct = gpWorldLevelData[ iMapIndex ].pStructHead;
 
+	// travnik: страховка от зацикленного списка struct-нод, иначе загрузка сектора зависает
+	UINT32 uiSearchGuard = 0;
+
 	// Look through all structs and remove index if found
 
 	while( pStruct != NULL )
 	{
+		if ( ++uiSearchGuard > MAX_LEVEL_NODE_SEARCH_STEPS )
+		{
+#ifdef _DEBUG
+			LogAssertDiagnostic( "RemoveStructFromLevelNode: STRUCT LIST LOOKS CYCLIC, aborting search" );
+#endif
+			return( FALSE );
+		}
+
 		if ( pStruct == pNode )
 		{
 			// OK, set links
