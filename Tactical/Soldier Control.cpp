@@ -18417,7 +18417,10 @@ void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravel
 	this->drugs.bDrugEffectRate[ ubDrugType ] = ubTravelRate;
 
 	// Reset once we sleep...
-	this->drugs.bTimesDrugUsedSinceSleep[ ubDrugType ]++;
+	if ( this->drugs.bTimesDrugUsedSinceSleep[ ubDrugType ] < 127 )
+	{
+		this->drugs.bTimesDrugUsedSinceSleep[ ubDrugType ]++;
+	}
 
 	// Increment side effects..
 	this->drugs.bDrugSideEffect[ubDrugType] = min(127, this->drugs.bDrugSideEffect[ubDrugType] + ubSideEffect);

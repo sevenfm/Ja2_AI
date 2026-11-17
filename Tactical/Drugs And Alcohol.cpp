@@ -1000,6 +1000,26 @@ void HourlyDrugUpdate( )
 			}
 		}
 
+		// sevenfm: update drug usage counters
+		for (UINT8 ubLoop = DRUG_TYPE_ADRENALINE; ubLoop < DRUG_TYPE_MAX; ++ubLoop)
+		{
+			// safety check: reset negative/overflowed values or clamp extreme values from older unpatched saves
+			if (pSoldier->drugs.bTimesDrugUsedSinceSleep[ubLoop] < 0)
+			{
+				pSoldier->drugs.bTimesDrugUsedSinceSleep[ubLoop] = 0;
+			}
+			else if (pSoldier->drugs.bTimesDrugUsedSinceSleep[ubLoop] > 8)
+			{
+				pSoldier->drugs.bTimesDrugUsedSinceSleep[ubLoop] = 8;
+			}
+
+			// decrease by 1 each hour when merc is sleeping
+			if (pSoldier->flags.fMercAsleep && pSoldier->drugs.bTimesDrugUsedSinceSleep[ubLoop] > 0)
+			{
+				pSoldier->drugs.bTimesDrugUsedSinceSleep[ubLoop]--;
+			}
+		}
+
 		// every hour, we lower our alcohol counter
 
 		// If side effect rate is non-zero....

@@ -9813,7 +9813,7 @@ void HandleSuppressionFire( UINT8 ubTargetedMerc, UINT8 ubCausedAttacker )
 				!AIRoleOfficer(pSoldier) &&
 				!AIRoleCommander(pSoldier)) &&
 				Chance(5 * pSoldier->ShockLevelPercent() * 100 * sPointsLost * (1 + ubProfileBonus) /
-				((10 + 10 * bTolerance / gGameExternalOptions.ubSuppressionToleranceMax) * (100 + pSoldier->aiData.bMorale) * APBPConstants[AP_MINIMUM] * (1 + InARoom(pSoldier->sGridNo, NULL)) * (1 + ubProfilePenalty) * (1 + pSoldier->drugs.bTimesDrugUsedSinceSleep[DRUG_TYPE_ADRENALINE])))
+				((10 + 10 * bTolerance / gGameExternalOptions.ubSuppressionToleranceMax) * (100 + pSoldier->aiData.bMorale) * APBPConstants[AP_MINIMUM] * (1 + InARoom(pSoldier->sGridNo, NULL)) * (1 + ubProfilePenalty) * (1 + max(0, (INT32)pSoldier->drugs.bTimesDrugUsedSinceSleep[DRUG_TYPE_ADRENALINE]))))
 				)
 			{
 				if (!pSoldier->TakenHit() &&
@@ -9824,7 +9824,7 @@ void HandleSuppressionFire( UINT8 ubTargetedMerc, UINT8 ubCausedAttacker )
 					!fPsycho &&
 					AIGunAutofireCapable(pSoldier) &&
 					Chance(pSoldier->ShockLevelPercent() * 100 * (1 + ubPsychoBonus) /
-					((10 + pSoldier->stats.bExpLevel) * (100 + pSoldier->aiData.bMorale) * (1 + ubPsychoPenalty) * (1 + pSoldier->drugs.bTimesDrugUsedSinceSleep[DRUG_TYPE_PSYCHO])))
+					((10 + pSoldier->stats.bExpLevel) * (100 + pSoldier->aiData.bMorale) * (1 + ubPsychoPenalty) * (1 + max(0, (INT32)pSoldier->drugs.bTimesDrugUsedSinceSleep[DRUG_TYPE_PSYCHO]))))
 					)
 				{
 					// add psycho effect
