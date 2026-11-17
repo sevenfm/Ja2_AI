@@ -1221,6 +1221,9 @@ void ReStartingGame()
 	ShopKeeperScreenInit();
 
 	//Delete the world info
+	#ifdef _DEBUG
+		LogAssertDiagnostic( "TrashWorld call: InitGame" );
+	#endif
 	TrashWorld();
 
 	//Init the help screen system

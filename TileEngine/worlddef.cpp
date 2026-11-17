@@ -353,6 +353,9 @@ BOOLEAN InitializeWorld( )
 //dnl ch43 290909
 void DeinitializeWorld()
 {
+	#ifdef _DEBUG
+		LogAssertDiagnostic( "TrashWorld call: DeinitializeWorld" );
+	#endif
 	TrashWorld();
 	if(gubGridNoMarkers)
 		MemFree(gubGridNoMarkers);
@@ -2868,6 +2871,9 @@ extern UINT8 GetCurrentSummaryVersion();
 extern void LoadShadeTablesFromTextFile();
 BOOLEAN LoadWorld(const STR8 puiFilename, FLOAT* pMajorMapVersion, UINT8* pMinorMapVersion)//dnl ch44 290909
 {
+	// travnik: разумный предел размера файла карты - защита от повреждённых/некорректных файлов
+	static const UINT32 MAP_FILE_SIZE_LIMIT = 32u * 1024u * 1024u;
+
 	HWFILE					hfile;
 	FLOAT					dMajorMapVersion;
 	UINT32					uiFlags;
@@ -2897,6 +2903,14 @@ BOOLEAN LoadWorld(const STR8 puiFilename, FLOAT* pMajorMapVersion, UINT8* pMinor
 	uiLoadWorldStartTime = GetJA2Clock();
 #endif
 
+#ifdef _DEBUG
+	{
+		CHAR8 zLoadText[256];
+		snprintf( zLoadText, sizeof( zLoadText ), "LoadWorld: begin file=%s force=%s", puiFilename, gfForceLoad ? gzForceLoadFile : "-" );
+		LogAssertDiagnostic( zLoadText );
+	}
+#endif
+
 	LoadShadeTablesFromTextFile();
 
 	// Append exension to filename!
@@ -2919,17 +2933,50 @@ BOOLEAN LoadWorld(const STR8 puiFilename, FLOAT* pMajorMapVersion, UINT8* pMinor
 #endif
 	if(!hfile)
 	{
+#ifdef _DEBUG
+		LogAssertDiagnostic( "LoadWorld: cannot open map file" );
+#endif
 #ifndef JA2EDITOR
 		SET_ERROR("Could not load map file %S", aFilename);
 #endif
 		return(FALSE);
 	}
+#ifdef _DEBUG
+	LogAssertDiagnostic( "LoadWorld: map file opened" );
+#endif
 	// Get the file size and alloc one huge buffer for it. We will use this buffer to transfer all of the data from.
 	uiFileSize = FileGetSize(hfile);
+#ifdef _DEBUG
+	{
+		CHAR8 zSizeText[96];
+		snprintf( zSizeText, sizeof( zSizeText ), "LoadWorld: file size=%u", (unsigned)uiFileSize );
+		LogAssertDiagnostic( zSizeText );
+	}
+#endif
+	// travnik: пустой или неадекватно большой файл карты - не пытаемся его читать
+	// (иначе MemAlloc/FileRead могут уронить или подвесить игру)
+	if( uiFileSize == 0 || uiFileSize > MAP_FILE_SIZE_LIMIT )
+	{
+		FileClose( hfile );
+#ifdef _DEBUG
+		LogAssertDiagnostic( "LoadWorld: invalid map file size, aborting load" );
+#endif
+		return( FALSE );
+	}
 	pBuffer = (INT8*)MemAlloc(uiFileSize);
 	pBufferHead = pBuffer;
+#ifdef _DEBUG
+	LogAssertDiagnostic( pBuffer ? "LoadWorld: buffer allocated" : "LoadWorld: buffer allocation FAILED" );
+#endif
 	FileRead(hfile, pBuffer, uiFileSize, &uiBytesRead);
 	FileClose(hfile);
+#ifdef _DEBUG
+	{
+		CHAR8 zReadText[96];
+		snprintf( zReadText, sizeof( zReadText ), "LoadWorld: read %u bytes", (unsigned)uiBytesRead );
+		LogAssertDiagnostic( zReadText );
+	}
+#endif
 
 	// RESET FLAGS FOR OUTDOORS/INDOORS
 	gfBasement = FALSE;
@@ -2938,12 +2985,21 @@ BOOLEAN LoadWorld(const STR8 puiFilename, FLOAT* pMajorMapVersion, UINT8* pMinor
 	// Flugente: select loadscreen hint
 	if(!gfEditMode)//dnl ch74 211013
 		SetNewLoadScreenHint();
+#ifdef _DEBUG
+	LogAssertDiagnostic( "LoadWorld: load screen hint set" );
+#endif
 
 	SetRelativeStartAndEndPercentage(0, 0, 1, L"Trashing world...");
+#ifdef _DEBUG
+	LogAssertDiagnostic( "LoadWorld: progress set, calling TrashWorld" );
+#endif
 #ifdef JA2TESTVERSION
 	uiStartTime = GetJA2Clock();
 #endif
 	TrashWorld();
+#ifdef _DEBUG
+	LogAssertDiagnostic( "LoadWorld: TrashWorld done" );
+#endif
 #ifdef JA2TESTVERSION
 	uiTrashWorldTime = GetJA2Clock() - uiStartTime;
 #endif
@@ -3431,6 +3487,9 @@ BOOLEAN LoadWorld(const STR8 puiFilename, FLOAT* pMajorMapVersion, UINT8* pMinor
 	// Remove this rather large chunk of memory from the system now!
 	MemFree(pBufferHead);
 	MemFree(bCounts);
+#ifdef _DEBUG
+	LogAssertDiagnostic( "LoadWorld: finished ok" );
+#endif
 	return(TRUE);
 }
 
@@ -3737,6 +3796,9 @@ BOOLEAN NewWorld( INT32 nMapRows,  INT32 nMapCols )
 
 	AdjustSoldierCreationStartValues( );
 
+	#ifdef _DEBUG
+		LogAssertDiagnostic( "TrashWorld call: NewWorld" );
+	#endif
 	TrashWorld();
 
 	//SB
@@ -3759,8 +3821,31 @@ BOOLEAN NewWorld( INT32 nMapRows,  INT32 nMapCols )
 }
 
 
+// travnik: счётчик вложенности TrashWorld - защита от повторного входа во время очистки мира
+static INT32 giTrashWorldDepth = 0;
+
 void TrashWorld( void )
 {
+#ifdef _DEBUG
+	{
+		CHAR8 zTrashText[128];
+		snprintf( zTrashText, sizeof( zTrashText ), "TrashWorld: begin depth=%d", (INT32)( giTrashWorldDepth + 1 ) );
+		LogAssertDiagnostic( zTrashText );
+	}
+#endif
+
+	if ( giTrashWorldDepth > 0 )
+	{
+		// travnik: повторный вход во время очистки мира (например, из обратного вызова одновременно с загрузкой сектора)
+		// travnik: оставляет висячие указатели структур и ломает загрузку - такой вызов игнорируем
+#ifdef _DEBUG
+		LogAssertDiagnostic( "TrashWorld: nested call ignored" );
+#endif
+		return;
+	}
+
+	giTrashWorldDepth++;
+
 	MAP_ELEMENT		*pMapTile;
 	LEVELNODE			*pLandNode;
 	LEVELNODE			*pObjectNode;
@@ -3775,20 +3860,39 @@ void TrashWorld( void )
 	SOLDIERTYPE		*pSoldier;
 
 	if( !gfWorldLoaded )
+	{
+		giTrashWorldDepth--;
 		return;
+	}
 
 
 	// REMOVE ALL ITEMS FROM WORLD
+#ifdef _DEBUG
+	{
+		CHAR8 zItemsText[96];
+		snprintf( zItemsText, sizeof( zItemsText ), "TrashWorld: trashing %u world items", (unsigned)guiNumWorldItems );
+		LogAssertDiagnostic( zItemsText );
+	}
+#endif
 	TrashWorldItems(  );
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: items trashed" );
+#endif
 
 	// Trash the overhead map
 	TrashOverheadMap( );
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: overhead map trashed" );
+#endif
 
 	//Reset the smoke effects.
 	ResetSmokeEffects();
 
 	//Reset the light effects
 	ResetLightEffects();
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: smoke/light effects reset" );
+#endif
 
 	// Set soldiers to not active!
 	//ATE: FOR NOW, ONLY TRASH FROM NPC UP!!!!
@@ -3814,11 +3918,20 @@ void TrashWorld( void )
 
 	// Reset attack busy since a militia might have been in the middle of radioing
 	gTacticalStatus.ubAttackBusyCount = 0;
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: soldiers processed" );
+#endif
 
 	RemoveCorpses( );
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: corpses removed" );
+#endif
 
 	// Remove all ani tiles...
 	DeleteAniTiles( );
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: ani tiles deleted" );
+#endif
 
 
 	//Kill both soldier init lists.
@@ -3826,14 +3939,23 @@ void TrashWorld( void )
 	KillSoldierInitList();
 	UseEditorOriginalList();
 	KillSoldierInitList();
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: soldier init lists killed" );
+#endif
 
 	//Remove the schedules
 	DestroyAllSchedules();
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: schedules destroyed" );
+#endif
 #ifdef JA2UB
 //Ja25 no meanwhiles
 #else
 	// on trash world sheck if we have to set up the first meanwhile
 	HandleFirstMeanWhileSetUpWithTrashWorld( );
+#endif
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: meanwhile setup done, freeing tile lists" );
 #endif
 	// Create world randomly from tiles
 	for ( cnt = 0; cnt < WORLD_MAX; cnt++ )
@@ -3916,6 +4038,10 @@ void TrashWorld( void )
 
 	}
 
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: tile lists freed" );
+#endif
+
 	// Zero world
 	memset( gpWorldLevelData, 0, WORLD_MAX * sizeof( MAP_ELEMENT ) );
 
@@ -3933,6 +4059,12 @@ void TrashWorld( void )
 	//gfBlitBattleSectorLocator = FALSE;
 	gfWorldLoaded = FALSE;
 	sprintf( gubFilename, "none" );
+
+	giTrashWorldDepth--;
+
+#ifdef _DEBUG
+	LogAssertDiagnostic( "TrashWorld: end" );
+#endif
 }
 
 

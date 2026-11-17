@@ -1918,11 +1918,18 @@ void HandleExitsFromMapScreen( void )
 			return;
 		}
 
+		// travnik: «забираем» запрос на выход до начала обработки. Выход в тактику грузит сектор,
+		// экран загрузки при этом крутит игровой цикл, карта успевает обработать этот же кадр
+		// повторно и вызывает SetCurrentWorldSector() рекурсивно - из-за этого открывался
+		// старый (уже выгруженный) мир без бойцов.
+		INT8 bExitToWhere = gbExitingMapScreenToWhere;
+		gbExitingMapScreenToWhere = -1;
+
 		// make sure it's still legal to do this!
-		if ( AllowedToExitFromMapscreenTo( gbExitingMapScreenToWhere ) )
+		if ( AllowedToExitFromMapscreenTo( bExitToWhere ) )
 		{
 			// see where we're trying to go
-			switch ( gbExitingMapScreenToWhere )
+			switch ( bExitToWhere )
 			{
 				case MAP_EXIT_TO_LAPTOP:
 					fLapTop = TRUE;
@@ -1978,6 +1985,15 @@ void HandleExitsFromMapScreen( void )
 
 			// now leaving mapscreen
 			fLeavingMapScreen = TRUE;
+
+#ifdef _DEBUG
+			// travnik: диагностика - видно, что обработка выхода действительно завершилась
+			{
+				CHAR8 zExitText[96];
+				snprintf( zExitText, sizeof( zExitText ), "HandleExitsFromMapScreen: exit %d handled", (INT32)bExitToWhere );
+				LogAssertDiagnostic( zExitText );
+			}
+#endif
 		}
 
 		// cancel exit, either we're on our way, or we're not allowed to go

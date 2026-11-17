@@ -161,7 +161,13 @@ namespace {
 
 } // namespace
 
+// travnik: в Debug включаем стек-трейс, чтобы при ассерте в Profiles\stack_trace.log
+// был виден полный путь вызова с именами функций и строками (нужен *.pdb рядом с exe).
+#ifdef _DEBUG
+#define ENABLE_STACK_TRACE 1
+#else
 #define ENABLE_STACK_TRACE 0
+#endif
 
 StackTrace::StackTrace() {
 	// From http://msdn.microsoft.com/en-us/library/bb204633(VS.85).aspx,

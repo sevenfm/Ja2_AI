@@ -1347,6 +1347,15 @@ BOOLEAN DeleteStructureFromWorld(STRUCTURE * pStructure)
 	pBaseStructure = FindBaseStructure(pStructure);
 	CHECKF(pBaseStructure);
 
+	// travnik: проверка на мусорный или уже освобождённый указатель структуры
+	if (TileIsOutOfBounds(pBaseStructure->sGridNo))
+	{
+#ifdef _DEBUG
+		LogAssertDiagnostic( "DeleteStructureFromWorld: invalid structure grid, skipped" );
+#endif
+		return(FALSE);
+	}
+
 	usStructureID = pBaseStructure->usStructureID;
 	fMultiStructure = ((pBaseStructure->fFlags & STRUCTURE_MULTI) != 0);
 	fRecompileMPs = ((gsRecompileAreaLeft != 0) && !((pBaseStructure->fFlags & STRUCTURE_MOBILE) != 0));
@@ -1617,6 +1626,9 @@ STRUCTURE * FindStructure(INT32 sGridNo, UINT32 fFlags)
 	return(NULL);
 }
 
+// travnik: предел обхода связного списка структур - защита от зацикливания при повреждённых данных
+static const UINT32 MAX_STRUCTURE_SEARCH_STEPS = 100000u;
+
 // Finds the last structure with matching flag
 STRUCTURE* FindLastStructure(INT32 sGridNo, UINT32 fFlags)
 {
@@ -1631,8 +1643,20 @@ STRUCTURE* FindLastStructure(INT32 sGridNo, UINT32 fFlags)
 	}
 
 	pCurrent = gpWorldLevelData[sGridNo].pStructureHead;
+
+	// travnik: страховка от зацикленного списка структур
+	UINT32 uiSearchGuard = 0;
+
 	while (pCurrent != NULL)
 	{
+		if (++uiSearchGuard > MAX_STRUCTURE_SEARCH_STEPS)
+		{
+#ifdef _DEBUG
+			LogAssertDiagnostic( "FindLastStructure: structure list looks cyclic, aborting" );
+#endif
+			return(NULL);
+		}
+
 		if ((pCurrent->fFlags & fFlags) != 0)
 		{
 			pLastMatch = pCurrent;
@@ -1666,10 +1690,26 @@ STRUCTURE * FindStructureByID(INT32 sGridNo, UINT16 usStructureID)
 	// finds a structure that matches any of the given flags
 	STRUCTURE * pCurrent;
 
+	// travnik: защита от выхода за пределы карты и от зацикленного списка структур
+	if (TileIsOutOfBounds(sGridNo))
+	{
+		return(NULL);
+	}
+
 	pCurrent = gpWorldLevelData[sGridNo].pStructureHead;
+
+	UINT32 uiSearchGuard = 0;
 
 	while (pCurrent != NULL)
 	{
+		if (++uiSearchGuard > MAX_STRUCTURE_SEARCH_STEPS)
+		{
+#ifdef _DEBUG
+			LogAssertDiagnostic( "FindStructureByID: structure list looks cyclic, aborting" );
+#endif
+			return(NULL);
+		}
+
 		if (pCurrent->usStructureID == usStructureID)
 		{
 			return(pCurrent);
