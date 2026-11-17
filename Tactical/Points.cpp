@@ -4364,6 +4364,9 @@ INT32 GetBPCostPer10APsForGunHolding(SOLDIERTYPE * pSoldier, BOOLEAN fEstimate)
 		}
 	}
 
+	// sevenfm: scale BP cost for weapon holding with remaining breath
+	iBPcost = iBPcost * min(100, pSoldier->bBreath) / 100;
+
 	// Adjust by predefined ini setting
 	iBPcost = (iBPcost * gGameExternalOptions.ubEnergyCostForWeaponWeight / 100);
 
@@ -4527,6 +4530,9 @@ INT32 GetBPCostForRecoilkick(SOLDIERTYPE * pSoldier)
 			break;
 		}
 	}
+
+	// sevenfm: scale kick power with energy left
+	iKickPower = iKickPower * min(100, pSoldier->bBreath) / 100;
 
 	UINT32 usItem = pSoldier->inv[pSoldier->ubAttackingHand].usItem;
 
