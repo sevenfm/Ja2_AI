@@ -423,6 +423,9 @@ typedef struct
 	// Flugente: backgrounds
 	UINT16 usBackground;
 
+	// travnik: voice set used (IMPVoices.xml); only used when reading MercProfiles.xml, not part of the savegame
+	UINT32 usVoiceIndex;
+
 } TEMPPROFILETYPE;
 
 extern TEMPPROFILETYPE tempProfiles[NUM_PROFILES+1];

@@ -136,7 +136,7 @@ void GameInitCharProfile()
 	LaptopSaveInfo.iIMPIndex = 0;
 	iCurrentPortrait = 0;
 	iCurrentProfileMode = 0;
-//	iCurrentVoice = 0;
+	iSelectedIMPVoiceSet = 0;
 	iPortraitNumber = 0;
 
 	return;
