@@ -24,6 +24,8 @@ lib
 /ja2_ai/.vs/ja2_VS2013
 /ja2_ai/build/VS2013
 
+.agents/
+.agents/rules/
 
 # ==========================================
 # Логи игры (создаются при запуске JA2)
@@ -54,6 +56,10 @@ bin/
 *.opensdf
 .vs/
 .editorconfig
+
+# Ignore per-user Visual Studio overrides, keep shared .props tracked
+.user
+.user.props
 
 # ==========================================
 # Сторонние библиотеки (Опционально)

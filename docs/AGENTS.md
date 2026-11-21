@@ -8,6 +8,7 @@
   - Never add new global variables or free global functions.
   - Mark every edit in an existing legacy file with `// author: description` (or `// author: begin` / `// author: end`).
   - Only modify `.vcxproj` and `.vcxproj.filters` to register newly created `.h` and `.cpp` files—never change compiler or project settings.
+  - If explicitly asked to refactor existing legacy code, read and follow REFACTORING_GUIDELINES.md.
 
 ---
 
