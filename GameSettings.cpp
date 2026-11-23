@@ -3729,6 +3729,8 @@ void LoadTauntsSettings()
 	gTauntsSettings.fTauntAlwaysShowInLog			= iniReader.ReadBoolean("Taunts Settings","TAUNT_ALWAYS_SHOW_IN_LOG", FALSE );
 	gTauntsSettings.fTauntVoice						= iniReader.ReadBoolean("Taunts Settings", "TAUNT_VOICE", FALSE, false);
 	gTauntsSettings.fTauntVoiceShowInfo				= iniReader.ReadBoolean("Taunts Settings", "TAUNT_VOICE_SHOW_INFO", FALSE, false);
+	gTauntsSettings.fTauntRadio						= iniReader.ReadBoolean("Taunts Settings", "TAUNT_RADIO", TRUE, false);
+	gTauntsSettings.fTauntRadioListen				= iniReader.ReadBoolean("Taunts Settings", "TAUNT_RADIO_LISTEN", FALSE, false);
 	gTauntsSettings.sVolume							= iniReader.ReadInteger("Taunts Settings","TAUNT_VOLUME",30, 0, 65535 );
 	gTauntsSettings.sModDelay						= iniReader.ReadInteger("Taunts Settings","TAUNT_MOD_DELAY",100, -32767, 32767 );
 	gTauntsSettings.sMinDelay						= iniReader.ReadInteger("Taunts Settings","TAUNT_MIN_DELAY",500, 0, 65535 );

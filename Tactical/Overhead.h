@@ -270,6 +270,8 @@ BOOLEAN TeamMemberNear(INT8 bTeam, INT32 sGridNo, INT32 iRange);
 BOOLEAN NotDeafTeamMemberNear(INT8 bTeam, INT32 sGridNo, INT32 iRange);
 BOOLEAN IsValidTargetMerc( UINT8 ubSoldierID );
 BOOLEAN PlayerCanHearNoise(SOLDIERTYPE *pSoldier);
+BOOLEAN PlayerCanHearVoiceTaunt(SOLDIERTYPE* pSoldier, UINT8 ubVolume);
+BOOLEAN FriendCanHearNoise(INT8 bTeam, INT32 sGridNo, INT8 bLevel, UINT8 ubBaseVolume, UINT8 ubNoiseType);
 
 // FUNCTIONS FOR MANIPULATING MERC SLOTS - A LIST OF ALL ACTIVE MERCS
 INT32 GetFreeMercSlot( );
