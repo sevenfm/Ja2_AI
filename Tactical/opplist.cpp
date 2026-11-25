@@ -5976,15 +5976,15 @@ void HearNoise(SOLDIERTYPE *pSoldier, UINT8 ubNoiseMaker, INT32 sNoiseSpot, INT8
 		sDistance > TACTICAL_RANGE / 4 &&
 		(ubNoiseMaker == NOBODY || PublicKnowledge(pSoldier->bTeam, ubNoiseMaker) != SEEN_CURRENTLY))
 	{
-		UINT8 ubBonus = 0;
+		UINT8 ubSteps = min(8, max(1, sDistance / 4));
 
-		if (!LOS_Location(pSoldier->sGridNo, pSoldier->pathing.bLevel, sNoiseSpot, bLevel, NO_DISTANCE_LIMIT))
+		/*if (!LOS_Location(pSoldier->sGridNo, pSoldier->pathing.bLevel, sNoiseSpot, bLevel, NO_DISTANCE_LIMIT))
 		{
-			ubBonus++;
-		}
+			ubSteps = ubSteps * 2;
+		}*/
 
 		//ScreenMsg(FONT_LTBLUE, MSG_INTERFACE, L"RandomizeLocation [%d] sDistance %d ubBonus %d", pSoldier->ubID, sDistance, ubBonus);
-		sNoiseSpot = RandomizeLocation(sNoiseSpot, bLevel, min(8, sDistance / (TACTICAL_RANGE / 4)) + ubBonus, NULL);
+		sNoiseSpot = RandomizeLocation(sNoiseSpot, bLevel, ubSteps, NULL);
 		sNewSpot = sNoiseSpot;
 	}
 
@@ -6972,14 +6972,10 @@ void NoticeUnseenAttacker(SOLDIERTYPE * pAttacker, SOLDIERTYPE * pDefender, INT8
 	// sevenfm: chance to ignore unseen attack using silenced weapons
 	if (pAttacker->IsHumanBodyType() &&
 		pDefender->IsHumanBodyType() &&
+		Item[usWeapon].usItemClass == IC_GUN &&
 		PythSpacesAway(pAttacker->sGridNo, pDefender->sGridNo) > TACTICAL_RANGE / 4 &&
 		fSilenced &&
 		!pAttacker->flags.fMuzzleFlash &&
-		(pDefender->aiData.bAlertStatus < STATUS_RED ||
-		pDefender->aiData.bShock == 0 && pDefender->aiData.bWoundShock == 0 ||
-		GuySawEnemy(pDefender, SEEN_LAST_TURN) || 
-		pDefender->IsLightDeafened() && Chance(pDefender->usSkillCounter[SOLDIER_COUNTER_NOISE_VOLUME]) ||
-		Chance(pDefender->aiData.bWoundShock / 2)) &&
 		SkillCheck(pDefender, NOTICE_DART_CHECK, 0) < 0 &&
 		SoldierToSoldierLineOfSightTest(pDefender, pAttacker, TRUE, CALC_FROM_ALL_DIRS) == 0)
 	{
@@ -7076,13 +7072,13 @@ void NoticeUnseenAttacker(SOLDIERTYPE * pAttacker, SOLDIERTYPE * pDefender, INT8
 			sDistance > TACTICAL_RANGE / 4 &&
 			PublicKnowledge(pDefender->bTeam, pAttacker->ubID) != SEEN_CURRENTLY)
 		{
-			UINT8 ubBonus = 0;
-
+			UINT8 ubSteps = max(1, min(8, sDistance / 4));
+		
 			if (fSilenced && !pAttacker->flags.fMuzzleFlash)
-				ubBonus++;
+				ubSteps = ubSteps * 2;
 
 			//ScreenMsg(FONT_DKGREEN, MSG_INTERFACE, L"NoticeUnseenAttacker [%d] [%d] sDistance %d ubBonus %d", pAttacker->ubID, pDefender->ubID, sDistance, ubBonus);
-			sNoiseSpot = RandomizeLocation(pAttacker->sGridNo, pAttacker->pathing.bLevel, min(8, sDistance / (TACTICAL_RANGE / 4)) + ubBonus, NULL);
+			sNoiseSpot = RandomizeLocation(pAttacker->sGridNo, pAttacker->pathing.bLevel, ubSteps, NULL);
 		}
 
 		INT8 bKnowledge = HEARD_THIS_TURN;
