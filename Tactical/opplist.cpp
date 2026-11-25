@@ -7032,7 +7032,7 @@ void NoticeUnseenAttacker(SOLDIERTYPE * pAttacker, SOLDIERTYPE * pDefender, INT8
 		PythSpacesAway(pAttacker->sGridNo, pDefender->sGridNo) > TACTICAL_RANGE / 4 &&
 		fSilenced &&
 		!pAttacker->flags.fMuzzleFlash &&
-		SkillCheck(pDefender, NOTICE_DART_CHECK, 0) < 0 &&
+		SkillCheck(pDefender, NOTICE_DART_CHECK, SoldierDifficultyLevel(pDefender) * 5) < 0 &&
 		SoldierToSoldierLineOfSightTest(pDefender, pAttacker, TRUE, CALC_FROM_ALL_DIRS) == 0)
 	{
 		return;
