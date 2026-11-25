@@ -4010,6 +4010,11 @@ void SOLDIERTYPE::SetSoldierGridNo( INT32 sNewGridNo, BOOLEAN fForceRemove )
 	{
 		this->bEndDoorOpenCode = 0;
 		HandleDoorChangeFromGridNo(this, this->sEndDoorOpenCodeData, FALSE);
+		// door_interrupt: emit door closing noise after door structure changes
+		if (this->ubDoorOpeningNoise > 0)
+		{
+			MakeNoise(this->ubID, this->sEndDoorOpenCodeData, this->pathing.bLevel, gpWorldLevelData[this->sGridNo].ubTerrainID, this->ubDoorOpeningNoise, NOISE_CREAKING);
+		}
 	}
 
 	// OK, Update buddy's strategic insertion code....
@@ -18452,7 +18457,8 @@ void SOLDIERTYPE::AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravel
 	this->usSoldierFlagMask |= SOLDIER_DRUGGED;
 }
 
-void SOLDIERTYPE::HandleFlashLights()
+// door_interrupt: optional fUpdateSight parameter to avoid premature HandleSight during door opening
+void SOLDIERTYPE::HandleFlashLights( BOOLEAN fUpdateSight )
 {
 	// sevenfm: clear vision range cache
 	this->ResetVisionRangeCache();
@@ -18486,11 +18492,15 @@ void SOLDIERTYPE::HandleFlashLights()
 	
 	if ( fLightChanged )
 	{
-		// refresh sight for everybody
-		if (this->stats.bLife >= OKLIFE)
-			HandleSight(this, SIGHT_LOOK | SIGHT_INTERRUPT);
-		else
-			AllTeamsLookForAll( TRUE );
+		// door_interrupt: skip premature HandleSight when caller performs AllTeamsLookForAll
+		if ( fUpdateSight )
+		{
+			// refresh sight for everybody
+			if (this->stats.bLife >= OKLIFE)
+				HandleSight(this, SIGHT_LOOK | SIGHT_INTERRUPT);
+			else
+				AllTeamsLookForAll( TRUE );
+		}
 		
 		SetRenderFlags(RENDER_FLAG_FULL);
 	}

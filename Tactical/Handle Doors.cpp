@@ -39,6 +39,7 @@
 #endif
 #include "fresh_header.h"
 #include "connect.h"
+#include "DoorInterruptHandler.h"	// door_interrupt: deferred IIS door AP registration
 
 #ifdef JA2UB
 #include "Explosion Control.h"
@@ -109,8 +110,9 @@ void HandleDoorChangeFromGridNo( SOLDIERTYPE *pSoldier, INT32 sGridNo, BOOLEAN f
 		LightSetBaseLevel(LightGetAmbient());
 
 	// Flugente: we have to redo flashlights
+	// door_interrupt: defer HandleSight so AllTeamsLookForAll resolves interrupts for all soldiers together
 	if ( pSoldier )
-		pSoldier->HandleFlashLights();
+		pSoldier->HandleFlashLights( FALSE );
 }
 
 UINT16 GetAnimStateForInteraction( SOLDIERTYPE *pSoldier, BOOLEAN fDoor, UINT16 usAnimState )
@@ -1097,7 +1099,17 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT32 sGridNo, STRUCTURE *p
 	// Deduct points!
 	//if ( fDoor )
 	{
-		DeductPoints( pSoldier, sAPCost, sBPCost );
+		// door_interrupt: begin - under IIS, defer door-opening AP interrupt check until after AllTeamsLookForAll updates LOS
+		if ( fDoor && fHandleDoor && gGameOptions.fImprovedInterruptSystem )
+		{
+			DeductPoints( pSoldier, sAPCost, sBPCost, DISABLED_INTERRUPT );
+			CDoorInterruptHandler::SetPendingDoorAPCost( pSoldier->ubID, sAPCost );
+		}
+		else
+		{
+			DeductPoints( pSoldier, sAPCost, sBPCost );
+		}
+		// door_interrupt: end
 	}
 
 	return( fHandleDoor );
@@ -1180,11 +1192,7 @@ BOOLEAN HandleDoorsOpenClose( SOLDIERTYPE *pSoldier, INT32 sGridNo, STRUCTURE * 
 		cnt++;
 	};
 
-	if (pSoldier && pSoldier->ubDoorOpeningNoise > 0)
-	{
-		//shadooow: noise handling moved here so we can work with modified value of pSoldier->ubDoorOpeningNoise
-		OurNoise(pSoldier->ubID, pSoldier->aiData.sPendingActionData2, pSoldier->pathing.bLevel, gpWorldLevelData[pSoldier->sGridNo].ubTerrainID, pSoldier->ubDoorOpeningNoise, NOISE_CREAKING);
-	}
+	// door_interrupt: door creaking noise moved back to post-open sequence (after SwapStructureForPartner and InitOpplistForDoorOpening)
 
 	if ( !(pStructure->fFlags & STRUCTURE_OPEN) )
 	{

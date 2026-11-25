@@ -38,6 +38,7 @@
     <ClInclude Include="Civ Quotes.h" />
     <ClInclude Include="Dialogue Control.h" />
     <ClInclude Include="DisplayCover.h" />
+    <ClInclude Include="DoorInterruptHandler.h" />
     <ClInclude Include="Drugs And Alcohol.h" />
     <ClInclude Include="End Game.h" />
     <ClInclude Include="Enemy Soldier Save.h" />
@@ -140,6 +141,7 @@
     <ClCompile Include="Civ Quotes.cpp" />
     <ClCompile Include="Dialogue Control.cpp" />
     <ClCompile Include="DisplayCover.cpp" />
+    <ClCompile Include="DoorInterruptHandler.cpp" />
     <ClCompile Include="Drugs And Alcohol.cpp" />
     <ClCompile Include="End Game.cpp" />
     <ClCompile Include="Enemy Soldier Save.cpp" />

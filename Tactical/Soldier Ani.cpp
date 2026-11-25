@@ -72,6 +72,7 @@ class OBJECTTYPE;
 class SOLDIERTYPE;
 #include "connect.h"
 #include "fresh_header.h"
+#include "DoorInterruptHandler.h"	// door_interrupt: post-door-open sight and interrupt orchestration
 #define		NO_JUMP											0
 // r9279 muzzle flash fix by Asdow
 #define		MAX_ANIFRAMES_PER_FLASH			3
@@ -2373,20 +2374,9 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 
 					if ( SoldierHandleInteractiveObject( pSoldier ) )
 					{
-						// HANDLE SIGHT!
-						HandleSight(pSoldier,SIGHT_LOOK | SIGHT_RADIO | SIGHT_INTERRUPT );
-
-						InitOpplistForDoorOpening();
-
-						//shadooow: this has been moved inside HandleDoorsOpenClose
-						//MakeNoise( pSoldier->ubID, pSoldier->aiData.sPendingActionData2, pSoldier->pathing.bLevel, gpWorldLevelData[pSoldier->sGridNo].ubTerrainID, pSoldier->ubDoorOpeningNoise, NOISE_CREAKING );
-						//	gfDelayResolvingBestSighting = FALSE;
-
-						gubInterruptProvoker = pSoldier->ubID;
-						AllTeamsLookForAll( TRUE );
-
-						// ATE: Now, check AI guy to cancel what he was going....
-						HandleSystemNewAISituation( pSoldier, TRUE );
+						// door_interrupt: begin - coordinate noise, AllTeamsLookForAll, and TB/RT/IIS interrupts together
+						CDoorInterruptHandler::HandlePostDoorOpen( pSoldier );
+						// door_interrupt: end
 					}
 
 					// EVENT HAS BEEN HANDLED

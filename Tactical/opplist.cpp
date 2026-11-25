@@ -64,6 +64,7 @@
 #include "Music Control.h"
 
 #include "connect.h"
+#include "DoorInterruptHandler.h"	// door_interrupt: pair-aware TB door/AllTeamsLookForAll interrupt resolution
 #include "../ModularizedTacticalAI/include/Plan.h"
 #include "../ModularizedTacticalAI/include/PlanFactoryLibrary.h"
 #include "../ModularizedTacticalAI/include/AbstractPlanFactory.h"
@@ -530,6 +531,8 @@ void HandleBestSightingPositionInRealtime(void)
 					ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, New113Message[MSG113_RTM_ENEMIES_SPOOTED]);
 				}
 
+				// door_interrupt: reset duel points before early return in realtime sneak
+				MercPtrs[gubBestToMakeSighting[0]]->aiData.bInterruptDuelPts = NO_INTERRUPT;
 				return;	// and do nothing
 			}
 			else if (MercPtrs[gubBestToMakeSighting[0]]->bTeam != OUR_TEAM && MercPtrs[gubBestToMakeSighting[0]]->aiData.bOppCnt > 0)
@@ -1615,6 +1618,8 @@ void InitOpplistForDoorOpening(void)
 	DebugMsg(TOPIC_JA2, DBG_LEVEL_3, "HBSPIR: setting door flag on");
 	// must init sight arrays here
 	InitSightArrays();
+	// door_interrupt: begin collecting turn-based sighting pairs across door noise + AllTeamsLookForAll
+	CDoorInterruptHandler::BeginSightingCollection();
 }
 
 
@@ -1642,6 +1647,11 @@ void AllTeamsLookForAll(UINT8 ubAllowInterrupts)
 		else
 		{
 			InitSightArrays();
+			// door_interrupt: begin collecting turn-based sighting pairs for non-door AllTeamsLookForAll(TRUE)
+			if (ubAllowInterrupts && (gTacticalStatus.uiFlags & INCOMBAT))
+			{
+				CDoorInterruptHandler::BeginSightingCollection();
+			}
 		}
 	}
 
@@ -1663,6 +1673,8 @@ void AllTeamsLookForAll(UINT8 ubAllowInterrupts)
 
 	if (!(gTacticalStatus.uiFlags & INCOMBAT))
 	{
+		// door_interrupt: clear any TB sighting collection when resolving in realtime
+		CDoorInterruptHandler::EndSightingCollection();
 		// decide who should get first turn
 		HandleBestSightingPositionInRealtime();
 		// this could have made us switch to combat mode
@@ -1677,9 +1689,15 @@ void AllTeamsLookForAll(UINT8 ubAllowInterrupts)
 	}
 	else if (ubAllowInterrupts)
 	{
-		HandleBestSightingPositionInTurnbased();
+		// door_interrupt: use pair-aware turn-based sighting interrupt resolution
+		CDoorInterruptHandler::ResolveTurnbasedSightingInterrupts();
 		// reset sighting size to 0
 		gubBestToMakeSightingSize = BEST_SIGHTING_ARRAY_SIZE_INCOMBAT;
+	}
+	else
+	{
+		// door_interrupt: ensure sighting collection is not left active
+		CDoorInterruptHandler::EndSightingCollection();
 	}
 
 	// reset interrupt only guynum which may have been used
@@ -2484,11 +2502,25 @@ void ManSeesMan(SOLDIERTYPE *pSoldier, SOLDIERTYPE *pOpponent, INT32 sOppGridNo,
 			{
 				if (gTacticalStatus.uiFlags & INCOMBAT)
 				{
-					// presumably a door opening... we do require standard interrupt conditions				
-					if (StandardInterruptConditionsMet(pSoldier, pOpponent->ubID, bOldOppList))
+					// door_interrupt: begin - record pair-aware TB sighting duel and IIS newly-exposed sightings
+					if (gGameOptions.fImprovedInterruptSystem &&
+						pSoldier->bTeam != gTacticalStatus.ubCurrentTeam &&
+						pOpponent->bTeam == gTacticalStatus.ubCurrentTeam)
 					{
-						ReevaluateBestSightingPosition(pSoldier, CalcInterruptDuelPts(pSoldier, pOpponent->ubID, TRUE));
+						CDoorInterruptHandler::RecordIISExposedSighting(pSoldier->ubID, pOpponent->ubID);
 					}
+
+					if (!gGameOptions.fImprovedInterruptSystem || gGameExternalOptions.fAllowInstantInterruptsOnSight)
+					{
+						// presumably a door opening... we do require standard interrupt conditions
+						if (StandardInterruptConditionsMet(pSoldier, pOpponent->ubID, bOldOppList))
+						{
+							INT8 bDuelPts = CalcInterruptDuelPts(pSoldier, pOpponent->ubID, TRUE);
+							CDoorInterruptHandler::RecordSightingDuel(pSoldier->ubID, pOpponent->ubID, bDuelPts);
+							ReevaluateBestSightingPosition(pSoldier, bDuelPts);
+						}
+					}
+					// door_interrupt: end
 				}
 				// require the enemy not to be dying if we are the sighter; in other words,
 				// always add for AI guys, and always add for people with life >= OKLIFE
@@ -5960,11 +5992,22 @@ void HearNoise(SOLDIERTYPE *pSoldier, UINT8 ubNoiseMaker, INT32 sNoiseSpot, INT8
 		// skip LOS check if we had to turn and we're a tank.	sorry Mr Tank, no looking out of the sides for you!
 		if (!(bHadToTurn && TANK(pSoldier)))
 		{
-			if (SoldierTo3DLocationLineOfSightTest(pSoldier, sNoiseSpot, bLevel, 0, TRUE, sDistVisible))
+			// door_interrupt: begin - when noise spot differs from noise maker tile (e.g. SIDE_OPEN_DOOR), require actual LOS to noise maker
+			if (ubNoiseMaker < TOTAL_SOLDIERS && sNoiseSpot != Menptr[ubNoiseMaker].sGridNo)
+			{
+				int sMakerDistVisible = pSoldier->GetMaxDistanceVisible(Menptr[ubNoiseMaker].sGridNo, Menptr[ubNoiseMaker].pathing.bLevel, CALC_FROM_WANTED_DIR);
+				if (PythSpacesAway(pSoldier->sGridNo, Menptr[ubNoiseMaker].sGridNo) <= sMakerDistVisible &&
+					SoldierToSoldierLineOfSightTest(pSoldier, MercPtrs[ubNoiseMaker], TRUE, sMakerDistVisible))
+				{
+					bSourceSeen = TRUE;
+				}
+			}
+			else if (SoldierTo3DLocationLineOfSightTest(pSoldier, sNoiseSpot, bLevel, 0, TRUE, sDistVisible))
 			{
 				// he can actually see the spot where the noise came from!
 				bSourceSeen = TRUE;
 			}
+			// door_interrupt: end
 		}
 	}
 
@@ -6195,23 +6238,36 @@ void HearNoise(SOLDIERTYPE *pSoldier, UINT8 ubNoiseMaker, INT32 sNoiseSpot, INT8
 			// as long as listener meets minimum interrupt conditions
 			if (gfDelayResolvingBestSightingDueToDoor)
 			{
-				if (bSourceSeen && (!((gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT)) || (gubSightFlags & SIGHTINTERRUPT && StandardInterruptConditionsMet(pSoldier, ubNoiseMaker, bOldOpplist))))
+				// door_interrupt: begin - fix SIGHTINTERRUPT/SIGHT_INTERRUPT typo, gate IIS, and record door noise bonus in CDoorInterruptHandler
+				BOOLEAN fInTBCombat = ((gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT));
+				if (bSourceSeen &&
+					(!fInTBCombat ||
+					 ((!gGameOptions.fImprovedInterruptSystem || gGameExternalOptions.fAllowInstantInterruptsOnSight) &&
+					  StandardInterruptConditionsMet(pSoldier, ubNoiseMaker, bOldOpplist))))
 				{
 					// we should be adding this to the array for the AllTeamLookForAll to handle
 					// since this is a door opening noise, add a bonus equal to half the door volume
-					UINT8	ubPoints;
-
-					ubPoints = CalcInterruptDuelPts(pSoldier, ubNoiseMaker, TRUE);
-					if (ubPoints != NO_INTERRUPT)
+					INT8 bPoints = CalcInterruptDuelPts(pSoldier, ubNoiseMaker, TRUE);
+					if (bPoints != NO_INTERRUPT)
 					{
+						INT32 iBonusPts = (INT32)bPoints + (INT32)(ubVolume / 2);
+						if (iBonusPts >= AUTOMATIC_INTERRUPT)
+						{
+							iBonusPts = AUTOMATIC_INTERRUPT - 1;
+						}
 						// require the enemy not to be dying if we are the sighter; in other words,
 						// always add for AI guys, and always add for people with life >= OKLIFE
 						if (pSoldier->bTeam != gbPlayerNum || MercPtrs[ubNoiseMaker]->stats.bLife >= OKLIFE)
 						{
-							ReevaluateBestSightingPosition(pSoldier, (UINT8)(ubPoints + (ubVolume / 2)));
+							if (fInTBCombat)
+							{
+								CDoorInterruptHandler::RecordSightingDuel(pSoldier->ubID, ubNoiseMaker, (INT8)iBonusPts);
+							}
+							ReevaluateBestSightingPosition(pSoldier, (INT8)iBonusPts);
 						}
 					}
 				}
+				// door_interrupt: end
 			}
 			else
 			{
