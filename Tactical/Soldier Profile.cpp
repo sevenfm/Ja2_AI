@@ -883,7 +883,7 @@ BOOLEAN LoadMercProfiles(void)
 		}
 
 		//if the Dialogue exists for the merc, allow the merc to be hired
-		if( DialogueDataFileExistsForProfile( (UINT8)uiLoop, 0, FALSE, NULL ) )
+		if( DialogueDataFileExistsForProfile( gMercProfiles[uiLoop].GetVoiceIndex() == 0 ? (UINT8)uiLoop : (UINT8)gMercProfiles[uiLoop].GetVoiceIndex(), 0, FALSE, NULL ) )
 		{
 			gMercProfiles[uiLoop].bMercStatus = 0;
 		}
@@ -2636,6 +2636,12 @@ void OverwriteMercProfileWithXMLData( UINT32 uiLoop )
 		gMercProfiles[ uiLoop ].bSex = tempProfiles[ uiLoop ].bSex ;
 		gMercProfiles[ uiLoop ].ubBodyType = tempProfiles[ uiLoop ].ubBodyType ;
 		gMercProfiles[ uiLoop ].uiBodyTypeSubFlags = tempProfiles[ uiLoop ].uiBodyTypeSubFlags ;
+
+		// travnik: voice set. Default (if the xml tag is missing) is the profile id itself, so all NPCs keep their voice
+		if ( tempProfiles[ uiLoop ].usVoiceIndex > 0 )
+			gMercProfiles[ uiLoop ].SetVoiceIndex( tempProfiles[ uiLoop ].usVoiceIndex );
+		else
+			gMercProfiles[ uiLoop ].SetVoiceIndex( uiLoop );
 
 		///////////////////////////////////////////////////////////////////////////////////////////
 		// SANDRO - old/new traits

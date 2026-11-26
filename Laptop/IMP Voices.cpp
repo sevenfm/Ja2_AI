@@ -19,19 +19,16 @@
 	#include "soldier profile type.h"
 	#include "GameSettings.h"
 	#include "LaptopSave.h"
+	#include "IMP Confirm.h"
 #endif
 
 INT32 iCurrentVoice = 0;
+UINT32 iSelectedIMPVoiceSet = 0;
 
 UINT32 uiVocVoiceSound = 0;
 // buttons needed for the IMP Voices screen
 INT32 giIMPVoicesButton[ 3 ];
 INT32 giIMPVoicesButtonImage[ 3 ];
-
-
-// hacks to be removeed later
-BOOLEAN fVoiceAVisited = FALSE, fVoiceBVisited = FALSE, fVoiceCVisited = FALSE;
-
 
 // redraw protrait screen
 BOOLEAN fReDrawVoicesScreenFlag = FALSE;
@@ -55,21 +52,30 @@ void BtnIMPVoicesPreviousCallback(GUI_BUTTON *btn,INT32 reason);
 void BtnIMPVoicesDoneCallback(GUI_BUTTON *btn,INT32 reason);
 void IMPPortraitRegionButtonCallback(MOUSE_REGION * pRegion, INT32 iReason );
 
+// travnik: is this voiceset valid for the character's gender?
+BOOLEAN VoiceFitsGender( int iVoiceIndex )
+{
+	return ( gIMPVoice[iVoiceIndex].exists && !fCharacterIsMale == gIMPVoice[iVoiceIndex].bSex );
+}
+
 void EnterIMPVoices( void )
 {
-	fVoiceAVisited = FALSE;
-	fVoiceBVisited = FALSE;
-	fVoiceCVisited = FALSE;
-
+	// travnik: voicesets are no longer tied to profile slots, they are defined in IMPVoices.xml.
 	// Set the initial voice
-	if (fCharacterIsMale == TRUE)
+	iCurrentVoice = -1;
+	for ( int i = 0; i < (int)gIMPVoice.size(); ++i )
 	{
-		iCurrentVoice = GetFirstFreeSlot(MALE);
+		// MALE is 0, FEMALE is 1, thus the negation
+		if ( VoiceFitsGender( i ) )
+		{
+			iCurrentVoice = i;
+			break;
+		}
 	}
-	else
-	{
-		iCurrentVoice = GetFirstFreeSlot(FEMALE);
-	}
+
+	// no fitting voice found: stay on the first entry to avoid out-of-bounds access
+	if ( iCurrentVoice == -1 && !gIMPVoice.empty() )
+		iCurrentVoice = 0;
 
 	// create buttons
 	CreateIMPVoicesButtons( );
@@ -140,72 +146,43 @@ void HandleIMPVoices( void )
 }
 
 
-
-// WDS: Allow flexible numbers of IMPs of each sex
-// Ensure the voice is within the valid range
-void FixVoiceRange()
-{
-	if (fCharacterIsMale == TRUE)
-	{
-		if (iCurrentVoice > GetLastMaleSlot())
-			iCurrentVoice = GetFirstMaleSlot();
-		else if (iCurrentVoice < GetFirstMaleSlot())
-			iCurrentVoice = GetLastMaleSlot();
-	}
-	else
-	{
-		if (iCurrentVoice > GetLastFemaleSlot())
-			iCurrentVoice = GetFirstFemaleSlot();
-		else if (iCurrentVoice < GetFirstFemaleSlot())
-			iCurrentVoice = GetLastFemaleSlot();
-	}
-}
-
-
 void IncrementVoice( void )
 {
-	INT32 iIMPIndex = -1;
-	INT32 i;
+	UINT32 uiSize = (UINT32)gIMPVoice.size();
+	if ( uiSize == 0 )
+		return;
 
-	iCurrentVoice++;
-	FixVoiceRange();
-
-	// Just to be safe (so we use no endless loop)
-	for (i = 0; i < CountIMPSlots(); i++)
+	// travnik: loop over all voicesets defined in IMPVoices.xml, skipping those that do not fit the gender
+	for ( UINT32 i = 1; i <= uiSize; ++i )
 	{
-		if (IsIMPSlotFree(gGameExternalOptions.iaIMPSlots[iCurrentVoice]) == TRUE)
-		{
-			// This is a free imp index
-			iIMPIndex = gGameExternalOptions.iaIMPSlots[iCurrentVoice];
-			break;
-		}
+		UINT32 uiIndex = ( iCurrentVoice + i ) % uiSize;
 
-		iCurrentVoice++;
-		FixVoiceRange();
+		if ( VoiceFitsGender( uiIndex ) )
+		{
+			iCurrentVoice = uiIndex;
+			return;
+		}
 	}
 }
 
 
 void DecrementVoice( void )
 {
-		INT32 iIMPIndex = -1;
-	INT32 i;
+	UINT32 uiSize = (UINT32)gIMPVoice.size();
+	if ( uiSize == 0 )
+		return;
 
-	iCurrentVoice--;
-	FixVoiceRange();
-
-	// Just to be safe (so we use no endless loop)
-	for (i = 0; i < CountIMPSlots(); i++)
+	// travnik: loop over all voicesets defined in IMPVoices.xml, skipping those that do not fit the gender
+	for ( UINT32 i = 1; i <= uiSize; ++i )
 	{
-		if (IsIMPSlotFree(gGameExternalOptions.iaIMPSlots[iCurrentVoice]) == TRUE)
-		{
-			// This is the free imp index
-			iIMPIndex = gGameExternalOptions.iaIMPSlots[iCurrentVoice];
-			break;
-		}
+		// cast to INT32 to correctly wrap around at index 0
+		UINT32 uiIndex = ( (INT32)uiSize + iCurrentVoice - (INT32)i ) % uiSize;
 
-		iCurrentVoice--;
-		FixVoiceRange();
+		if ( VoiceFitsGender( uiIndex ) )
+		{
+			iCurrentVoice = uiIndex;
+			return;
+		}
 	}
 }
 
@@ -372,11 +349,12 @@ void BtnIMPVoicesDoneCallback( GUI_BUTTON *btn, INT32 reason )
 
 			// Changed to continue to color choosing - SANDRO
 			iCurrentImpPage = IMP_COLOR_CHOICE_PAGE;
-			// Following part removed
 
-			// set voice id, to grab character slot
-			// WDS: Allow flexible numbers of IMPs of each sex
-			LaptopSaveInfo.iIMPIndex = gGameExternalOptions.iaIMPSlots[iCurrentVoice];
+			// travnik: the voiceset is no longer tied to the character slot, it is stored in the profile
+			if ( iCurrentVoice >= 0 && iCurrentVoice < (INT32)gIMPVoice.size() )
+				iSelectedIMPVoiceSet = gIMPVoice[iCurrentVoice].voiceset;
+			else
+				iSelectedIMPVoiceSet = 0;
 
 			// set button up image	pending
 			fButtonPendingFlag = TRUE;
@@ -400,7 +378,11 @@ UINT32 PlayVoice( void )
 {
 	CHAR8 zFileName[164];
 
-	INT32 iSlot = gGameExternalOptions.iaIMPSlots[iCurrentVoice];
+	// travnik: play the sample of the voiceset defined in IMPVoices.xml
+	UINT16 iSlot = 0;
+	if ( iCurrentVoice >= 0 && iCurrentVoice < (INT32)gIMPVoice.size() )
+		iSlot = gIMPVoice[iCurrentVoice].voiceset;
+
 	Assert( (iSlot >= 0) && (iSlot <= 999) );
 
 	sprintf( zFileName, "Speech\\%03d_001.ogg", iSlot );
@@ -449,11 +431,14 @@ void IMPPortraitRegionButtonCallback( MOUSE_REGION * pRegion, INT32 iReason )
 
 void RenderVoiceIndex( void )
 {
-	CHAR16 sString[32];
+	CHAR16 sString[100];
 	INT16 sX, sY;
 
-	// render the voice index value on the the blank portrait
-	swprintf( sString, L"%s %d", pIMPVoicesStrings[0], GetVoiceCountFromVoiceSlot( iCurrentVoice ) );
+	// travnik: render the name of the voiceset instead of a slot number
+	if ( iCurrentVoice >= 0 && iCurrentVoice < (INT32)gIMPVoice.size() )
+		swprintf( sString, L"%s", gIMPVoice[iCurrentVoice].szVoiceSetName );
+	else
+		swprintf( sString, L"" );
 
 	FindFontCenterCoordinates( 290 + LAPTOP_UL_X, 0, 100, 0, sString, FONT12ARIAL, &sX, &sY );
 

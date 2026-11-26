@@ -23,7 +23,8 @@ struct
 }
 typedef impVoiceParseData;
 
-IMP_VOICESET gIMPVoice[NUM_IMP_VOICESETS];
+// Flugente: the number of possible IMP voices is no longer limited
+std::vector<IMP_VOICESET> gIMPVoice;
 
 static void XMLCALL
 impVoicesStartElementHandle( void *userData, const XML_Char *name, const XML_Char **atts )
@@ -87,10 +88,9 @@ impVoicesEndElementHandle( void *userData, const XML_Char *name )
 		{
 			pData->curElement = ELEMENT_LIST;
 
-			wcscpy( gIMPVoice[pData->curIndex].szVoiceSetName, pData->curIMPVoice.szVoiceSetName );
-			gIMPVoice[pData->curIndex].voiceset = pData->curIMPVoice.voiceset;
-			gIMPVoice[pData->curIndex].bSex = pData->curIMPVoice.bSex;
-			gIMPVoice[pData->curIndex].exists = TRUE;
+			pData->curIMPVoice.exists = TRUE;
+
+			gIMPVoice.push_back( pData->curIMPVoice );
 
 			++pData->curIndex;
 		}
@@ -129,7 +129,7 @@ BOOLEAN ReadInIMPVoices( STR fileName )
 	pData.curIndex = 0;
 
 	DebugMsg( TOPIC_JA2, DBG_LEVEL_3, "Loading IMPVoices.xml" );
-	
+
 	// Open file
 	hFile = FileOpen( fileName, FILE_ACCESS_READ, FALSE );
 	if ( !hFile )

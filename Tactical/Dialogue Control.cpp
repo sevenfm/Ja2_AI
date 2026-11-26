@@ -2097,8 +2097,14 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 {
 	static CHAR8 zFileName[164];
 	static CHAR8 zFileNameExists[164];
-	UINT8		ubFileNumID;
+	UINT32		ubFileNumID;
 	BOOLEAN isBartenderSantos = FALSE;
+
+	// travnik: the voice set is no longer tied to the profile id (see IMPVoices.xml).
+	// 0 means "not set" -> fall back to the legacy behaviour (voice == profile id)
+	UINT32 usVoiceSet = gMercProfiles[ubCharacterNum].GetVoiceIndex();
+	if ( usVoiceSet == 0 )
+		usVoiceSet = ubCharacterNum;
 
 	// Are we an NPC OR an RPC that has not been recruited?
 	// ATE: Did the || clause here to allow ANY RPC that talks while the talking menu is up to use an npc quote file
@@ -2118,10 +2124,10 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 //			#else
 			if ( gSoundProfileValue[ubCharacterNum].EnabledSound == TRUE )
 			{
-				sprintf( zFileName,"NPC_SPEECH\\d_%03d_%03d.ogg",ubCharacterNum,usQuoteNum );
+				sprintf( zFileName,"NPC_SPEECH\\d_%03d_%03d.ogg",usVoiceSet,usQuoteNum );
 				if ( !FileExists( zFileName ) )
 				{
-					sprintf( zFileName,"NPC_SPEECH\\d_%03d_%03d.wav",ubCharacterNum,usQuoteNum );
+					sprintf( zFileName,"NPC_SPEECH\\d_%03d_%03d.wav",usVoiceSet,usQuoteNum );
 				}
 			}
 //			#endif
@@ -2129,7 +2135,7 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 		else
 		{
 			// assume EDT files are in EDT directory on HARD DRIVE
-			sprintf( zFileName,"NPCDATA\\d_%03d.EDT", ubCharacterNum );
+			sprintf( zFileName,"NPCDATA\\d_%03d.EDT", usVoiceSet );
 		}
 	}
 	//else if ( ubCharacterNum >= FIRST_RPC && ubCharacterNum < GASTON &&
@@ -2141,7 +2147,7 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 			)
 
 	{
-		ubFileNumID = ubCharacterNum;
+		ubFileNumID = usVoiceSet;
 		
 		if ( ubCharacterNum == HERVE )
 		{
@@ -2304,34 +2310,34 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 				{
 			
 					#ifdef JA2UB
-					sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",ubCharacterNum,usQuoteNum );
+					sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",usVoiceSet,usQuoteNum );
 					if ( !FileExists( zFileName ) )
 					{
-						sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",ubCharacterNum,usQuoteNum );
-					}					
+						sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",usVoiceSet,usQuoteNum );
+					}
 					#else
-					sprintf( zFileName,"SPEECH\\r_%03d_%03d.ogg",ubCharacterNum,usQuoteNum );
+					sprintf( zFileName,"SPEECH\\r_%03d_%03d.ogg",usVoiceSet,usQuoteNum );
 					#endif
 					if ( !FileExists( zFileName ) )
 					{
 					//inshy: fix for UB-1.13 version only
 					#ifdef JA2UB
-					sprintf( zFileName,"SPEECH\\%03d_%03d.wav",ubCharacterNum,usQuoteNum );
-						
+					sprintf( zFileName,"SPEECH\\%03d_%03d.wav",usVoiceSet,usQuoteNum );
+
 					if ( !FileExists( zFileName ) )
 					{
-						sprintf( zFileName,"SPEECH\\%03d_%03d.wav",ubCharacterNum,usQuoteNum );
-					}	
+						sprintf( zFileName,"SPEECH\\%03d_%03d.wav",usVoiceSet,usQuoteNum );
+					}
 					#else
-						sprintf( zFileName,"SPEECH\\r_%03d_%03d.wav",ubCharacterNum,usQuoteNum );
+						sprintf( zFileName,"SPEECH\\r_%03d_%03d.wav",usVoiceSet,usQuoteNum );
 					#endif
 					//<SB> Also check for Russian Gold sound files (identical to international ones)
 						if(! FileExists( zFileName ) )
 						{
-							sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",ubCharacterNum,usQuoteNum );
+							sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",usVoiceSet,usQuoteNum );
 							if ( !FileExists( zFileName ) )
 							{
-								sprintf( zFileName,"SPEECH\\%03d_%03d.wav",ubCharacterNum,usQuoteNum );
+								sprintf( zFileName,"SPEECH\\%03d_%03d.wav",usVoiceSet,usQuoteNum );
 							}
 						}
 //</SB>
@@ -2344,10 +2350,10 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 				if ( gSoundProfileValue[ubCharacterNum].EnabledSound == TRUE )
 				{
 				// build name of wav file (characternum + quotenum)
-				sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",ubCharacterNum,usQuoteNum );
+				sprintf( zFileName,"SPEECH\\%03d_%03d.ogg",usVoiceSet,usQuoteNum );
 				if ( !FileExists( zFileName ) )
 				{
-					sprintf( zFileName,"SPEECH\\%03d_%03d.wav",ubCharacterNum,usQuoteNum );
+					sprintf( zFileName,"SPEECH\\%03d_%03d.wav",usVoiceSet,usQuoteNum );
 				}
 				}
 			}
@@ -2355,7 +2361,7 @@ CHAR8 *GetDialogueDataFilename( UINT8 ubCharacterNum, UINT16 usQuoteNum, BOOLEAN
 		else
 		{
 			// assume EDT files are in EDT directory on HARD DRIVE
-			sprintf( zFileName,"MERCEDT\\%03d.EDT", ubCharacterNum );
+			sprintf( zFileName,"MERCEDT\\%03d.EDT", usVoiceSet );
 		}
 	}
 
@@ -2369,11 +2375,16 @@ CHAR8 *GetSnitchDialogueDataFilename(UINT8 ubCharacterNum, UINT16 usQuoteNum, BO
 	static CHAR8 zFileNameExists[164];
 	//UINT8		ubFileNumID;
 
+	// travnik: the voice set is no longer tied to the profile id (see IMPVoices.xml).
+	// 0 means "not set" -> fall back to the legacy behaviour (voice == profile id)
+	UINT32 usVoiceSet = gMercProfiles[ubCharacterNum].GetVoiceIndex();
+	if ( usVoiceSet == 0 )
+		usVoiceSet = ubCharacterNum;
 
 	if (ubVariant == 0)
-		sprintf(zFileNameNoExtension, "%03d_%03d", ubCharacterNum, usQuoteNum);
+		sprintf(zFileNameNoExtension, "%03d_%03d", usVoiceSet, usQuoteNum);
 	else
-		sprintf(zFileNameNoExtension, "%03d_%03d_%d", ubCharacterNum, usQuoteNum, ubVariant + 1);
+		sprintf(zFileNameNoExtension, "%03d_%03d_%d", usVoiceSet, usQuoteNum, ubVariant + 1);
 
 	if (fWavFile)
 	{
@@ -2414,9 +2425,9 @@ CHAR8 *GetSnitchDialogueDataFilename(UINT8 ubCharacterNum, UINT16 usQuoteNum, BO
 	{
 		// assume EDT files are in EDT directory on HARD DRIVE
 		if (fName)
-			sprintf(zFileName, "MERCEDT\\SNITCH\\NAMES\\%03d.EDT", ubCharacterNum);
+			sprintf(zFileName, "MERCEDT\\SNITCH\\NAMES\\%03d.EDT", usVoiceSet);
 		else
-			sprintf(zFileName, "MERCEDT\\SNITCH\\%03d.EDT", ubCharacterNum);
+			sprintf(zFileName, "MERCEDT\\SNITCH\\%03d.EDT", usVoiceSet);
 	}
 
 	return(zFileName);

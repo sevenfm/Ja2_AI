@@ -970,7 +970,7 @@ public:
 	UINT32	uiPrecedentQuoteSaid;
 	UINT32	uiProfileChecksum;
 //	INT16		sPreCombatGridNo;
-	INT16		_old_sPreCombatGridNo;		// WANNE - BMP: DONE! (Structure)
+	INT16		_old_sPreCombatGridNo;		// WANNE - BMP: DONE! (Structure) - legacy field, re-used as storage for the IMP voice set index (see docs/wiki_imp_voice_selection.md, GetVoiceIndex/SetVoiceIndex)
 	UINT8		ubTimeTillNextHatedComplaint;
 	UINT8		ubSuspiciousDeath;
 
@@ -1002,6 +1002,12 @@ public:
 
 	// anv: simplified ubExposedInSector, hours until snitch can go undercover after exposition
 	UINT8 ubSnitchExposedCooldown;
+
+	// travnik: IMP voice set index. The voiceset is no longer tied to the profile slot (see IMPVoices.xml).
+	// Stored in the legacy POD field _old_sPreCombatGridNo, so the savegame format stays unchanged.
+	// 0 means "not set" -> the profile id is used as the voice set (fallback for characters created before this feature).
+	UINT32 GetVoiceIndex( ) const { return (UINT32)_old_sPreCombatGridNo; }
+	void   SetVoiceIndex( UINT32 aVoiceIndex ) { _old_sPreCombatGridNo = (INT16)aVoiceIndex; }
 
 }; // MERCPROFILESTRUCT;
 
