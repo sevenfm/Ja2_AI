@@ -125,6 +125,15 @@
     <ClInclude Include="World Items.h" />
     <ClInclude Include="XML.h" />
     <ClInclude Include="XML_Profiles.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLoot.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootTypes.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootScanner.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootLua.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootSpawner.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootXml.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootSectorContext.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootRandomItems.h" />
+    <ClInclude Include="..\Feature\ContainerLoot\ContainerLootSecurity.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Air Raid.cpp" />
@@ -276,6 +285,14 @@
     <ClCompile Include="XML_Taunts.cpp" />
     <ClCompile Include="XML_TonyInventory.cpp" />
     <ClCompile Include="XML_Vehicles.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLoot.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootScanner.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootLua.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootSpawner.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootXml.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootSectorContext.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootRandomItems.cpp" />
+    <ClCompile Include="..\Feature\ContainerLoot\ContainerLootSecurity.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{433FBCC4-F612-489C-AA28-CCD6CF27D80C}</ProjectGuid>

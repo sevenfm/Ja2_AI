@@ -1573,6 +1573,19 @@ typedef struct
 	// Lua 1.13 port: can extra civilians be created via LUA?
 	BOOLEAN bExtraCivilians;
 
+	// travnik: ContainerLoot total spawn cap (Ja2_Options.ini)
+	INT32 iContainerLootMaxSpawns;
+
+	// travnik: ContainerLoot global balance coefficients (Ja2_Options.ini)
+	FLOAT fContainerLootProgressWeight;
+	FLOAT fContainerLootSectorCoolnessWeight;
+	FLOAT fContainerLootMilitaryTypeBonus;
+	FLOAT fContainerLootDifficultyBonus;
+	FLOAT fContainerLootProgressTierCapBonus;
+	FLOAT fContainerLootMaxItemCoolnessBonus;
+	FLOAT fContainerLootMoneyProgressScale;
+	FLOAT fContainerLootEmptyChanceScale;
+
 } GAME_EXTERNAL_OPTIONS;
 
 typedef struct

@@ -39,6 +39,7 @@
 #endif
 #include "fresh_header.h"
 #include "connect.h"
+#include "Feature/ContainerLoot/ContainerLoot.h"
 
 #ifdef JA2UB
 #include "Explosion Control.h"
@@ -1090,6 +1091,9 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT32 sGridNo, STRUCTURE *p
 		}
 		else
 		{
+			// travnik: перед сменой не-дверной openable-структуры принудительно
+			// показываем пул, чтобы лут не остался в HIDDEN_IN_OBJECT.
+			ContainerLoot::OnContainerOpening( pSoldier, sGridNo, pStructure );
 			HandleStructChangeFromGridNo( pSoldier, sGridNo );
 		}
 	}

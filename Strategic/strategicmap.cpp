@@ -132,6 +132,8 @@
 #include "LuaInitNPCs.h"
 #include "Luaglobal.h"
 
+#include "Feature/ContainerLoot/ContainerLoot.h"
+
 #include "sgp_logger.h"
 
 // travnik: нужен для сбора текста диагностического ассерта в AssertAllSoldiersPlacedInSector()
@@ -3095,6 +3097,10 @@ extern void SetLastTimePlayerWasInSector();
 // @calls SetLastTimePlayerWasInSector
 BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 {
+#if CONTAINER_LOOT_SCAN_ALL_MAPS
+	ContainerLoot::ScanAllMapsOnce();
+#endif
+
 	INT32 i;
 	UNDERGROUND_SECTORINFO *pNode = NULL;
 	CHAR8 bFilename[ 50 ];
@@ -3257,6 +3263,16 @@ BOOLEAN EnterSector( INT16 sSectorX, INT16 sSectorY , INT8 bSectorZ )
 	//Update LastTimePlayerWasInSector
 	SetLastTimePlayerWasInSector();
 	
+	// travnik: этап 0-1 — аудит карты; на этапе 4 здесь появится генерация лута.
+	// Вызов находится до сохранения temp-файла, чтобы будущие предметы попали в сектор.
+	ContainerLoot::Trace("EnterSector: reached ContainerLoot hook");
+#if CONTAINER_LOOT_ENABLED
+	if (!(gTacticalStatus.uiFlags & LOADING_SAVED_GAME))
+	{
+		ContainerLoot::ProcessSector(sSectorX, sSectorY, (INT8)bSectorZ);
+	}
+#endif
+
 	//Save to tempfile
 	SaveWorldItemsToTempItemFile( sSectorX, sSectorY, (INT8)bSectorZ, guiNumWorldItems, gWorldItems );
 

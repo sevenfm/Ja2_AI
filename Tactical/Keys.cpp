@@ -951,8 +951,24 @@ void SaveDoorTableToMap(HWFILE fp, FLOAT dMajorMapVersion, UINT8 ubMinorMapVersi
 //information is overwritten.
 void AddDoorInfoToTable( DOOR *pDoor )
 {
-	Assert(DoorTable);
-	CHECKV(DoorTable);
+	const UINT8 DOOR_TABLE_GROWTH = 10;
+	const UINT8 DOOR_TABLE_MAX = 255;
+
+	// travnik: Container locks can be the first DoorTable entry in a sector.
+	if( !DoorTable )
+	{
+		gubNumDoors = 0;
+		gubMaxDoors = DOOR_TABLE_GROWTH;
+		DoorTable = (DOOR*)MemAlloc( sizeof( DOOR ) * gubMaxDoors );
+		if( !DoorTable )
+			return;
+	}
+
+	if( gubNumDoors >= DOOR_TABLE_MAX )
+	{
+		DebugMsg( TOPIC_JA2, DBG_LEVEL_3, String("AddDoorInfoToTable: door table is full") );
+		return;
+	}
 
 	INT32 i;
 	for( i = 0; i < gubNumDoors; i++ )
@@ -972,9 +988,16 @@ void AddDoorInfoToTable( DOOR *pDoor )
 	else
 	{ //we need to allocate more memory, so add ten more slots.
 		DOOR *NewDoorTable;
-		gubMaxDoors += 10;
+		if( gubMaxDoors > DOOR_TABLE_MAX - DOOR_TABLE_GROWTH )
+		{
+			DebugMsg( TOPIC_JA2, DBG_LEVEL_3, String("AddDoorInfoToTable: cannot grow door table") );
+			return;
+		}
+		gubMaxDoors += DOOR_TABLE_GROWTH;
 		//Allocate new table with max+10 doors.
 		NewDoorTable = (DOOR*)MemAlloc( sizeof( DOOR ) * gubMaxDoors );
+		if( !NewDoorTable )
+			return;
 		//Copy contents of existing door table to new door table.
 		memcpy( NewDoorTable, DoorTable, sizeof( DOOR ) * gubNumDoors );
 		//Deallocate the existing door table (possible to not have one).
