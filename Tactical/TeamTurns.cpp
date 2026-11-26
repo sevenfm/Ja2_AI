@@ -1512,7 +1512,10 @@ BOOLEAN StandardInterruptConditionsMet( SOLDIERTYPE * pSoldier, UINT8 ubOpponent
 	SOLDIERTYPE *		pOpponent;	
 
 	// no interrupt by hearing in turnbased combat
-	if ( (gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT) && !(gubSightFlags & SIGHT_INTERRUPT) )
+	// door_interrupt: allow sight interrupt evaluation during AllTeamsLookForAll(TRUE)
+	if ( (gTacticalStatus.uiFlags & TURNBASED) && (gTacticalStatus.uiFlags & INCOMBAT) &&
+		!(gubSightFlags & SIGHT_INTERRUPT) &&
+		(gubBestToMakeSightingSize != BEST_SIGHTING_ARRAY_SIZE_ALL_TEAMS_LOOK_FOR_ALL) )
 	{
 		return FALSE;
 	}
@@ -1629,27 +1632,31 @@ BOOLEAN StandardInterruptConditionsMet( SOLDIERTYPE * pSoldier, UINT8 ubOpponent
 		// if the interrupted opponent is not the selected character, then the only
 		// people eligible to win an interrupt are those on the SAME SIDE AS
 		// the selected character, ie. his friends...
-		if ( pOpponent->bTeam == gbPlayerNum )
+		// door_interrupt: during AllTeamsLookForAll(TRUE), any soldier on the active team may be newly exposed or contest interrupts
+		if ( gubBestToMakeSightingSize != BEST_SIGHTING_ARRAY_SIZE_ALL_TEAMS_LOOK_FOR_ALL )
 		{
-			if ((ubOpponentID != gusSelectedSoldier) && (pSoldier->bSide != Menptr[gusSelectedSoldier].bSide))
+			if ( pOpponent->bTeam == gbPlayerNum )
 			{
-				return FALSE;
-			}
-		}
-		else
-		{
-			if (!is_networked) {
-				if ( !(pOpponent->flags.uiStatusFlags & SOLDIER_UNDERAICONTROL) && (pSoldier->bSide != pOpponent->bSide))
-				{
-					return FALSE;
-				}
-			} else {
-				if ( !(is_client || (pOpponent->flags.uiStatusFlags & SOLDIER_UNDERAICONTROL)) && (pSoldier->bSide != pOpponent->bSide))
+				if ((ubOpponentID != gusSelectedSoldier) && (pSoldier->bSide != Menptr[gusSelectedSoldier].bSide))
 				{
 					return FALSE;
 				}
 			}
+			else
+			{
+				if (!is_networked) {
+					if ( !(pOpponent->flags.uiStatusFlags & SOLDIER_UNDERAICONTROL) && (pSoldier->bSide != pOpponent->bSide))
+					{
+						return FALSE;
+					}
+				} else {
+					if ( !(is_client || (pOpponent->flags.uiStatusFlags & SOLDIER_UNDERAICONTROL)) && (pSoldier->bSide != pOpponent->bSide))
+					{
+						return FALSE;
+					}
+				}
 
+			}
 		}
 
 		// an non-active soldier can't interrupt a soldier who is also non-active!

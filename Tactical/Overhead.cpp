@@ -5808,10 +5808,50 @@ BOOLEAN NotDeafTeamMemberNear(INT8 bTeam, INT32 sGridNo, INT32 iRange)
 	return(FALSE);
 }
 
+extern UINT8 CalcEffVolume(SOLDIERTYPE* pSoldier, INT32 sGridNo, INT8 bLevel, UINT8 ubNoiseType, UINT8 ubBaseVolume, UINT8 ubTerrType1, UINT8 ubTerrType2);
+
+BOOLEAN FriendCanHearNoise(INT8 bTeam, INT32 sGridNo, INT8 bLevel, UINT8 ubBaseVolume, UINT8 ubNoiseType)
+{
+    CHECKF(!TileIsOutOfBounds(sGridNo));
+
+	UINT8 bLoop;
+	SOLDIERTYPE* pSoldier;
+    UINT8 ubSourceTerrType = gpWorldLevelData[sGridNo].ubTerrainID;
+
+	for (bLoop = gTacticalStatus.Team[bTeam].bFirstID, pSoldier = MercPtrs[bLoop]; bLoop <= gTacticalStatus.Team[bTeam].bLastID; ++bLoop, pSoldier++)
+	{
+		if (pSoldier->bActive &&
+			pSoldier->bInSector &&
+			pSoldier->stats.bLife >= OKLIFE &&
+			!pSoldier->IsGassed() &&
+			pSoldier->bDeafenedCounter == 0)
+		{
+			if (CalcEffVolume(pSoldier, sGridNo, bLevel, ubNoiseType, ubBaseVolume, pSoldier->bOverTerrainType, ubSourceTerrType) > 0)
+			{
+                return TRUE;
+			}
+		}
+	}
+
+	return(FALSE);
+}
+
 BOOLEAN PlayerCanHearNoise(SOLDIERTYPE *pSoldier)
 {
 	if (pSoldier &&
-		(pSoldier->bVisible == TRUE || NotDeafTeamMemberNear(gbPlayerNum, pSoldier->sGridNo, TACTICAL_RANGE / 2) || NightLight() && !InTurnbasedCombat() && NotDeafTeamMemberNear(gbPlayerNum, pSoldier->sGridNo, TACTICAL_RANGE)))
+		//(pSoldier->bVisible == TRUE || NotDeafTeamMemberNear(gbPlayerNum, pSoldier->sGridNo, TACTICAL_RANGE / 2) || NightLight() && !InTurnbasedCombat() && NotDeafTeamMemberNear(gbPlayerNum, pSoldier->sGridNo, TACTICAL_RANGE)))
+		(pSoldier->bVisible == TRUE || NotDeafTeamMemberNear(gbPlayerNum, pSoldier->sGridNo, TACTICAL_RANGE / 2)))
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOLEAN PlayerCanHearVoiceTaunt(SOLDIERTYPE* pSoldier, UINT8 ubVolume)
+{
+    // check if player merc or milita can actually hear the voice taunt
+	if (pSoldier &&
+		(FriendCanHearNoise(gbPlayerNum, pSoldier->sGridNo, pSoldier->pathing.bLevel, ubVolume, NOISE_VOICE) ||
+        gGameExternalOptions.bWeSeeWhatMilitiaSeesAndViceVersa && FriendCanHearNoise(MILITIA_TEAM, pSoldier->sGridNo, pSoldier->pathing.bLevel, ubVolume, NOISE_VOICE)))
 		return TRUE;
 
 	return FALSE;

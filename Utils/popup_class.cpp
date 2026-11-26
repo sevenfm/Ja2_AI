@@ -1649,11 +1649,17 @@ void POPUP::DetermineBoxPositions( void )
 
 	// r8459
 	// Flugente: fix obvious errors
+	if ( boxWidth > 0 && boxWidth <= SCREEN_WIDTH )
+		pPoint.iX = min( pPoint.iX, (INT32)(SCREEN_WIDTH - boxWidth) );
+	else
+		pPoint.iX = min( pPoint.iX, (INT32)SCREEN_WIDTH );
 	pPoint.iX = max( pPoint.iX, 0 );
-	pPoint.iX = min( pPoint.iX, SCREEN_WIDTH );
 
+	if ( boxHeight > 0 && boxHeight <= SCREEN_HEIGHT )
+		pPoint.iY = min( pPoint.iY, (INT32)(SCREEN_HEIGHT - boxHeight) );
+	else
+		pPoint.iY = min( pPoint.iY, (INT32)SCREEN_HEIGHT );
 	pPoint.iY = max( pPoint.iY, 0 );
-	pPoint.iY = min( pPoint.iY, SCREEN_HEIGHT );
 
 	// set all the other positions to match this one
 	this->Position = pPoint;
@@ -1692,12 +1698,16 @@ void POPUP::CheckAndUpdateTacticalPopUpPositions( void )
 	if( this->BoxesX + pDimensions2.iRight  >= SCREEN_WIDTH ) 
 	{
 		this->BoxesX = ( INT16 ) ( SCREEN_WIDTH - 1 - ( pDimensions2.iRight  ) );
+		if ( this->BoxesX < 0 )
+			this->BoxesX = 0;
 		SetRenderFlags( RENDER_FLAG_FULL );
 	}
 
 	if( this->BoxesY + pDimensions2.iBottom  >= SCREEN_HEIGHT-120 )
 	{
 		this->BoxesY = ( INT16 )( SCREEN_HEIGHT - 121 - ( pDimensions2.iBottom  ) );
+		if ( this->BoxesY < 0 )
+			this->BoxesY = 0;
 		SetRenderFlags( RENDER_FLAG_FULL );
 	}
 

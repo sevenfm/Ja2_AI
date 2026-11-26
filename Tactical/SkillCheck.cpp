@@ -701,8 +701,7 @@ INT32 SkillCheck(SOLDIERTYPE * pSoldier, INT8 bReason, INT8 bChanceMod, INT32 *p
 			break;
 		case NOTICE_DART_CHECK:
 			// only a max of ~20% chance
-			// sevenfm: add difficulty based bonus
-			iSkill = EffectiveWisdom(pSoldier) / 10 + EffectiveExpLevel(pSoldier, TRUE) + SoldierDifficultyLevel(pSoldier) * 5;
+			iSkill = EffectiveWisdom(pSoldier) / 10 + EffectiveExpLevel(pSoldier, TRUE);
 			break;
 		case LIE_TO_QUEEN_CHECK:
 			// competitive check vs the queen's wisdom and leadership... poor guy!

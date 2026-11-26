@@ -2108,7 +2108,8 @@ public:
 
 	void		AddDrugValues(UINT8 ubDrugType, UINT8 ubEffect, UINT8 ubTravelRate, UINT8 ubSideEffect );
 
-	void		HandleFlashLights();
+	// door_interrupt: allow updating flashlights without premature single-soldier HandleSight
+	void		HandleFlashLights( BOOLEAN fUpdateSight = TRUE );
 	bool		AddBestFlashLight();
 	UINT8		GetBestEquippedFlashLightRange();
 

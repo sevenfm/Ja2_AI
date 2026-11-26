@@ -2062,7 +2062,7 @@ void ShowTauntPopupBox( SOLDIERTYPE *pCiv, STR16 gzTauntQuote )
 
 STR VoiceTauntFileName[] =
 {
-	"FIRE_GUN",
+	"FIRE_GUN",			//+
 	"FIRE_LAUNCHER",
 	"ATTACK_BLADE",
 	"ATTACK_HTH",
@@ -2076,8 +2076,8 @@ STR VoiceTauntFileName[] =
 	"STEAL",
 
 	// AI routines
-	"CHARGE_BLADE",
-	"CHARGE_HTH",
+	"CHARGE_BLADE",		//-
+	"CHARGE_HTH",		//-
 	"RUN_AWAY",
 	"SEEK_NOISE",
 	"ALERT",
@@ -2115,10 +2115,10 @@ STR VoiceTauntFileName[] =
 	// hit_xxx
 	"HIT",
 	"HIT_GUNFIRE",
-	"HIT_BLADE",
-	"HIT_HTH",
+	"HIT_BLADE",			//-
+	"HIT_HTH",				//-
 	"HIT_EXPLOSION",
-	"HIT_THROWING_KNIFE",
+	"HIT_THROWING_KNIFE",	//-
 
 	// kill_xxx
 	"KILL",
@@ -2129,11 +2129,11 @@ STR VoiceTauntFileName[] =
 	"HEAD_POP",
 
 	// miss_xxx
-	"MISS",
-	"MISS_GUNFIRE",
-	"TAUNT_MISS_BLADE",
-	"MISS_HTH",
-	"MISS_THROWING_KNIFE",
+	"MISS",					//-
+	"MISS_GUNFIRE",			//-
+	"TAUNT_MISS_BLADE",		//-
+	"MISS_HTH",				//-
+	"MISS_THROWING_KNIFE",	//-
 
 	// ripostes to merc quotes
 	"RIPOSTE"
@@ -2148,6 +2148,7 @@ BOOLEAN PlayVoiceTaunt(SOLDIERTYPE *pCiv, TAUNTTYPE iTauntType, SOLDIERTYPE *pTa
 	CHAR8 buf[1024];
 	INT32 iRandomTaunt = 0;
 	UINT8 ubExtraTaunts = 0;
+	BOOLEAN fRadioTaunt = FALSE;
 
 	CHECKF(pCiv);
 
@@ -2177,7 +2178,22 @@ BOOLEAN PlayVoiceTaunt(SOLDIERTYPE *pCiv, TAUNTTYPE iTauntType, SOLDIERTYPE *pTa
 		return FALSE;
 	}
 
-	strcpy(filename, "VoiceTaunts");
+	// sevenfm: determine if we should use radio taunt now
+	if (gTauntsSettings.fTauntRadio && 
+		(!gTauntsSettings.fTauntMakeNoise && !PlayerCanHearNoise(pCiv) ||
+			gTauntsSettings.fTauntMakeNoise && (!PlayerCanHearNoise(pCiv) || !PlayerCanHearVoiceTaunt(pCiv, (UINT8)gTauntsSettings.sVolume))) &&
+		(!gTauntsSettings.fTauntRadioListen || TeamHasListeningRadioOperator(gbPlayerNum)))
+	{
+		if (gTauntsSettings.fTauntVoiceShowInfo)
+			ScreenMsg(FONT_ORANGE, MSG_INTERFACE, L"Radio taunt");
+
+		fRadioTaunt = TRUE;
+	}
+
+	if(fRadioTaunt)
+		strcpy(filename, "RadioTaunts");
+	else 
+		strcpy(filename, "VoiceTaunts");
 
 	// prepare team
 	if (pCiv->bTeam == ENEMY_TEAM)
@@ -2223,7 +2239,10 @@ BOOLEAN PlayVoiceTaunt(SOLDIERTYPE *pCiv, TAUNTTYPE iTauntType, SOLDIERTYPE *pTa
 	for (ubVoiceCount = 1; ubVoiceCount <= 100; ubVoiceCount++)
 	{
 		sprintf(buf, "%s%02d", filename, ubVoiceCount);
-		strcat(buf, "\\alert.ogg");
+		if (fRadioTaunt)
+			strcat(buf, "\\alert_radio.ogg");
+		else
+			strcat(buf, "\\alert.ogg");
 
 		// check that folder exists
 		if (!FileExists(buf))
@@ -2283,6 +2302,19 @@ BOOLEAN PlayVoiceTaunt(SOLDIERTYPE *pCiv, TAUNTTYPE iTauntType, SOLDIERTYPE *pTa
 		strcat(filename, buf);
 	}
 
+	if(fRadioTaunt)
+	{
+		if (SectorJammed())
+		{
+			if(Random(2))
+				strcat(filename, "_jam1");
+			else
+				strcat(filename, "_jam2");
+		}
+		else
+			strcat(filename, "_radio");
+	}
+
 	strcat(filename, ".ogg");
 
 	// log taunt file names
@@ -2316,8 +2348,14 @@ BOOLEAN PlayVoiceTaunt(SOLDIERTYPE *pCiv, TAUNTTYPE iTauntType, SOLDIERTYPE *pTa
 		return FALSE;
 	}
 
-	if (gTauntsSettings.fTauntMakeNoise == TRUE)
+	if (gTauntsSettings.fTauntMakeNoise == TRUE && !fRadioTaunt)
 	{
+		if (gTauntsSettings.fTauntVoiceShowInfo)
+		{
+			ScreenMsg(FONT_YELLOW, MSG_INTERFACE, L"play noise taunt with volume %d", (UINT8)gTauntsSettings.sVolume);
+			BeginMultiPurposeLocator(pCiv->sGridNo, pCiv->pathing.bLevel, FALSE);
+		}
+
 		// convert char to char16
 		mbstowcs(noise, filename, strlen(filename) + 1);
 		// use filename as taunt text, play sound later
@@ -2325,8 +2363,29 @@ BOOLEAN PlayVoiceTaunt(SOLDIERTYPE *pCiv, TAUNTTYPE iTauntType, SOLDIERTYPE *pTa
 	}
 	else
 	{
+		INT8 bVolume = HIGHVOLUME;
+
+		if (fRadioTaunt)
+		{
+			bVolume = MIDVOLUME;
+
+			if (gTauntsSettings.fTauntVoiceShowInfo)
+			{
+				ScreenMsg(FONT_SHADE_WHITE, MSG_INTERFACE, L"play radio taunt");
+				BeginMultiPurposeLocator(pCiv->sGridNo, pCiv->pathing.bLevel, FALSE);
+			}
+		}
+		else
+		{
+			if (gTauntsSettings.fTauntVoiceShowInfo)
+			{
+				ScreenMsg(FONT_BURGUNDY, MSG_INTERFACE, L"play normal taunt");
+				BeginMultiPurposeLocator(pCiv->sGridNo, pCiv->pathing.bLevel, FALSE);
+			}
+		}
+
 		// play voice taunt
-		if (PlayJA2SampleFromFile(filename, RATE_11025, SoundVolume(HIGHVOLUME, pCiv->sGridNo), 1, SoundDir(pCiv->sGridNo)) == SOUND_ERROR)
+		if (PlayJA2SampleFromFile(filename, RATE_11025, SoundVolume(bVolume, pCiv->sGridNo), 1, SoundDir(pCiv->sGridNo)) == SOUND_ERROR)
 		{
 			if (gTauntsSettings.fTauntVoiceShowInfo)
 				ScreenMsg(FONT_MCOLOR_LTRED, MSG_INTERFACE, L"Failed to play taunt");

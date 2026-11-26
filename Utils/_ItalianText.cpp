@@ -2378,12 +2378,12 @@ STR16 pSkillMenuStrings[] =	// TODO.Translate
 	L"Radio",
 
 	L"Militia placements",	//TODO.Translate
-	L"HE shell ($%d)",
-	L"Smoke shell ($%d)",
-	L"Tear gas shell ($%d)",
-	L"Mustard gas shell ($%d)",
-	L"Napalm shell ($%d)",
-	L"SAM site artillery",	// travnik: artillery strike via captured SAM site
+	L"HE ($%d)",
+	L"Smoke ($%d)",
+	L"Tear gas ($%d)",
+	L"Mustard gas ($%d)",
+	L"Napalm ($%d)",
+	L"SAM site",	// travnik: artillery strike via captured SAM site
 };
 
 // TODO.Translate
