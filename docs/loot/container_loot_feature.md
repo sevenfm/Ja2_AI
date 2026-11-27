@@ -4,11 +4,8 @@
 
 Связанные документы:
 
-- `docs/container_loot_configuration.md` — подробная инструкция по настройке.
-- `docs/xml_environment_loot.md` — краткий справочник по XML-схеме.
-- `docs/player_loot_guide.md` — простая страница для игроков: что, где и с каким шансом лежит.
-- `docs/analysis_container_loot.md`, `docs/analysis_container_loot_v2.md` — исторические исследования.
-- `docs/wiki_container_loot.md` — устаревшая версия, оставлена для истории.
+- `docs/loot/container_loot_configuration.md` — подробная инструкция по настройке.
+- `docs/loot/xml_environment_loot.md` — краткий справочник по XML-схеме.
 
 ---
 
@@ -163,13 +160,15 @@ if (!(gTacticalStatus.uiFlags & LOADING_SAVED_GAME))
 | `sectorCoolness` | `gCoolnessBySector[]` | Coolness сектора |
 | `weather` | `guiEnvWeather` | Погода |
 | `worldDay` | `GetWorldDay()` | День |
-| `townId` | `StrategicMap[].bNameId` | Город |
-| `threat` | количество врагов | 0..10 |
+| `townId` | `StrategicMap[].bNameId` только для `sectorZ == 0`; для подземелий `BLANK_SECTOR` | Город |
+| `threat` | Наземный гарнизон `SECTORINFO` для `sectorZ == 0`; `UNDERGROUND_SECTORINFO` для `sectorZ > 0` | 0..10 |
 | `wealth` | город, аэропорт, военная база, шахта, трафик | 0..10 |
-| `traffic` | `ubTravelRating` | 0..10 |
-| `enemyControlled` | стратегическая карта | Флаг |
+| `traffic` | `ubTravelRating` соответствующего уровня | 0..10 |
+| `enemyControlled` | `StrategicMap[].fEnemyControlled` для `sectorZ == 0`; `!SectorInfo[].fPlayer[sectorZ]` для `sectorZ > 0` | Флаг |
 | `isUnderground` | `sectorZ > 0` | Подземелье |
 | `foodSystem` | `gGameOptions.fFoodSystem` | Включена ли еда |
+
+Для `sectorZ > 0` используются `UNDERGROUND_SECTORINFO` и `SectorInfo[].fPlayer[sectorZ]`. Наземные флаги, threat и `enemyControlled` в подземный контекст не наследуются. `sectorCoolness` остаётся двумерным свойством сектора, потому что отдельного coolness по `Z` в r7609 нет.
 
 ### 7.1. Тип сектора
 
@@ -196,7 +195,7 @@ lawless
 palace
 ```
 
-Тип определяется по `SF_SAM_SITE`, `SF_MINING_SITE`, городу, tileset и подземности.
+Для наземных секторов тип определяется по `SF_SAM_SITE`, `SF_MINING_SITE`, городу и tileset. Для подземелий тип всегда `underground`, а теги строятся по tileset и `UNDERGROUND_SECTORINFO::uiFlags`.
 
 ### 7.2. Теги сектора
 
@@ -218,6 +217,8 @@ palace
 - `traffic`
 
 `isSectorAllowed()` в Lua разрешает запись, если `sectorTypes` пуст или содержит `ctx.sectorType` либо любой тег из `ctx.sectorTags`.
+
+Для подземелий теги `town`, `sam`, `mine` и `airport` не добавляются автоматически с поверхности. Если профиль должен работать только на подземном уровне, используй `sectorType = underground` или тег `underground`.
 
 ---
 
@@ -241,7 +242,17 @@ palace
 - структура входит в исключённые типы;
 - открытый openable-контейнер уже открыт.
 
-Открывающиеся скрытые объекты (например, кассы) классифицируются как `container`, если у структуры есть `STRUCTURE_OPENABLE`. Это позволяет им получать замок, даже если лут размещается как `hidden`.
+Специальные item-pool клетки Omerta, Bobby Ray и аэропорта проверяются вместе с координатами сектора, поэтому одноимённый `gridNo` в другом секторе не пропускается. Meduna drop-off в активном коде не используется и отдельно не исключается.
+
+Для hidden-тайников дополнительно проверяется доступный тайл взаимодействия:
+
+- сама клетка должна быть проходимой или рядом должна быть проходимая клетка;
+- для multi-tile структур проверяются все occupied-тайлы;
+- если доступного тайла нет, сайт пропускается, а в лог пишется `hiddenNoAccessSkipped`.
+
+Сейчас это проверка локальной проходимости, а не полной достижимости от точки входа. Тайник в изолированной комнате всё ещё может быть выбран.
+
+Скрытые объекты с `STRUCTURE_OPENABLE` получают `canOpen = TRUE`, но `canHide = FALSE`: hidden-placement им запрещён. Они могут участвовать в обычном open-placement и получать замок/ловушку.
 
 ---
 
@@ -324,10 +335,10 @@ emptyChance = clamp(emptyChance, 0, 100)
 Иначе:
 
 ```text
-rolls = random(profile.minRolls, min(profile.maxRolls, 6))
+rolls = random(profile.minRolls, min(profile.maxRolls, 12))
 ```
 
-Каждый roll выбирает одну запись из активного пула с учётом веса.
+Каждый roll выбирает одну запись из активного пула с учётом веса. Лимит `12` соответствует `MAX_ITEMS_PER_SITE` в C++; `MAX_COUNT = 10` ограничивает только количество копий одного item ID в одном стаке, а не число предметов в контейнере.
 
 ### 10.3. Пул
 
@@ -371,7 +382,7 @@ money += floor(amount * multiplier)
 | `placement` | Требование |
 |---|---|
 | `open` | `canOpen && !isOpen` |
-| `hidden` | `canHide` |
+| `hidden` | `canHide && !canOpen` и есть доступный тайл взаимодействия |
 | `surface` | `canSurface` |
 | `corpse` | `canCorpse` |
 
@@ -390,7 +401,7 @@ money += floor(amount * multiplier)
 5. Если ловушка не выпала — вернуть только замок.
 6. Выбрать тип ловушки и уровень.
 
-Подробные формулы — в `docs/container_loot_configuration.md`.
+Подробные формулы — в `docs/loot/container_loot_configuration.md`.
 
 ---
 
@@ -456,7 +467,7 @@ struct DOOR
 - `canOpen == TRUE`;
 - `isOpen == FALSE`;
 - в контейнере реально что-то заспавнилось;
-- `lockId` не больше 254;
+- `lockId` находится в диапазоне `1..254`; `lockId = 0` при `hasLock = TRUE` считается невалидным;
 - нет чужого (map-authored) замка на этом тайле.
 
 Если на тайле уже есть `DOOR`, созданный не этой фичей, запись не перезаписывается.
@@ -486,6 +497,9 @@ struct DOOR
 
 - `SF_CONTAINER_LOOT_GENERATED` хранится в `SECTORINFO`.
 - Новые save-поля не добавляются.
+- Seed кампании хранится в существующем `GENERAL_SAVE_INFO::uiSeedNumber`.
+- При новой игре создаётся новый seed, при загрузке он восстанавливается. Для старых сейвов с `uiSeedNumber == 0` создаётся новый seed и записывается при следующем сохранении.
+- Seed участвует в `MakeSiteRandomKey()`, поэтому разные кампании выбирают разные контейнеры при одинаковых лимитах.
 - Предметы и деньги попадают в temp-файл сектора и обычное сохранение.
 - `DoorTable` уже сохраняется движком, поэтому замки и ловушки контейнеров сохраняются без отдельной сериализации.
 - При повторном входе в сектор генерация не повторяется.
@@ -502,6 +516,8 @@ struct DOOR
 ```text
 ContainerLoot_debug.log
 ```
+
+`Trace()` открывает файл один раз за процесс и пишет через буферизованный `std::ofstream`. `FlushTrace()` вызывается в конце `ProcessSector()` и в `ContainerLoot::Reset()`, чтобы последние строки не терялись при завершении игры или переходе между секторами. В Release `Trace()` и `FlushTrace()` не выполняют файловых операций.
 
 Основные строки:
 
@@ -571,6 +587,8 @@ local DEBUG_ONLY_SUBTYPES = {
 7. Профили перебираются в порядке XML; при конфликте селекторов это важнее `priority`.
 8. Ловушки и замки применяются только к закрытым openable-контейнерам, в которые реально попал лут.
 9. `maxSites="0"` означает «без ограничения», а не «отключено».
+10. Для hidden-тайников проверяется только локальная проходимость соседней клетки, а не полная достижимость от точки входа. Изолированные комнаты требуют отдельной flood-fill/`FindBestPath` проверки.
+11. `MAX_ITEMS_PER_SITE = 12`; превышение не отбрасывает сайт, а обрезает список предметов с warning в логе.
 
 ---
 
@@ -610,3 +628,8 @@ local DEBUG_ONLY_SUBTYPES = {
 8. Проверить обнаружение и обезвреживание ловушки.
 9. Сохранить игру, выйти, загрузить, проверить замок и ловушку.
 10. Проверить, что старые предметы с `bTrap` не мешают новой логике.
+11. Проверить seed: две новые игры должны давать разные наборы контейнеров при одинаковых `maxSites`/`maxSpawns`.
+12. Сохраниться до генерации сектора, загрузиться и войти: выбранные сайты должны совпасть.
+13. Проверить подземный сектор: threat/enemyControlled берутся с подземного уровня, наземные теги не наследуются.
+14. Проверить `hiddenNoAccessSkipped` в логе и отсутствие hidden-лута в заведомо недоступных местах.
+15. Проверить, что `MAX_ITEMS_PER_SITE = 12` не превышается.

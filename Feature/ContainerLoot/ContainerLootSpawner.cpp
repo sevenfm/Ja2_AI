@@ -169,6 +169,7 @@ namespace
 
 void ContainerLootSpawner::Reset()
 {
+	// travnik: no process-wide spawn state yet; keep the lifecycle hook wired for future state.
 }
 
 BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
@@ -243,8 +244,15 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 			continue;
 		}
 
-		if (entry.items.size() > (size_t)ContainerLootData::MAX_ITEMS_PER_SITE)
-			continue;
+		// travnik: clamp oversized Lua plans instead of discarding the whole site.
+		const size_t maxItems = (size_t)ContainerLootData::MAX_ITEMS_PER_SITE;
+		if (entry.items.size() > maxItems)
+		{
+			CHAR8 message[256];
+			sprintf_s(message, "ContainerLootSpawner: item cap site=%d items=%d max=%d, truncating",
+				entry.site, (INT32)entry.items.size(), (INT32)maxItems);
+			ContainerLoot::Trace(message);
+		}
 
 		// travnik: clamp oversized generated money instead of discarding the whole site.
 		const UINT32 money = (entry.money > ContainerLootData::MAX_MONEY) ?
@@ -271,13 +279,12 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 			}
 		}
 
-		for (std::vector<ContainerLootData::PlanItem>::const_iterator item = entry.items.begin();
-			item != entry.items.end(); ++item)
+		for (size_t itemIndex = 0; itemIndex < entry.items.size() && itemIndex < maxItems; ++itemIndex)
 		{
 			if (totalSpawns >= maxSpawns)
 				break;
 
-			if (SpawnItem(site, *item, entry.placement))
+			if (SpawnItem(site, entry.items[itemIndex], entry.placement))
 			{
 				spawnedAny = TRUE;
 				++totalSpawns;

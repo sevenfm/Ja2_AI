@@ -7936,6 +7936,9 @@ BOOLEAN SaveGeneralInfo( HWFILE hFile )
 		sGeneralInfo.sContractRehireSoldierID = -1;
 
 	memcpy( &sGeneralInfo.GameOptions, &gGameOptions, sizeof( GAME_OPTIONS ) );
+#ifdef BMP_RANDOM
+	sGeneralInfo.uiSeedNumber = ContainerLoot::GetCampaignSeed();
+#endif
 #ifndef BMP_RANDOM//dnl ch55 111009
 	#ifdef JA2BETAVERSION
 	//Everytime we save get, and set a seed value, when reload, seed again
@@ -8465,6 +8468,12 @@ BOOLEAN LoadGeneralInfo( HWFILE hFile )
 		pContractReHireSoldier = &Menptr[ sGeneralInfo.sContractRehireSoldierID ];
 
 	memcpy( &gGameOptions, &sGeneralInfo.GameOptions, sizeof( GAME_OPTIONS ) );
+#ifdef BMP_RANDOM
+	UINT32 campaignSeed = sGeneralInfo.uiSeedNumber;
+	if (campaignSeed == 0)
+		campaignSeed = ContainerLoot::CreateCampaignSeed();
+	ContainerLoot::SetCampaignSeed(campaignSeed);
+#endif
 #ifndef BMP_RANDOM//dnl ch55 111009
 	#ifdef JA2BETAVERSION
 	//Reset the random 'seed' number

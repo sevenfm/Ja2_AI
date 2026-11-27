@@ -545,7 +545,10 @@ BOOLEAN InitNewGame( BOOLEAN fReset )
 		gubScreenCount = 0;
 		return( TRUE );
 	}
-	
+
+	// travnik: each new campaign gets its own container-loot seed.
+	ContainerLoot::SetCampaignSeed(ContainerLoot::CreateCampaignSeed());
+
 	if( gubScreenCount == 0 )
 	{	
 		IniLuaGlobal();//Lua

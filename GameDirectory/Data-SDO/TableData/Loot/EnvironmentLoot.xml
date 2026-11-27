@@ -12,7 +12,7 @@
 			lockId="0">
 			<TRAP_TYPES></TRAP_TYPES>
 		</SECURITY_PROFILE>
-		<SECURITY_PROFILE id="base_value" lockChanceMin="20" lockChanceMax="30" trapChanceMin="30" trapChanceMax="40" lockChanceCap="60" trapChanceCap="80" lockProgressWeight="0.10" lockCoolnessWeight="0.10" trapProgressWeight="0.10" trapCoolnessWeight="0.10" trapLevelMin="1" trapLevelMax="4" trapLevelProgressWeight="0.02" trapLevelCoolnessWeight="1.0" lockId="0">
+		<SECURITY_PROFILE id="base_value" lockChanceMin="20" lockChanceMax="30" trapChanceMin="30" trapChanceMax="40" lockChanceCap="60" trapChanceCap="80" lockProgressWeight="0.10" lockCoolnessWeight="0.10" trapProgressWeight="0.10" trapCoolnessWeight="0.10" trapLevelMin="1" trapLevelMax="4" trapLevelProgressWeight="0.02" trapLevelCoolnessWeight="1.0" lockId="1">
 			<TRAP_TYPES>
 				<TRAP_TYPE id="EXPLOSION" weight="60" />
 				<TRAP_TYPE id="ELECTRIC" weight="40" />
@@ -422,7 +422,7 @@
 			<TILE image="furn_6" frame="4" kind="container" />
 		</TILES>
 		<EMPTY_CHANCE>45</EMPTY_CHANCE>
-		<ROLLS min="1" max="3" />
+		<ROLLS min="1" max="2" />
 		<PLACEMENTS>
 			<PLACEMENT type="open" weight="100" />
 		</PLACEMENTS>
@@ -468,7 +468,7 @@
 			<ITEM id="204" weight="40" min="1" max="1" statusMin="80" statusMax="100" />
 			<ITEM id="37" weight="30" min="1" max="1" statusMin="80" statusMax="100" />
 			<ITEM id="264" weight="25" min="1" max="1" statusMin="100" statusMax="100" sectorTypes="airport,lawless,military,sam,town" />
-			<ITEM id="326" weight="10" min="100" max="500" statusMin="100" statusMax="100" sectorTypes="wealthy" />
+			<ITEM id="326" weight="10" min="1" max="1" statusMin="1" statusMax="50" sectorTypes="wealthy" />
 			<MONEY weight="5" min="10" max="50" />
 			<TYPE id="city_clothing_only" weight="50" sectorTypes="farm,hospital,lawless,town,wealthy" />
 			<ITEM id="205" weight="50" min="1" max="1" statusMin="80" statusMax="100" />
@@ -557,7 +557,7 @@
 			<ITEM id="137" weight="80" min="1" max="1" minTier="0" />
 			<ITEM id="223" weight="80" min="1" max="1" minTier="0" />
 			<ITEM id="203" weight="150" min="1" max="1" statusMin="80" statusMax="100" minTier="0" />
-			<ITEM id="325" weight="50" min="100" max="500" statusMin="100" statusMax="100" />
+			<ITEM id="325" weight="50" min="1" max="1" statusMin="10" statusMax="100" />
 		</ITEM_POOL>
 	</LOOT_PROFILE>
 	<LOOT_PROFILE id="alcohol_cache" name="Alcohol Cache" priority="20" maxSites="0" sectorTypes="lawless,town,underground" coolnessBonus="0">
@@ -603,7 +603,7 @@
 			<TILE image="furn_7" frame="17" kind="container" />
 		</TILES>
 		<EMPTY_CHANCE>40</EMPTY_CHANCE>
-		<ROLLS min="1" max="3" />
+		<ROLLS min="1" max="1" />
 		<PLACEMENTS>
 			<PLACEMENT type="open" weight="100" />
 		</PLACEMENTS>
@@ -619,7 +619,7 @@
 			<TILE image="basefrn1" frame="18" kind="container" />
 		</TILES>
 		<EMPTY_CHANCE>40</EMPTY_CHANCE>
-		<ROLLS min="1" max="3" />
+		<ROLLS min="1" max="2" />
 		<PLACEMENTS>
 			<PLACEMENT type="open" weight="100" />
 		</PLACEMENTS>
@@ -643,10 +643,9 @@
 			<TILE image="jailstf3" frame="0" kind="container" />
 		</TILES>
 		<EMPTY_CHANCE>40</EMPTY_CHANCE>
-		<ROLLS min="1" max="3" />
+		<ROLLS min="1" max="2" />
 		<PLACEMENTS>
 			<PLACEMENT type="open" weight="100" />
-			<PLACEMENT type="hidden" weight="100" />
 		</PLACEMENTS>
 		<ITEM_POOL>
 			<TYPE id="heavy_weapons_only" weight="50" sectorTypes="military,sam" />
@@ -705,7 +704,7 @@
 	</LOOT_PROFILE>
 	<!-- travnik: профили 1-8 и ammo_crate_only добавлены отключёнными: назначь реальные TILES и включи. -->
 
-	<LOOT_PROFILE id="clothing_crate_only" name="Clothing Crate Only" priority="25" maxSites="0" sectorTypes="town,farm,lawless,hospital" coolnessBonus="0" enabled="false">
+	<LOOT_PROFILE id="clothing_crate_only" name="Clothing Crate Only" priority="25" maxSites="0" sectorTypes="town,farm,lawless,hospital" coolnessBonus="0" enabled="true">
 		<EMPTY_CHANCE>70</EMPTY_CHANCE>
 		<ROLLS min="1" max="1" />
 		<PLACEMENTS>

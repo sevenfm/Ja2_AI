@@ -478,6 +478,7 @@ namespace
 
 void ContainerLootLua::Reset()
 {
+	// travnik: no cached Lua state yet; keep the lifecycle hook wired for future state.
 }
 
 BOOLEAN ContainerLootLua::Generate(const ContainerLootData::Context& ctx,

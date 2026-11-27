@@ -18,6 +18,9 @@ public:
 	// travnik: временная диагностика для проверки, доходит ли hook до ProcessSector
 	static void Trace(const char* message);
 
+	// travnik: flush buffered trace output without closing the log stream.
+	static void FlushTrace();
+
 	// travnik: один раз за запуск сканирует все карты (debug-инструмент).
 	static void ScanAllMapsOnce();
 
@@ -28,6 +31,13 @@ public:
 
 	// travnik: сбрасывает process-wide состояние фичи при новой игре/загрузке.
 	static void Reset();
+
+	// travnik: seed текущей кампании для стабильного выбора сайтов под лимиты.
+	static void SetCampaignSeed(UINT32 seed);
+	static UINT32 GetCampaignSeed();
+
+	// travnik: create a non-zero 32-bit seed without overflowing NewRandom().
+	static UINT32 CreateCampaignSeed();
 };
 
 #endif

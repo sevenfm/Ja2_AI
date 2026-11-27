@@ -5,6 +5,7 @@
 #include "Game Clock.h"
 #include "GameSettings.h"
 #include "mapscreen.h"
+#include "Queen Command.h"
 #include "strategic.h"
 #include "strategicmap.h"
 #include "World Tileset Enums.h"
@@ -41,6 +42,17 @@ namespace
 	bool HasFlag(UINT32 flags, UINT32 flag)
 	{
 		return (flags & flag) != 0;
+	}
+
+	// travnik: same threat scale for surface and underground garrisons.
+	UINT8 EnemyThreatFromGarrison(UINT8 elites, UINT8 troops, UINT8 admins)
+	{
+		const INT32 enemyScore =
+			(INT32)elites * 3 +
+			(INT32)troops * 2 +
+			(INT32)admins;
+
+		return (UINT8)std::min<INT32>(10, (enemyScore + 4) / 5);
 	}
 
 	INT32 TownWealth(UINT8 townId)
@@ -236,31 +248,50 @@ void ContainerLootSectorContext::Resolve(INT16 sSectorX, INT16 sSectorY, INT8 bS
 	ctx.sectorKey = sectorKey;
 
 	const INT32 sectorIndex = SECTOR(sSectorX, sSectorY);
-	const INT32 strategicIndex = CALCULATE_STRATEGIC_INDEX(sSectorX, sSectorY);
-	const StrategicMapElement& strategic = StrategicMap[strategicIndex];
 	const SECTORINFO* pSector = (sectorIndex >= 0 && sectorIndex < (INT32)SectorInfo.size()) ?
 		&SectorInfo[sectorIndex] : NULL;
+	const UNDERGROUND_SECTORINFO* pUnderground = (bSectorZ > 0) ?
+		FindUnderGroundSector(sSectorX, sSectorY, (UINT8)bSectorZ) : NULL;
 
-	const UINT32 sectorFlags = pSector ? pSector->uiFlags : 0;
+	const UINT32 sectorFlags = (bSectorZ > 0)
+		? (pUnderground ? pUnderground->uiFlags : 0)
+		: (pSector ? pSector->uiFlags : 0);
 	const INT32 tileset = giCurrentTilesetID;
 
-	ctx.townId = (strategic.bNameId > BLANK_SECTOR) ? (UINT8)strategic.bNameId : BLANK_SECTOR;
-	ctx.enemyControlled = strategic.fEnemyControlled ? TRUE : FALSE;
-
+	ctx.townId = BLANK_SECTOR;
+	ctx.enemyControlled = FALSE;
 	ctx.traffic = 0;
-	if (pSector)
-	{
-		ctx.traffic = (UINT8)std::min<INT32>(10, (INT32)pSector->ubTravelRating / 10);
-	}
-
 	ctx.threat = 0;
-	if (pSector)
+
+	if (bSectorZ > 0)
 	{
-		const INT32 enemyScore =
-			(INT32)pSector->ubNumElites * 3 +
-			(INT32)pSector->ubNumTroops * 2 +
-			(INT32)pSector->ubNumAdmins;
-		ctx.threat = (UINT8)std::min<INT32>(10, (enemyScore + 4) / 5);
+		// travnik: underground levels use their own garrison/control data, not surface SectorInfo.
+		const UINT8 playerLevels = (UINT8)(sizeof(pSector->fPlayer) / sizeof(pSector->fPlayer[0]));
+		const BOOLEAN playerControlled =
+			pSector && bSectorZ < playerLevels && pSector->fPlayer[bSectorZ];
+		ctx.enemyControlled = playerControlled ? FALSE : TRUE;
+
+		if (pUnderground)
+		{
+			ctx.traffic = (UINT8)std::min<INT32>(10, (INT32)pUnderground->ubTravelRating / 10);
+			ctx.threat = EnemyThreatFromGarrison(pUnderground->ubNumElites,
+				pUnderground->ubNumTroops, pUnderground->ubNumAdmins);
+		}
+	}
+	else
+	{
+		const INT32 strategicIndex = CALCULATE_STRATEGIC_INDEX(sSectorX, sSectorY);
+		const StrategicMapElement& strategic = StrategicMap[strategicIndex];
+
+		ctx.townId = (strategic.bNameId > BLANK_SECTOR) ? (UINT8)strategic.bNameId : BLANK_SECTOR;
+		ctx.enemyControlled = strategic.fEnemyControlled ? TRUE : FALSE;
+
+		if (pSector)
+		{
+			ctx.traffic = (UINT8)std::min<INT32>(10, (INT32)pSector->ubTravelRating / 10);
+			ctx.threat = EnemyThreatFromGarrison(pSector->ubNumElites,
+				pSector->ubNumTroops, pSector->ubNumAdmins);
+		}
 	}
 
 	INT32 wealth = TownWealth(ctx.townId);

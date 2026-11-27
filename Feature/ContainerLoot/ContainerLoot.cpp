@@ -21,6 +21,7 @@
 #include "World Items.h"
 #include "Soldier Control.h"
 #include "structure.h"
+#include "Random.h"
 
 #include <fstream>
 #include <stdio.h>
@@ -28,6 +29,18 @@
 
 namespace
 {
+#if CONTAINER_LOOT_AUDIT_ENABLED
+	// travnik: keep the debug log open so Trace() does not reopen it per line.
+	std::ofstream& TraceLog()
+	{
+		static std::ofstream log("ContainerLoot_debug.log", std::ios::out | std::ios::app);
+		return log;
+	}
+#endif
+
+	// travnik: stable per-campaign seed; persisted through GENERAL_SAVE_INFO::uiSeedNumber.
+	UINT32 sCampaignSeed = 0;
+
 #if CONTAINER_LOOT_SCAN_ALL_MAPS
 	BOOLEAN sScanAllMapsDone = FALSE;
 #endif
@@ -42,18 +55,53 @@ namespace
 void ContainerLoot::Trace(const char* message)
 {
 #if CONTAINER_LOOT_AUDIT_ENABLED
-	std::ofstream log("ContainerLoot_debug.log", std::ios::out | std::ios::app);
+	std::ofstream& log = TraceLog();
 	if (log)
 	{
-		log << message << "\n";
+		log << message << '\n';
 	}
 #else
 	(void)message;
 #endif
 }
 
+void ContainerLoot::FlushTrace()
+{
+#if CONTAINER_LOOT_AUDIT_ENABLED
+	std::ofstream& log = TraceLog();
+	if (log)
+	{
+		log.flush();
+	}
+#endif
+}
+
+void ContainerLoot::SetCampaignSeed(UINT32 seed)
+{
+	sCampaignSeed = seed;
+}
+
+UINT32 ContainerLoot::GetCampaignSeed()
+{
+	return sCampaignSeed;
+}
+
+UINT32 ContainerLoot::CreateCampaignSeed()
+{
+	// travnik: NewRandom() uses an int uniform distribution; splitting the seed
+	// into 16-bit chunks avoids the invalid UINT32_MAX range.
+	const UINT32 chunkSize = 0x10000;
+	UINT32 seed = ((UINT32)Random(chunkSize) << 16) | (UINT32)Random(chunkSize);
+	if (seed == 0)
+		seed = 1;
+
+	return seed;
+}
+
 void ContainerLoot::Reset()
 {
+	sCampaignSeed = 0;
+
 #if CONTAINER_LOOT_SCAN_ALL_MAPS
 	sScanAllMapsDone = FALSE;
 #endif
@@ -62,7 +110,11 @@ void ContainerLoot::Reset()
 	sForcedRegeneratedSectors.clear();
 #endif
 
+	// travnik: reset every module that may gain process-wide state.
+	ContainerLootLua::Reset();
+	ContainerLootSpawner::Reset();
 	ContainerLootSecurity::Reset();
+	FlushTrace();
 }
 
 void ContainerLoot::ScanAllMapsOnce()
@@ -87,10 +139,11 @@ void ContainerLoot::ScanAllMapsOnce()
 void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 {
 	CHAR8 trace[256];
-	sprintf_s(trace, "ProcessSector: enter %c%d z=%d enabled=%d audit=%d allowVisited=%d forceRegen=%d",
+	sprintf_s(trace, "ProcessSector: enter %c%d z=%d enabled=%d audit=%d allowVisited=%d forceRegen=%d seed=%u",
 		(CHAR8)(sSectorY + 'A' - 1), sSectorX, bSectorZ,
 		(int)CONTAINER_LOOT_ENABLED, (int)CONTAINER_LOOT_AUDIT_ENABLED,
-		(int)CONTAINER_LOOT_ALLOW_VISITED_SECTORS, (int)CONTAINER_LOOT_FORCE_REGENERATE);
+		(int)CONTAINER_LOOT_ALLOW_VISITED_SECTORS, (int)CONTAINER_LOOT_FORCE_REGENERATE,
+		GetCampaignSeed());
 	Trace(trace);
 
 #if !CONTAINER_LOOT_ENABLED
@@ -183,6 +236,7 @@ void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 	if (!ContainerLootXml::EnsureLoaded(ctx.profiles, ctx.lootTypes, ctx.securityProfiles, ctx.sectorSecurity))
 	{
 		Trace("ProcessSector: EnvironmentLoot.xml is not loaded — loot generation disabled");
+		FlushTrace();
 		return;
 	}
 
@@ -208,6 +262,7 @@ void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 		(INT32)ctx.sites.size(), openSites, hiddenSites,
 		(INT32)plan.size(), luaOk ? 1 : 0, spawnOk ? 1 : 0);
 	Trace(trace);
+	FlushTrace();
 #endif
 }
 
@@ -266,7 +321,9 @@ BOOLEAN ContainerLoot::OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, 
 			if (!GetItemPool(grids[gridIndex], &pItemPool, levels[levelIndex]) || pItemPool == NULL)
 				continue;
 
-			const BOOLEAN changed = SetItemPoolVisibilityOn(pItemPool, ANY_VISIBILITY_VALUE, TRUE);
+			// travnik: reveal only items hidden inside the opened object; never
+			// HIDDEN_ITEM/BURIED_ITEM that may exist in a map-authored pool.
+			const BOOLEAN changed = SetItemPoolVisibilityOn(pItemPool, HIDDEN_IN_OBJECT, TRUE);
 
 			INT32 revealed = 0;
 			for (ITEM_POOL* p = pItemPool; p != NULL; p = p->pNext)

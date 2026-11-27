@@ -4,8 +4,8 @@
 
 См. также:
 
-- `docs/container_loot_feature.md` — описание фичи и потока данных.
-- `docs/xml_environment_loot.md` — краткий справочник по XML-схеме.
+- `docs/loot/container_loot_feature.md` — описание фичи и потока данных.
+- `docs/loot/xml_environment_loot.md` — краткий справочник по XML-схеме.
 - `.opencode/skills/loot-balance/SKILL.md` — рабочий skill для балансных правок.
 
 ---
@@ -44,9 +44,25 @@ SlfLibs, Vanilla, v113, SDO, SDO-ru, AR, AR+SDO, User, UserProf
 
 Практическое следствие:
 
-- XML может приходить из `Data-SDO`, а не из `GameDirectory`;
-- Lua может приходить из `Data-User`, если там есть `containerloot.lua`;
+- XML читается из `Data-SDO`, а не из `GameDirectory`;
+- Lua читается из `Data-User`, если там есть `containerloot.lua`;
 - `GameDirectory` — это repo master, но не обязательно файл, который читает игра.
+
+Проверенные активные копии:
+
+| Файл | Активная копия |
+|---|---|
+| `EnvironmentLoot.xml` | `D:\Projects\JA2_Game\Data-SDO\TableData\Loot\EnvironmentLoot.xml` |
+| `containerloot.lua` | `D:\Projects\JA2_Game\Data-User\Scripts\containerloot.lua` |
+
+Архивы `Data-AR.7z`, `Data-AR+SDO.7z` и `Data-SDO-ru.7z` не содержат `EnvironmentLoot.xml` или `containerloot.lua`, поэтому они не перекрывают эти файлы.
+
+Актуальные хэши синхронизированных master-файлов:
+
+```text
+EnvironmentLoot.xml: 775D4F8793CBDD1848CAFD651B23F1551E5F6F5362D2B09C34F76B12379A20E1
+containerloot.lua:    09B45F664D33D32E2A0116CBDDB68087340DC27A038F3FB0C5CCDE46B0057CBB
+```
 
 Найди реальные копии:
 
@@ -57,8 +73,12 @@ Get-ChildItem 'D:\Projects\JA2_Game' -Recurse -File -Filter 'containerloot.lua'
 
 Правило: сначала определи, какой VFS-профиль является целевым для релиза,
 затем выбери один source of truth и синхронизируй все активные копии.
-Не копируй маленький `GameDirectory`-файл поверх более полного `Data-SDO`
-без сравнения профилей и профилей security.
+Для текущего профиля `AR+SDO` синхронизируются:
+
+- XML: `Data`, `Data-1.13`, `Data-AFS`, `Data-SDO`;
+- Lua: `Data`, `Data-1.13`, `Data-User`.
+
+Все эти XML-копии должны иметь одинаковый SHA256. Все Lua-копии также должны совпадать.
 
 ---
 
@@ -106,7 +126,7 @@ Get-ChildItem 'D:\Projects\JA2_Game' -Recurse -File -Filter 'containerloot.lua'
 
 ```xml
 <CONTAINER_SECURITY>
-    <SECURITY_PROFILE id="default"
+    <SECURITY_PROFILE id="base_value"
         lockChanceMin="20" lockChanceMax="30"
         trapChanceMin="30" trapChanceMax="40"
         lockChanceCap="60" trapChanceCap="80"
@@ -114,7 +134,7 @@ Get-ChildItem 'D:\Projects\JA2_Game' -Recurse -File -Filter 'containerloot.lua'
         trapProgressWeight="0.10" trapCoolnessWeight="0.10"
         trapLevelMin="1" trapLevelMax="4"
         trapLevelProgressWeight="0.02" trapLevelCoolnessWeight="1.0"
-        lockId="0">
+        lockId="1">
         <TRAP_TYPES>
             <TRAP_TYPE id="EXPLOSION" weight="60" />
             <TRAP_TYPE id="ELECTRIC" weight="40" />
@@ -139,7 +159,7 @@ Get-ChildItem 'D:\Projects\JA2_Game' -Recurse -File -Filter 'containerloot.lua'
 | `trapLevelMin`, `trapLevelMax` | Базовый уровень ловушки | 1..10 |
 | `trapLevelProgressWeight` | Вклад прогресса в уровень | float |
 | `trapLevelCoolnessWeight` | Вклад coolness в уровень | float |
-| `lockId` | ID замка из `Locks.xml` | 0..254 |
+| `lockId` | ID замка из `Locks.xml`; для реального замка используй `1..254` | 1..254 |
 
 `lockChanceMin/Max` и `trapChanceMin/Max` — это диапазон, из которого берётся случайное базовое значение, а не фиксированный процент.
 
@@ -239,7 +259,7 @@ wealthy, traffic
 - это `KIND_CONTAINER`;
 - в контейнер реально что-то заспавнилось;
 - `hasLock == true`;
-- `lockId <= 254`;
+- `lockId` находится в диапазоне `1..254`; `lockId = 0` считается невалидным и замок не создаётся;
 - на тайле нет чужого map-authored замка.
 
 Ловушка ставится только после замка. Если `trapId` или `trapLevel` некорректны, ловушка отключается, а замок остаётся.
@@ -250,8 +270,8 @@ wealthy, traffic
 
 Текущие базовые ID:
 
-- `0` — `Crate key`
-- `1` — `Tough crate`
+- `0` — `Crate key`; для процедурных замков не используется, потому что `hasLock=true` с `lockId=0` считается невалидным;
+- `1` — `Tough crate`; используется профилем `base_value`.
 
 Если добавляешь новый `lockId`, проверь его в `Locks.xml` и убедись, что игрок может открыть контейнер отмычкой, ломом или взрывчаткой.
 
@@ -400,7 +420,7 @@ entry.weight * typeItem.weight
 ```
 
 - `EMPTY_CHANCE` — 0..100.
-- `ROLLS min/max` — 1..6; C++ и Lua дополнительно ограничивают значение.
+- `ROLLS min/max` — 1..12; C++ и Lua дополнительно ограничивают значение. Лимит соответствует `MAX_ITEMS_PER_SITE = 12`.
 - Не используй `EMPTY_CHANCE=100` для отключения профиля: используй `enabled="false"`.
 
 ### 6.6. `PLACEMENTS`
@@ -415,11 +435,13 @@ entry.weight * typeItem.weight
 | Тип | Требование сайта |
 |---|---|
 | `open` | `canOpen && !isOpen` |
-| `hidden` | `canHide` |
+| `hidden` | `canHide && !canOpen` и есть доступный тайл взаимодействия |
 | `surface` | `canSurface` |
 | `corpse` | `canCorpse`; пока не реализовано |
 
 C++ повторно проверяет placement и отклоняет недопустимый вариант.
+
+Hidden-placement запрещён для openable-контейнеров. Для hidden-тайников `CollectSites()` также требует проходимую клетку взаимодействия рядом; недоступные тайники не попадают в `ctx.sites` и учитываются в `hiddenNoAccessSkipped`.
 
 ### 6.7. `ITEM_POOL`
 
@@ -546,6 +568,14 @@ LOOT_EMPTY_CHANCE_SCALE = 1.0
 - `MAX_SITES` в INI больше не используется.
 - Изменения INI применяются после перезапуска игры.
 
+Кодовые лимиты, которые не настраиваются через INI:
+
+| Константа | Значение | Смысл |
+|---|---:|---|
+| `MAX_ITEMS_PER_SITE` | 12 | Максимум записей предметов на один сайт |
+| `MAX_COUNT` | 10 | Максимум копий одного item ID в одном стаке |
+| `MAX_MONEY` | 10000 | Максимальная сумма денег на сайт |
+
 ---
 
 ## 8. Lua: что можно настраивать
@@ -630,7 +660,7 @@ LOOT_EMPTY_CHANCE_SCALE = 1.5
 <ROLLS min="2" max="4" />
 ```
 
-Помни про `MAX_ITEMS_PER_SITE = 6` и `MAX_SPAWNS_PER_SECTOR`.
+Помни про `MAX_ITEMS_PER_SITE = 12` и `MAX_SPAWNS_PER_SECTOR`.
 
 ### 9.6. Ограничить профиль секторами
 
@@ -701,10 +731,21 @@ python -c "import lupa; from lupa import LuaRuntime; lua=LuaRuntime(); lua.execu
 Get-FileHash 'GameDirectory\Data\TableData\Loot\EnvironmentLoot.xml',
              'D:\Projects\JA2_Game\Data\TableData\Loot\EnvironmentLoot.xml',
              'D:\Projects\JA2_Game\Data-1.13\TableData\Loot\EnvironmentLoot.xml',
-             'D:\Projects\JA2_Game\Data-User\TableData\Loot\EnvironmentLoot.xml' -Algorithm SHA256
+             'D:\Projects\JA2_Game\Data-AFS\TableData\Loot\EnvironmentLoot.xml',
+             'D:\Projects\JA2_Game\Data-SDO\TableData\Loot\EnvironmentLoot.xml' -Algorithm SHA256
 ```
 
-Хэши должны совпадать.
+```powershell
+Get-FileHash 'GameDirectory\Data\Scripts\containerloot.lua',
+             'D:\Projects\JA2_Game\Data\Scripts\containerloot.lua',
+             'D:\Projects\JA2_Game\Data-1.13\Scripts\containerloot.lua',
+             'D:\Projects\JA2_Game\Data-User\Scripts\containerloot.lua' -Algorithm SHA256
+```
+
+Хэши внутри каждой группы должны совпадать. Активные файлы текущего профиля `AR+SDO`:
+
+- XML: `Data-SDO\TableData\Loot\EnvironmentLoot.xml`;
+- Lua: `Data-User\Scripts\containerloot.lua`.
 
 ### 10.4. Игра
 

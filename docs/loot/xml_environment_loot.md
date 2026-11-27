@@ -3,8 +3,8 @@
 `TableData\Loot\EnvironmentLoot.xml` — master-конфигурация процедурного лута.
 Файл читается через Expat в `Feature/ContainerLoot/ContainerLootXml.cpp`.
 
-Полная инструкция по настройке: `docs/container_loot_configuration.md`.
-Описание фичи: `docs/container_loot_feature.md`.
+Полная инструкция по настройке: `docs/loot/container_loot_configuration.md`.
+Описание фичи: `docs/loot/container_loot_feature.md`.
 
 ---
 
@@ -104,7 +104,7 @@
 ```
 
 - `EMPTY_CHANCE` — 0..100.
-- `ROLLS min/max` — 1..6.
+- `ROLLS min/max` — 1..12; C++ ограничивает значение через `MAX_ITEMS_PER_SITE = 12`.
 - `EMPTY_CHANCE=100` не отключает профиль; для этого есть `enabled="false"`.
 
 ---
@@ -122,7 +122,7 @@
 | Тип | Требование |
 |---|---|
 | `open` | `canOpen && !isOpen` |
-| `hidden` | `canHide` |
+| `hidden` | `canHide && !canOpen` и есть доступный тайл взаимодействия |
 | `surface` | `canSurface` |
 | `corpse` | `canCorpse`; спавн трупов пока не реализован |
 
@@ -215,7 +215,7 @@ Security-блоки описывают замки и ловушки контей
 
 ```xml
 <CONTAINER_SECURITY>
-    <SECURITY_PROFILE id="default" lockChanceMin="20" ... />
+    <SECURITY_PROFILE id="base_value" lockChanceMin="20" lockId="1" ... />
 </CONTAINER_SECURITY>
 
 <SECTOR_SECURITY>
@@ -224,7 +224,7 @@ Security-блоки описывают замки и ловушки контей
 ```
 
 Подробные формулы, допустимые trap ID и правила применения:
-`docs/container_loot_configuration.md`.
+`docs/loot/container_loot_configuration.md`.
 
 ---
 
@@ -257,7 +257,7 @@ Security-блоки описывают замки и ловушки контей
 
 Глобальные коэффициенты находятся в `[Tactical container loot]`
 файла `Ja2_Options.INI`. Полный список и значения по умолчанию:
-`docs/container_loot_configuration.md`.
+`docs/loot/container_loot_configuration.md`.
 
 Основное:
 
@@ -279,7 +279,7 @@ LOOT_EMPTY_CHANCE_SCALE = 1.0
 ## 12. Debug
 
 - XML кэшируется статически; после правок нужен перезапуск игры.
-- Лог в Debug-сборке: `ContainerLoot_debug.log`.
+- Лог в Debug-сборке: `ContainerLoot_debug.log`; файл открыт один раз за процесс, `FlushTrace()` вызывается в конце `ProcessSector()` и `Reset()`.
 - Lua debug-фильтр: `DEBUG_FILTER_ENABLED` в `containerloot.lua`.
 - `CONTAINER_LOOT_DEBUG_VISIBLE_HIDDEN` показывает скрытый лут.
 

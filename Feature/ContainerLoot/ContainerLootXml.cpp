@@ -21,6 +21,12 @@ namespace
 {
 	const char* const ENVIRONMENT_LOOT_FILE = "TableData\\Loot\\EnvironmentLoot.xml";
 
+	// travnik: sector-specificity weights used only for profile selection.
+	const INT32 PROFILE_EXACT_SECTOR_BONUS = 100;
+	const INT32 PROFILE_STRONG_TAG_BONUS = 5;
+	const INT32 PROFILE_MEDIUM_TAG_BONUS = 3;
+	const INT32 PROFILE_WEAK_TAG_BONUS = 1;
+
 	enum EXmlState
 	{
 		XML_STATE_ROOT = 0,
@@ -1032,6 +1038,32 @@ namespace
 		XML_ParserFree(parser);
 		MemFree(buffer);
 
+		// travnik: a typo in security="..." must be visible in the debug log.
+		for (size_t profileIndex = 0; profileIndex < profiles.size(); ++profileIndex)
+		{
+			const std::string& securityId = profiles[profileIndex].securityProfile;
+			if (securityId.empty() || securityId == "none")
+				continue;
+
+			BOOLEAN found = FALSE;
+			for (size_t securityIndex = 0; securityIndex < securityProfiles.size(); ++securityIndex)
+			{
+				if (securityProfiles[securityIndex].id == securityId)
+				{
+					found = TRUE;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				CHAR8 message[320];
+				sprintf_s(message, "ContainerLootSecurity: unknown security profile '%s' in loot profile '%s'",
+					securityId.c_str(), profiles[profileIndex].id.c_str());
+				ContainerLoot::Trace(message);
+			}
+		}
+
 		return data.sawRoot ? TRUE : FALSE;
 	}
 
@@ -1069,16 +1101,16 @@ namespace
 	INT32 SectorTokenSpecificity(const std::string& token)
 	{
 		if (token == "military" || token == "sam" || token == "prison")
-			return 5;
+			return PROFILE_STRONG_TAG_BONUS;
 
 		if (token == "palace" || token == "airport" || token == "hospital" ||
 			token == "industrial" || token == "mine" || token == "underground" ||
 			token == "lawless")
-			return 3;
+			return PROFILE_MEDIUM_TAG_BONUS;
 
 		if (token == "wealthy" || token == "traffic" || token == "farm" ||
 			token == "agricultural" || token == "rural")
-			return 1;
+			return PROFILE_WEAK_TAG_BONUS;
 
 		return 0;
 	}
@@ -1092,7 +1124,7 @@ namespace
 
 		INT32 score = 0;
 		if (ContainsToken(profile.sectorTypes, *sectorType))
-			score += 100;
+			score += PROFILE_EXACT_SECTOR_BONUS;
 
 		for (size_t i = 0; i < sectorTags->size(); ++i)
 		{

@@ -116,7 +116,7 @@ namespace ContainerLootData
 	};
 
 	// travnik: профиль лута из TableData\Loot\EnvironmentLoot.xml.
-	// travnik: ��� ���������� �������� ��� ����������.
+	// travnik: тип ловушки и вес для выбора.
 	struct TrapTypeDef
 	{
 		TrapTypeDef()
@@ -128,7 +128,7 @@ namespace ContainerLootData
 		UINT32	weight;
 	};
 
-	// travnik: ���������� ������ ���������� ����������.
+	// travnik: параметры замков и ловушек контейнера.
 	struct ContainerSecurityProfile
 	{
 		ContainerSecurityProfile()
@@ -161,7 +161,7 @@ namespace ContainerLootData
 		std::vector<TrapTypeDef> trapTypes;
 	};
 
-	// travnik: �������� �� ����� ��������.
+	// travnik: модификаторы безопасности сектора.
 	struct SectorSecurityModifier
 	{
 		SectorSecurityModifier()
@@ -335,7 +335,7 @@ namespace ContainerLootData
 	};
 
 	// travnik: абсолютные предохранители, а не баланс. Баланс — в Lua.
-	const INT32 MAX_ITEMS_PER_SITE = 6;
+	const INT32 MAX_ITEMS_PER_SITE = 12;
 	const INT32 MAX_COUNT = 10;
 	const UINT32 MAX_MONEY = 10000;
 	const INT32 DEFAULT_PROFILE_PRIORITY = 100;

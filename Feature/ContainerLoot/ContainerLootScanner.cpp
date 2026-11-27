@@ -145,8 +145,6 @@ void ContainerLootScanner::DumpSectorAudit(INT16 sSectorX, INT16 sSectorY, INT8 
 
 namespace
 {
-	const INT32 MEDUNA_ITEM_DROP_OFF_GRIDNO_VALUE = 10959;
-
 	std::string GetTileImageName(UINT16 usIndex)
 	{
 		if (usIndex >= gTileDatabaseSize)
@@ -178,12 +176,120 @@ namespace
 			STRUCTURE_WALL | STRUCTURE_ROOF | STRUCTURE_PERSON | STRUCTURE_CORPSE)) != 0;
 	}
 
-	BOOLEAN IsSpecialContainerGrid(INT32 gridNo)
+	// travnik: gridNo is local to the current sector, so special item-pool
+	// coordinates must be checked together with their sector.
+	BOOLEAN IsSpecialContainerGrid(INT16 sectorX, INT16 sectorY, INT8 sectorZ, INT32 gridNo)
 	{
-		return gridNo == OMERTA_LEAVE_EQUIP_GRIDNO ||
-			gridNo == BOBBYR_SHIPPING_DEST_GRIDNO ||
-			gridNo == MEDUNA_ITEM_DROP_OFF_GRIDNO_VALUE ||
-			gridNo == gModSettings.iAirportDropOff;
+		if (sectorX == OMERTA_LEAVE_EQUIP_SECTOR_X &&
+			sectorY == OMERTA_LEAVE_EQUIP_SECTOR_Y &&
+			sectorZ == OMERTA_LEAVE_EQUIP_SECTOR_Z &&
+			gridNo == OMERTA_LEAVE_EQUIP_GRIDNO)
+		{
+			return TRUE;
+		}
+
+		if (sectorX == BOBBYR_SHIPPING_DEST_SECTOR_X &&
+			sectorY == BOBBYR_SHIPPING_DEST_SECTOR_Y &&
+			sectorZ == BOBBYR_SHIPPING_DEST_SECTOR_Z &&
+			gridNo == BOBBYR_SHIPPING_DEST_GRIDNO)
+		{
+			return TRUE;
+		}
+
+		if (sectorX == (INT16)gModSettings.ubAirportX &&
+			sectorY == (INT16)gModSettings.ubAirportY &&
+			sectorZ == 0 &&
+			gridNo == gModSettings.iAirportDropOff)
+		{
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	// travnik: hidden stashes are discovered from a tile the soldier can occupy.
+	BOOLEAN IsLootTilePassable(INT32 gridNo)
+	{
+		if (gridNo < 0 || gridNo >= WORLD_MAX)
+			return FALSE;
+
+		STRUCTURE* pStructure = FindStructure(gridNo, STRUCTURE_BLOCKSMOVES);
+		while (pStructure)
+		{
+			if (!(pStructure->fFlags & STRUCTURE_PASSABLE) &&
+				pStructure->sCubeOffset == STRUCTURE_ON_GROUND)
+			{
+				return FALSE;
+			}
+
+			pStructure = FindNextStructure(pStructure, STRUCTURE_BLOCKSMOVES);
+		}
+
+		return TRUE;
+	}
+
+	BOOLEAN HasAccessibleTile(INT32 gridNo)
+	{
+		if (IsLootTilePassable(gridNo))
+			return TRUE;
+
+		const INT32 col = gridNo % WORLD_COLS;
+		const INT32 row = gridNo / WORLD_COLS;
+
+		for (INT32 dy = -1; dy <= 1; ++dy)
+		{
+			const INT32 y = row + dy;
+			if (y < 0 || y >= WORLD_ROWS)
+				continue;
+
+			for (INT32 dx = -1; dx <= 1; ++dx)
+			{
+				if (dx == 0 && dy == 0)
+					continue;
+
+				const INT32 x = col + dx;
+				if (x < 0 || x >= WORLD_COLS)
+					continue;
+
+				if (IsLootTilePassable(y * WORLD_COLS + x))
+					return TRUE;
+			}
+		}
+
+		return FALSE;
+	}
+
+	BOOLEAN HasAccessibleTileForStructure(STRUCTURE* pStructure)
+	{
+		if (!pStructure)
+			return FALSE;
+
+		if (HasAccessibleTile(pStructure->sGridNo))
+			return TRUE;
+
+		if (!pStructure->pDBStructureRef ||
+			!pStructure->pDBStructureRef->pDBStructure ||
+			!pStructure->pDBStructureRef->ppTile)
+		{
+			return FALSE;
+		}
+
+		const UINT16 tileCount = pStructure->pDBStructureRef->pDBStructure->ubNumberOfTiles;
+		for (UINT16 i = 0; i < tileCount; ++i)
+		{
+			if (!pStructure->pDBStructureRef->ppTile[i])
+				continue;
+
+			const INT32 gridNo = AddPosRelToBase(pStructure->sGridNo,
+				pStructure->pDBStructureRef->ppTile[i]);
+			if (gridNo == pStructure->sGridNo || gridNo < 0 || gridNo >= WORLD_MAX)
+				continue;
+
+			if (HasAccessibleTile(gridNo))
+				return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	// travnik: multi-tile containers may store map-authored items on any occupied tile.
@@ -266,9 +372,11 @@ namespace
 	}
 
 	UINT32 MakeSiteRandomKey(INT16 sectorX, INT16 sectorY, INT8 sectorZ,
-		INT32 gridNo, const std::string& profile)
+		INT32 gridNo, const std::string& profile, UINT32 campaignSeed)
 	{
 		UINT32 hash = 2166136261u;
+		// travnik: seed is stable within one campaign but differs between new games.
+		hash ^= campaignSeed; hash *= 16777619u;
 		hash ^= (UINT32)(UINT16)sectorX; hash *= 16777619u;
 		hash ^= (UINT32)(UINT16)sectorY; hash *= 16777619u;
 		hash ^= (UINT32)(UINT8)sectorZ; hash *= 16777619u;
@@ -309,6 +417,7 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 	INT32 nature = 0;
 	INT32 props = 0;
 	INT32 hiddenContainers = 0;
+	INT32 hiddenNoAccessSkipped = 0;
 	INT32 nonEmptySkipped = 0;
 	INT32 openContainersSkipped = 0;
 
@@ -326,7 +435,7 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 			if (s->sGridNo < 0 || s->sGridNo >= WORLD_MAX)
 				continue;
 
-			if (IsSpecialContainerGrid(s->sGridNo))
+			if (IsSpecialContainerGrid(ctx.sectorX, ctx.sectorY, ctx.sectorZ, s->sGridNo))
 				continue;
 
 			LEVELNODE* pNode = FindLevelNodeBasedOnStructure(s->sGridNo, s);
@@ -377,13 +486,19 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 			site.priority = profile->priority;
 			site.maxSites = profile->maxSites;
 			site.randomKey = MakeSiteRandomKey(ctx.sectorX, ctx.sectorY, ctx.sectorZ,
-				site.gridNo, site.profile);
+				site.gridNo, site.profile, ContainerLoot::GetCampaignSeed());
 
 			if (isHiddenContainer)
 			{
 				if (flags & STRUCTURE_OPEN)
 				{
 					++openContainersSkipped;
+					continue;
+				}
+
+				if (!HasAccessibleTileForStructure(s))
+				{
+					++hiddenNoAccessSkipped;
 					continue;
 				}
 
@@ -464,10 +579,10 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 		}
 	}
 
-	CHAR8 message[256];
-	sprintf_s(message, "CollectSites: total=%d containers=%d vehicles=%d surfaces=%d nature=%d props=%d hidden=%d nonEmptySkipped=%d openSkipped=%d",
+	CHAR8 message[320];
+	sprintf_s(message, "CollectSites: total=%d containers=%d vehicles=%d surfaces=%d nature=%d props=%d hidden=%d hiddenNoAccessSkipped=%d nonEmptySkipped=%d openSkipped=%d",
 		(INT32)ctx.sites.size(), containers, vehicles, surfaces, nature, props, hiddenContainers,
-		nonEmptySkipped, openContainersSkipped);
+		hiddenNoAccessSkipped, nonEmptySkipped, openContainersSkipped);
 	ContainerLoot::Trace(message);
 }
 namespace

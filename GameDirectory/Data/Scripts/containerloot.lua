@@ -11,7 +11,8 @@ local DEBUG_ONLY_SUBTYPES = {
 
 local MAX_LOOT_TIER = 10
 local MAX_ITEM_COOLNESS = 10
-local MAX_ROLLS = 6
+local MAX_ROLLS = 12
+local MAX_LOCK_ID = 254
 
 local function clamp(value, minimum, maximum)
     if value < minimum then
@@ -111,9 +112,29 @@ local function buildSecurity(site, profile, ctx)
         return result
     end
 
+    if not profile then
+        return result
+    end
+
     local profiles = ctx.securityProfiles or {}
-    local security = profiles[profile.security or "default"] or profiles["default"]
+    local securityName = profile.security or ""
+    if securityName == "none" then
+        return result
+    end
+
+    local security = nil
+    if securityName == "" then
+        security = profiles["default"]
+    else
+        security = profiles[securityName]
+    end
+
     if not security then
+        return result
+    end
+
+    local lockId = security.lockId or 0
+    if lockId < 1 or lockId > MAX_LOCK_ID then
         return result
     end
 
@@ -133,7 +154,7 @@ local function buildSecurity(site, profile, ctx)
     end
 
     result.hasLock = true
-    result.lockId = security.lockId or 0
+    result.lockId = lockId
 
     local trapMin = math.max(0, security.trapChanceMin or 0)
     local trapMax = math.max(trapMin, security.trapChanceMax or trapMin)
@@ -210,7 +231,7 @@ local function choosePlacement(site, profile)
         if placement.type == "open" then
             allowed = site.canOpen and not site.isOpen
         elseif placement.type == "hidden" then
-            allowed = site.canHide
+            allowed = site.canHide and not site.canOpen
         elseif placement.type == "surface" then
             allowed = site.canSurface
         elseif placement.type == "corpse" then
@@ -232,7 +253,7 @@ local function choosePlacement(site, profile)
         if placement.type == "open" then
             allowed = site.canOpen and not site.isOpen
         elseif placement.type == "hidden" then
-            allowed = site.canHide
+            allowed = site.canHide and not site.canOpen
         elseif placement.type == "surface" then
             allowed = site.canSurface
         elseif placement.type == "corpse" then
@@ -288,29 +309,66 @@ local function entryAllowed(entry, ctx, tier, maxCoolness, minTier, maxTier, pla
     return true
 end
 
+local function appendLootType(pool, typeId, entry, ctx, tier, maxCoolness,
+    minTier, maxTier, placement, lootTypes, depth)
+    if depth > 4 or entry.enabled == false then
+        return
+    end
+
+    local lootType = lootTypes[typeId]
+    if not lootType or not isSectorAllowed(entry.sectorTypes, ctx) or
+       not isSectorAllowed(lootType.sectorTypes, ctx) then
+        return
+    end
+
+    local typeMinTier = math.max(minTier or 0, entry.minTier or 0, lootType.minTier or 0)
+    local typeMaxTier = math.min(maxTier or MAX_LOOT_TIER, entry.maxTier or MAX_LOOT_TIER,
+        lootType.maxTier or MAX_LOOT_TIER)
+    if typeMinTier > typeMaxTier then
+        return
+    end
+
+    local childPool = {}
+    local childTotal = 0
+
+    for _, typeItem in ipairs(lootType.items or {}) do
+        if typeItem.lootType and typeItem.lootType ~= "" then
+            local before = #childPool
+            appendLootType(childPool, typeItem.lootType, typeItem, ctx, tier, maxCoolness,
+                typeMinTier, typeMaxTier, placement, lootTypes, depth + 1)
+            for i = before + 1, #childPool do
+                childTotal = childTotal + (childPool[i].weight or 1)
+            end
+        elseif entryAllowed(typeItem, ctx, tier, maxCoolness,
+            typeMinTier, typeMaxTier, placement) then
+            childPool[#childPool + 1] = typeItem
+            childTotal = childTotal + (typeItem.weight or 1)
+        end
+    end
+
+    if childTotal <= 0 then
+        return
+    end
+
+    local parentWeight = entry.weight or 1
+    for _, child in ipairs(childPool) do
+        local clone = {}
+        for key, value in pairs(child) do
+            clone[key] = value
+        end
+        clone.weight = parentWeight * ((child.weight or 1) / childTotal)
+        pool[#pool + 1] = clone
+    end
+end
+
 local function buildPool(profile, ctx, tier, maxCoolness, placement, lootTypes)
     local pool = {}
 
     for _, entry in ipairs(profile.items or {}) do
         if entry.enabled ~= false then
             if entry.lootType and entry.lootType ~= "" then
-                local lootType = lootTypes[entry.lootType]
-                if lootType and isSectorAllowed(entry.sectorTypes, ctx) and
-                   isSectorAllowed(lootType.sectorTypes, ctx) then
-                    for _, typeItem in ipairs(lootType.items or {}) do
-                        if entryAllowed(typeItem, ctx, tier, maxCoolness,
-                            math.max(lootType.minTier or 0, entry.minTier or 0),
-                            math.min(lootType.maxTier or MAX_LOOT_TIER, entry.maxTier or MAX_LOOT_TIER),
-                            placement) then
-                            local clone = {}
-                            for key, value in pairs(typeItem) do
-                                clone[key] = value
-                            end
-                            clone.weight = (entry.weight or 1) * (typeItem.weight or 1)
-                            pool[#pool + 1] = clone
-                        end
-                    end
-                end
+                appendLootType(pool, entry.lootType, entry, ctx, tier, maxCoolness,
+                    0, MAX_LOOT_TIER, placement, lootTypes, 0)
             elseif entryAllowed(entry, ctx, tier, maxCoolness, 0, MAX_LOOT_TIER, placement) then
                 pool[#pool + 1] = entry
             end
@@ -320,9 +378,9 @@ local function buildPool(profile, ctx, tier, maxCoolness, placement, lootTypes)
     return pool
 end
 
-local function makeLootForProfile(profile, ctx, tier, placement, lootTypes, profiles, depth)
+local function makeLootForProfile(profile, ctx, tier, placement, lootTypes, profiles, depth, site)
     if not profile or depth > 4 then
-        return {}, 0, profile
+        return {}, 0, profile, placement
     end
 
     local maxCoolness = computeMaxCoolness(tier, profile, ctx)
@@ -332,10 +390,13 @@ local function makeLootForProfile(profile, ctx, tier, placement, lootTypes, prof
         local fallback = profiles[profile.fallbackProfile]
         if fallback and fallback.id ~= profile.id and
            profileTierAllowed(fallback, tier) and isSectorAllowed(fallback.sectorTypes, ctx) then
-            local items, money, usedProfile = makeLootForProfile(fallback, ctx, tier, placement,
-                lootTypes, profiles, depth + 1)
-            if #items > 0 or money > 0 then
-                return items, money, usedProfile
+            local fallbackPlacement = choosePlacement(site, fallback)
+            if fallbackPlacement then
+                local items, money, usedProfile, usedPlacement = makeLootForProfile(fallback, ctx, tier,
+                    fallbackPlacement, lootTypes, profiles, depth + 1, site)
+                if #items > 0 or money > 0 then
+                    return items, money, usedProfile, usedPlacement
+                end
             end
         end
     end
@@ -348,7 +409,7 @@ local function makeLootForProfile(profile, ctx, tier, placement, lootTypes, prof
         (1 + progressLoss / 200)
     emptyChance = clamp(emptyChance, 0, 100)
     if emptyChance > 0 and math.random(100) <= emptyChance then
-        return items, money, profile
+        return items, money, profile, placement
     end
 
     local minRolls = math.max(1, profile.minRolls or 1)
@@ -383,7 +444,7 @@ local function makeLootForProfile(profile, ctx, tier, placement, lootTypes, prof
         end
     end
 
-    return items, money, profile
+    return items, money, profile, placement
 end
 
 local function selectProfile(profile, profiles, ctx, tier, depth)
@@ -413,6 +474,22 @@ local function isDebugAllowed(profileId)
     return DEBUG_ONLY_SUBTYPES[profileId] == true
 end
 
+local function siteSortLess(left, right)
+    local leftPriority = left.priority or 0
+    local rightPriority = right.priority or 0
+    if leftPriority ~= rightPriority then
+        return leftPriority < rightPriority
+    end
+
+    local leftRandom = left.randomKey or 0
+    local rightRandom = right.randomKey or 0
+    if leftRandom ~= rightRandom then
+        return leftRandom < rightRandom
+    end
+
+    return (left.site or 0) < (right.site or 0)
+end
+
 function GenerateSectorLoot(ctx)
     local plan = {}
     local profiles = ctx.profiles or {}
@@ -420,42 +497,46 @@ function GenerateSectorLoot(ctx)
     local spawnedByProfile = {}
     local tier = computeTier(ctx)
 
-    -- travnik: C++ already sorted sites by priority/randomKey.
-    -- Lua chooses the concrete containers and spawn/no-spawn decisions.
+    -- travnik: order sites by priority and campaign-seeded randomKey.
+    local orderedSites = {}
     for _, site in ipairs(ctx.sites or {}) do
+        orderedSites[#orderedSites + 1] = site
+    end
+    table.sort(orderedSites, siteSortLess)
+
+    -- Lua chooses the concrete containers and spawn/no-spawn decisions.
+    for _, site in ipairs(orderedSites) do
         local profileId = site.profile
 
         if profileId and profileId ~= "" and isDebugAllowed(profileId) then
             local profile = selectProfile(profiles[profileId], profiles, ctx, tier, 0)
 
             if profile then
-                local maxSites = profile.maxSites or site.maxSites or 0
-                local spawned = spawnedByProfile[profile.id] or 0
+                local placement = choosePlacement(site, profile)
+                if placement then
+                    local items, money, usedProfile, usedPlacement = makeLootForProfile(profile, ctx, tier,
+                        placement, lootTypes, profiles, 0, site)
 
-                if maxSites > 0 and spawned >= maxSites then
-                    -- soft cap: keep scanning only if another profile can still spawn
-                else
-                    local placement = choosePlacement(site, profile)
-                    if placement then
-                        local items, money, usedProfile = makeLootForProfile(profile, ctx, tier,
-                            placement, lootTypes, profiles, 0)
+                    if #items > 0 or money > 0 then
+                        local maxSites = usedProfile.maxSites or site.maxSites or 0
+                        local spawned = spawnedByProfile[usedProfile.id] or 0
 
-                        if #items > 0 or money > 0 then
+                        if maxSites <= 0 or spawned < maxSites then
                             local security = buildSecurity(site, usedProfile, ctx)
                             plan[#plan + 1] = {
                                 site = site.site,
-                                placement = placement,
+                                placement = usedPlacement or placement,
                                 items = items,
                                 money = money,
                                 profile = usedProfile.id,
-                                maxSites = usedProfile.maxSites or 0,
+                                maxSites = maxSites,
                                 hasLock = security.hasLock,
                                 lockId = security.lockId,
                                 hasTrap = security.hasTrap,
                                 trapId = security.trapId,
                                 trapLevel = security.trapLevel,
                             }
-                            spawnedByProfile[usedProfile.id] = (spawnedByProfile[usedProfile.id] or 0) + 1
+                            spawnedByProfile[usedProfile.id] = spawned + 1
                         end
                     end
                 end
