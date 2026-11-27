@@ -943,9 +943,6 @@ void MapScreenMessage( UINT16 usColor, UINT8 ubPriority, STR16 pStringA, ... )
 
 	if( ubPriority == MSG_BETAVERSION )
 	{
-		// sevenfm: store all debug messages
-		AddTacticalDebugMessage(DestString);
-
 		usColor = BETAVERSION_COLOR;
 		#ifndef JA2BETAVERSION
 			#ifndef JA2TESTVERSION
@@ -956,18 +953,21 @@ void MapScreenMessage( UINT16 usColor, UINT8 ubPriority, STR16 pStringA, ... )
 		va_start(argptr, pStringA);			// Set up variable argument pointer
 		vswprintf(DestString, pStringA, argptr);	// process gprintf string (get output str)
 		va_end(argptr);
+
+		// travnik: add the already formatted message to the in-game console
+		AddTacticalDebugMessage(DestString);
 		WriteMessageToFile( DestString );
 	}
 
 	if( ubPriority == MSG_TESTVERSION )
 	{
-		// sevenfm: store all debug messages
-		AddTacticalDebugMessage(DestString);
-
 		usColor = TESTVERSION_COLOR;
 		va_start(argptr, pStringA);			// Set up variable argument pointer
 		vswprintf(DestString, pStringA, argptr);	// process gprintf string (get output str)
 		va_end(argptr);
+
+		// travnik: add the already formatted message to the in-game console
+		AddTacticalDebugMessage(DestString);
 
 		#ifndef JA2TESTVERSION
 			return;
@@ -1111,10 +1111,33 @@ std::vector<std::wstring> gTacticalDebugMessageVector;
 std::vector<std::wstring> gTacticalAIMessageVector;
 std::vector<std::wstring> gTacticalHelpMessageVector;
 
+// travnik: in debug builds mirror the in-game console panel to a text log
+#ifdef _DEBUG
+static void LogTacticalConsoleMessage(const CHAR16* pStr, const wchar_t* pTag)
+{
+	if (pStr == NULL || pStr[0] == L'\0')
+		return;
+
+	static sgp::Logger_ID logId = (sgp::Logger_ID)-1;
+	if (logId == (sgp::Logger_ID)-1)
+	{
+		logId = sgp::Logger::instance().createLogger();
+		sgp::Logger::instance().connectFile(logId, L"TacticalConsole.txt", false, sgp::Logger::FLUSH_ON_ENDL);
+	}
+
+	SGP_LOG(logId) << L"[" << pTag << L"] " << pStr << sgp::endl;
+}
+#else
+static void LogTacticalConsoleMessage(const CHAR16*, const wchar_t*)
+{
+}
+#endif
+
 void AddTacticalMessage(CHAR16 *pStr, UINT16 usColor)
 {
 	gTacticalMessageVector.push_back(std::wstring(pStr));
 	gusTacticalMessageColorVector.push_back(usColor);
+	LogTacticalConsoleMessage(pStr, L"MSG");
 
 	if (TacticalLeftPanelActive())
 	{
@@ -1131,6 +1154,7 @@ void AddTacticalMessage(CHAR16 *pStr, UINT16 usColor)
 void AddTacticalDebugMessage(CHAR16 *pStr)
 {
 	gTacticalDebugMessageVector.push_back(std::wstring(pStr));
+	LogTacticalConsoleMessage(pStr, L"DEBUG");
 
 	if( guiCurrentScreen == GAME_SCREEN )
 		fInterfacePanelDirty = DIRTYLEVEL2;
@@ -1139,6 +1163,7 @@ void AddTacticalDebugMessage(CHAR16 *pStr)
 void AddTacticalAIMessage(CHAR16 *pStr)
 {
 	gTacticalAIMessageVector.push_back(std::wstring(pStr));
+	LogTacticalConsoleMessage(pStr, L"AI");
 
 	if( guiCurrentScreen == GAME_SCREEN )
 		fInterfacePanelDirty = DIRTYLEVEL2;

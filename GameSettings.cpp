@@ -801,7 +801,18 @@ void LoadGameExternalOptions()
 
 	//Kaiden: Setting Ja2_Options.ini file to be read
 	CIniReader iniReader(GAME_EXTERNAL_OPTIONS_FILE);
-	
+
+	// travnik: ????? ????? ?????? ContainerLoot
+	gGameExternalOptions.iContainerLootMaxSpawns = iniReader.ReadInteger("Tactical container loot", "MAX_SPAWNS_PER_SECTOR", 400, 1, 4096);
+	gGameExternalOptions.fContainerLootProgressWeight = iniReader.ReadFloat("Tactical container loot", "LOOT_PROGRESS_WEIGHT", 1.0f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootSectorCoolnessWeight = iniReader.ReadFloat("Tactical container loot", "LOOT_SECTOR_COOLNESS_WEIGHT", 1.0f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootMilitaryTypeBonus = iniReader.ReadFloat("Tactical container loot", "LOOT_MILITARY_TYPE_BONUS", 1.0f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootDifficultyBonus = iniReader.ReadFloat("Tactical container loot", "LOOT_DIFFICULTY_BONUS", 0.5f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootProgressTierCapBonus = iniReader.ReadFloat("Tactical container loot", "LOOT_PROGRESS_TIER_CAP_BONUS", 3.0f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootMaxItemCoolnessBonus = iniReader.ReadFloat("Tactical container loot", "LOOT_MAX_ITEM_COOLNESS_BONUS", 2.0f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootMoneyProgressScale = iniReader.ReadFloat("Tactical container loot", "LOOT_MONEY_PROGRESS_SCALE", 0.5f, 0.0f, 10.0f);
+	gGameExternalOptions.fContainerLootEmptyChanceScale = iniReader.ReadFloat("Tactical container loot", "LOOT_EMPTY_CHANCE_SCALE", 1.0f, 0.0f, 10.0f);
+
 	//################# System Limit Settings #################
 
 	// WDS - make number of mercenaries, etc. be configurable. Note: Changing one of these can render savegames unloadable.

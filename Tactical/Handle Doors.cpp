@@ -40,6 +40,7 @@
 #include "fresh_header.h"
 #include "connect.h"
 #include "DoorInterruptHandler.h"	// door_interrupt: deferred IIS door AP registration
+#include "Feature/ContainerLoot/ContainerLoot.h"
 
 #ifdef JA2UB
 #include "Explosion Control.h"
@@ -527,8 +528,12 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT32 sGridNo, STRUCTURE *p
 	{
 		if ( pSoldier->bTeam == OUR_TEAM )
 		{
+			// travnik: multi-tile openable structures store their DoorTable entry on the base tile.
+			STRUCTURE* pBaseStructure = FindBaseStructure( pStructure );
+			const INT32 sDoorGridNo = (pBaseStructure != NULL) ? pBaseStructure->sGridNo : sGridNo;
+
 			// Find locked door here....
-			pDoor = FindDoorInfoAtGridNo( sGridNo );
+			pDoor = FindDoorInfoAtGridNo( sDoorGridNo );
 
 			// Alrighty, first check for traps ( unless we are examining.... )
 			if ( pSoldier->aiData.ubDoorHandleCode != HANDLE_DOOR_EXAMINE && pSoldier->aiData.ubDoorHandleCode != HANDLE_DOOR_UNTRAP && pSoldier->aiData.ubDoorHandleCode != HANDLE_DOOR_UNLOCK )
@@ -1092,6 +1097,9 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT32 sGridNo, STRUCTURE *p
 		}
 		else
 		{
+			// travnik: ����� ������ ��-������� openable-��������� �������������
+			// ���������� ���, ����� ��� �� ������� � HIDDEN_IN_OBJECT.
+			ContainerLoot::OnContainerOpening( pSoldier, sGridNo, pStructure );
 			HandleStructChangeFromGridNo( pSoldier, sGridNo );
 		}
 	}

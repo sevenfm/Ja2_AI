@@ -1,0 +1,721 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ENVIRONMENT_LOOT version="1">
+	<CONTAINER_SECURITY>
+		<SECURITY_PROFILE id="default"
+			lockChanceMin="0" lockChanceMax="0"
+			trapChanceMin="0" trapChanceMax="0"
+			lockChanceCap="0" trapChanceCap="0"
+			lockProgressWeight="0" lockCoolnessWeight="0"
+			trapProgressWeight="0" trapCoolnessWeight="0"
+			trapLevelMin="1" trapLevelMax="1"
+			trapLevelProgressWeight="0" trapLevelCoolnessWeight="0"
+			lockId="0">
+			<TRAP_TYPES></TRAP_TYPES>
+		</SECURITY_PROFILE>
+		<SECURITY_PROFILE id="base_value" lockChanceMin="20" lockChanceMax="30" trapChanceMin="30" trapChanceMax="40" lockChanceCap="60" trapChanceCap="80" lockProgressWeight="0.10" lockCoolnessWeight="0.10" trapProgressWeight="0.10" trapCoolnessWeight="0.10" trapLevelMin="1" trapLevelMax="4" trapLevelProgressWeight="0.02" trapLevelCoolnessWeight="1.0" lockId="1">
+			<TRAP_TYPES>
+				<TRAP_TYPE id="EXPLOSION" weight="60" />
+				<TRAP_TYPE id="ELECTRIC" weight="40" />
+			</TRAP_TYPES>
+		</SECURITY_PROFILE>
+		<SECURITY_PROFILE id="high_value"
+			lockChanceMin="30" lockChanceMax="45"
+			trapChanceMin="40" trapChanceMax="55"
+			lockChanceCap="70" trapChanceCap="85"
+			lockProgressWeight="0.10" lockCoolnessWeight="0.10"
+			trapProgressWeight="0.10" trapCoolnessWeight="0.10"
+			trapLevelMin="3" trapLevelMax="6"
+			trapLevelProgressWeight="0.02" trapLevelCoolnessWeight="1.0"
+			lockId="1">
+			<TRAP_TYPES>
+				<TRAP_TYPE id="EXPLOSION" weight="40" />
+				<TRAP_TYPE id="SILENT_ALARM" weight="30" />
+				<TRAP_TYPE id="SUPER_ELECTRIC" weight="30" />
+			</TRAP_TYPES>
+		</SECURITY_PROFILE>
+	</CONTAINER_SECURITY>
+	<SECTOR_SECURITY>
+		<TAG name="sam" lockBonus="15" trapBonus="20" trapLevelBonus="1" />
+		<TAG name="military" lockBonus="8" trapBonus="10" trapLevelBonus="0" />
+		<TAG name="wealthy" lockBonus="5" trapBonus="5" trapLevelBonus="0" />
+		<TAG name="underground" lockBonus="5" trapBonus="5" trapLevelBonus="0" />
+		<TAG name="mine" lockBonus="3" trapBonus="3" trapLevelBonus="0" />
+	</SECTOR_SECURITY>
+	<LOOT_TYPES>
+		<LOOT_TYPE id="base_medical_supplies" minTier="0" maxTier="10">
+			<ITEM id="201" weight="200" min="1" max="1" statusMin="20" statusMax="100" minTier="2" />
+			<ITEM id="202" weight="50" min="1" max="1" statusMin="20" statusMax="100" minTier="4" />
+			<ITEM id="808" weight="400" min="1" max="1" statusMin="100" statusMax="100" maxTier="5" />
+			<ITEM id="1127" weight="500" min="1" max="1" statusMin="100" statusMax="100" maxTier="3" />
+			<ITEM id="236" weight="200" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="235" weight="10" min="1" max="1" statusMin="100" statusMax="100" minTier="6" />
+			<ITEM id="220" weight="200" min="1" max="1" statusMin="100" statusMax="100" minTier="1" maxTier="6" />
+		</LOOT_TYPE>
+		<!-- travnik: категорийные пулы для профилей 1-8 и обойм ammo_only. -->
+		<LOOT_TYPE id="hight_medical_supplies" minTier="0" maxTier="10">
+			<ITEM id="201" weight="200" min="1" max="1" statusMin="80" statusMax="100" minTier="0" />
+			<ITEM id="202" weight="200" min="1" max="1" statusMin="80" statusMax="100" minTier="4" />
+			<ITEM id="235" weight="100" min="1" max="1" statusMin="100" statusMax="100" minTier="6" />
+			<ITEM id="222" weight="100" min="1" max="1" statusMin="100" statusMax="100" minTier="6" />
+		</LOOT_TYPE>
+		<LOOT_TYPE id="sidearms_only" minTier="0" maxTier="10">
+			<ITEM id="3" weight="220" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Beretta 92F, cool 1 -->
+			<ITEM id="8" weight="200" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- M1911A1, cool 1 -->
+			<ITEM id="689" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- PM, cool 1 -->
+			<ITEM id="720" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Skorpion, cool 1 -->
+			<ITEM id="1" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- Glock 17, cool 3 -->
+			<ITEM id="7" weight="90" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- Desert Eagle .357, cool 3 -->
+			<ITEM id="692" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- Mini-Uzi, cool 3 -->
+			<ITEM id="330" weight="70" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Micro-Uzi, cool 4 -->
+			<ITEM id="765" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- OA-93, cool 5 -->
+			<ITEM id="764" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- CMMG 7.3, cool 6 -->
+			<ITEM id="619" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- Veresk, cool 7 -->
+			<ITEM id="673" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- MP7A1, cool 8 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="smg_only" minTier="0" maxTier="10">
+			<ITEM id="16" weight="200" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Type 85, cool 1 -->
+			<ITEM id="11" weight="180" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Thompson M1A1, cool 2 -->
+			<ITEM id="345" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Uzi, cool 2 -->
+			<ITEM id="761" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- MPL, cool 2 -->
+			<ITEM id="342" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- MP5A4, cool 3 -->
+			<ITEM id="69" weight="90" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- M-960A, cool 3 -->
+			<ITEM id="642" weight="70" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- SAF, cool 4 -->
+			<ITEM id="702" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- PPsh-41, cool 4 -->
+			<ITEM id="344" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- MP5SD5, cool 5 -->
+			<ITEM id="1139" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- KRISS, cool 7 -->
+			<ITEM id="15" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- P90, cool 8 -->
+			<ITEM id="2413" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- MP7A1, cool 8 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="assault_rifles_only" minTier="0" maxTier="10">
+			<ITEM id="347" weight="220" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- AK-47, cool 3 -->
+			<ITEM id="613" weight="180" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- AKS-47, cool 3 -->
+			<ITEM id="708" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- SA vz.58, cool 3 -->
+			<ITEM id="26" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- AKM, cool 4 -->
+			<ITEM id="14" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- AKS-74U, cool 5 -->
+			<ITEM id="20" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- AUG-A2, cool 5 -->
+			<ITEM id="25" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- AK-74, cool 5 -->
+			<ITEM id="29" weight="90" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- G3A3, cool 5 -->
+			<ITEM id="12" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Commando, cool 7 -->
+			<ITEM id="331" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- L85A2, cool 7 -->
+			<ITEM id="633" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- M4A1, cool 7 -->
+			<ITEM id="755" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- G36, cool 7 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="sniper_rifles_only" minTier="0" maxTier="10">
+			<ITEM id="18" weight="160" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="8" /> <!-- SVD, cool 5 -->
+			<ITEM id="625" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="9" /> <!-- M501, cool 6 -->
+			<ITEM id="734" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="9" /> <!-- SVDS, cool 6 -->
+			<ITEM id="745" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="9" /> <!-- VSk-94, cool 6 -->
+			<ITEM id="333" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- VSS, cool 7 -->
+			<ITEM id="334" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- PSG1, cool 7 -->
+			<ITEM id="19" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- M24, cool 8 -->
+			<ITEM id="630" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- SR-25, cool 8 -->
+			<ITEM id="335" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="9" maxTier="10" /> <!-- M82A2, cool 10 -->
+			<ITEM id="618" weight="8" min="1" max="1" statusMin="50" statusMax="100" minTier="9" maxTier="10" /> <!-- AWM, cool 10 -->
+			<ITEM id="639" weight="8" min="1" max="1" statusMin="50" statusMax="100" minTier="9" maxTier="10" /> <!-- DSR-1, cool 10 -->
+			<ITEM id="682" weight="6" min="1" max="1" statusMin="50" statusMax="100" minTier="9" maxTier="10" /> <!-- KSVK, cool 10 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="heavy_weapons_only" minTier="0" maxTier="10">
+			<ITEM id="2083" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- BAR, cool 3 -->
+			<ITEM id="627" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="6" /> <!-- M1919 A6, cool 4 -->
+			<ITEM id="705" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="6" /> <!-- RPD, cool 4 -->
+			<ITEM id="706" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="7" /> <!-- RPK, cool 5 -->
+			<ITEM id="35" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="8" /> <!-- RPK-74, cool 6 -->
+			<ITEM id="687" weight="70" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="8" /> <!-- M60E3, cool 6 -->
+			<ITEM id="34" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="9" /> <!-- Minimi, cool 7 -->
+			<ITEM id="36" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="9" /> <!-- HK 21E, cool 7 -->
+			<ITEM id="649" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- FN MAG, cool 8 -->
+			<ITEM id="669" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- MG43, cool 9 -->
+			<ITEM id="699" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- Pecheneg, cool 9 -->
+			<ITEM id="700" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- PKM, cool 9 -->
+			<ITEM id="1581" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Rifle Grenade Device, cool 2 -->
+			<ITEM id="2060" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- RPG-2, cool 2 -->
+			<ITEM id="40" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- M79, cool 3 -->
+			<ITEM id="914" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- RPG-7, cool 4 -->
+			<ITEM id="51" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- LAW, cool 5 -->
+			<ITEM id="902" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- M203PI, cool 6 -->
+			<ITEM id="905" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- AG36, cool 7 -->
+			<ITEM id="917" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- RPG-27, cool 7 -->
+			<ITEM id="906" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- MGL-140, cool 8 -->
+			<ITEM id="901" weight="5" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Commando Mortar, cool 9 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="rifles_only" minTier="0" maxTier="10">
+			<ITEM id="17" weight="180" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- SKS, cool 2 -->
+			<ITEM id="348" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- SL8, cool 2 -->
+			<ITEM id="1193" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- M1 Carbine, cool 2 -->
+			<ITEM id="22" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Mini-14, cool 3 -->
+			<ITEM id="693" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Mosin-Nagant, cool 3 -->
+			<ITEM id="776" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Kar 98k, cool 3 -->
+			<ITEM id="683" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="6" /> <!-- M1 Garand, cool 4 -->
+			<ITEM id="753" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="6" /> <!-- Zastava, cool 4 -->
+			<ITEM id="676" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- SL9SD, cool 6 -->
+			<ITEM id="760" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- .50 Beo, cool 6 -->
+			<ITEM id="784" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- Mauser M-03, cool 8 -->
+			<ITEM id="2089" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- SSK Whisper, cool 8 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="clothing_only" minTier="0" maxTier="10">
+			<ITEM id="296" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- T-Shirt, cool 0 -->
+			<ITEM id="188" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Leather Jacket, cool 1 -->
+			<ITEM id="291" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Coat, cool 1 -->
+			<ITEM id="286" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Uniform, cool 1 -->
+			<ITEM id="281" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="6" /> <!-- Black Cap, cool 1 -->
+			<ITEM id="943" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="6" /> <!-- Army Cap, cool 1 -->
+			<ITEM id="1128" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="6" /> <!-- Balaclava, cool 1 -->
+			<ITEM id="285" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="6" /> <!-- Wood Hat, cool 2 -->
+			<ITEM id="284" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Uniform, cool 3 -->
+			<ITEM id="2280" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Ghillie Hood, cool 8 -->
+			<ITEM id="2281" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Ghillie Pants, cool 8 -->
+			<ITEM id="2282" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Ghillie Suit, cool 8 -->
+		</LOOT_TYPE>
+		
+		<LOOT_TYPE id="city_clothing_only" minTier="0" maxTier="10">
+			<!-- travnik: городская гражданская одежда. Отдельных предметов обуви в SDO/r7609 нет, поэтому гражданский комплект представлен item 1577 Civilian Clothes. -->
+			<ITEM id="1577" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Civilian Clothes, cool 1 -->
+			<ITEM id="296" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- T-Shirt, cool 0 -->
+			<ITEM id="194" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Arulco T-Shirt, cool 1 -->
+			<ITEM id="195" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Deidranna T-Shirt, cool 1 -->
+			<ITEM id="188" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Leather Jacket, cool 1 -->
+			<ITEM id="291" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Coat, cool 1 -->
+			<ITEM id="281" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Black Cap, cool 1 -->
+			<ITEM id="944" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Baseball Cap, cool 1 -->
+			<ITEM id="1606" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Black Shirt, cool 1 -->
+			<ITEM id="1607" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Blue Shirt, cool 1 -->
+			<ITEM id="1608" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Brown Shirt, cool 1 -->
+			<ITEM id="1609" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Green Shirt, cool 1 -->
+			<ITEM id="1610" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Grey Shirt, cool 1 -->
+			<ITEM id="1611" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Yellow Shirt, cool 1 -->
+			<ITEM id="1612" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- White Shirt, cool 1 -->
+			<ITEM id="1613" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Purple Shirt, cool 1 -->
+			<ITEM id="1614" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Red Shirt, cool 1 -->
+			<ITEM id="1615" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Jean Shirt, cool 1 -->
+			<ITEM id="1616" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Light Green Shirt, cool 1 -->
+			<ITEM id="869" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Tan Shirt, cool 1 -->
+			<ITEM id="870" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Sand Shirt, cool 1 -->
+			<ITEM id="871" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Grey-Blue Shirt, cool 1 -->
+			<ITEM id="840" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Red Pants, cool 1 -->
+			<ITEM id="841" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Grey Pants, cool 1 -->
+			<ITEM id="842" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Brown Pants, cool 1 -->
+			<ITEM id="843" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Yellow Pants, cool 1 -->
+			<ITEM id="845" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Sand Pants, cool 1 -->
+			<ITEM id="846" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Purple Pants, cool 1 -->
+			<ITEM id="847" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Grey-Blue Pants, cool 1 -->
+			<ITEM id="848" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Black-Blue Pants, cool 1 -->
+			<ITEM id="1617" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Beige Pants, cool 1 -->
+			<ITEM id="1618" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Black Pants, cool 1 -->
+			<ITEM id="1619" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Blue Jeans, cool 1 -->
+			<ITEM id="1620" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Green Pants, cool 1 -->
+			<ITEM id="1621" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Jean Pants, cool 1 -->
+			<ITEM id="1622" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="5" /> <!-- Tan Pants, cool 1 -->
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="junk_only" minTier="0" maxTier="10">
+			<ITEM id="312" weight="140" min="1" max="2" statusMin="50" statusMax="100" minTier="0" maxTier="10" /> <!-- Can, cool 1 -->
+			<ITEM id="311" weight="100" min="1" max="2" statusMin="50" statusMax="100" minTier="0" maxTier="10" /> <!-- String, cool 1 -->
+			<ITEM id="320" weight="80" min="1" max="2" statusMin="50" statusMax="100" minTier="0" maxTier="10" /> <!-- Gum, cool 1 -->
+			<ITEM id="323" weight="80" min="1" max="2" statusMin="50" statusMax="100" minTier="0" maxTier="10" /> <!-- Rubber Band, cool 1 -->
+			<ITEM id="314" weight="60" min="1" max="2" statusMin="50" statusMax="100" minTier="0" maxTier="10" /> <!-- Marbles, cool 3 --> <!-- Alcohol, cool 1 --> <!-- Wine, cool 1 --> <!-- Beer, cool 1 --> <!-- PET bottle, cool 1 --> <!-- Vegetable juice, cool 1 --> <!-- Milk, cool 1 --> <!-- Red Bull, cool 1 -->
+			<ITEM id="316" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="1" />
+			<ITEM id="314" weight="40" min="1" max="1" statusMin="100" statusMax="100" minTier="3" />
+			<ITEM id="247" weight="80" min="1" max="1" statusMin="40" statusMax="90" />
+			<ITEM id="308" weight="80" min="1" max="1" statusMin="40" statusMax="90" />
+		</LOOT_TYPE>
+
+		<LOOT_TYPE id="ammo_only" minTier="0" maxTier="10">
+			<!-- 9x19 / .45 / 10mm / 5.45 / 5.56 / 7.62 / 12g / .50 -->
+			<ITEM id="71" weight="220" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- 9x19mm Mag 15 FMJ, cool 1 -->
+			<ITEM id="72" weight="160" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- 9x19mm SMG Mag FMJ, cool 1 -->
+			<ITEM id="80" weight="160" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- .45 Mag FMJ, cool 2 -->
+			<ITEM id="81" weight="120" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- .45 SMG Mag FMJ, cool 2 -->
+			<ITEM id="77" weight="100" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- .38 S-Load LRN, cool 1 -->
+			<ITEM id="87" weight="100" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- .357 Mag JHP, cool 2 -->
+			<ITEM id="506" weight="80" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- 9x18mm Mag 12 FMJ, cool 1 -->
+			<ITEM id="94" weight="120" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- 5.56x45mm Mag 30 FMJ, cool 1 -->
+			<ITEM id="96" weight="100" min="1" max="2" statusMin="100" statusMax="100" minTier="0" maxTier="4" /> <!-- 7.62x39mm Mag 10 FMJ, cool 2 -->
+			<ITEM id="586" weight="100" min="1" max="2" statusMin="100" statusMax="100" minTier="1" maxTier="5" /> <!-- 10mm Mag FMJ, cool 3 -->
+			<ITEM id="92" weight="100" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="6" /> <!-- 5.45x39mm Mag 30 FMJ, cool 5 -->
+			<ITEM id="107" weight="80" min="1" max="2" statusMin="100" statusMax="100" minTier="1" maxTier="5" /> <!-- 12g Shells 7 Slug, cool 2 -->
+			<ITEM id="73" weight="100" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="7" /> <!-- 9x19mm Mag 15 AP, cool 3 -->
+			<ITEM id="83" weight="80" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="7" /> <!-- .45 SMG Mag AP, cool 3 -->
+			<ITEM id="587" weight="80" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="7" /> <!-- 10mm Mag HP, cool 3 -->
+			<ITEM id="531" weight="60" min="1" max="2" statusMin="100" statusMax="100" minTier="3" maxTier="8" /> <!-- 10mm SMG Mag FMJ, cool 4 -->
+			<ITEM id="95" weight="80" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="7" /> <!-- 5.56x45mm Mag 30 HP, cool 3 -->
+			<ITEM id="97" weight="80" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="7" /> <!-- 7.62x39mm Mag 30 FMJ, cool 3 -->
+			<ITEM id="93" weight="70" min="1" max="2" statusMin="100" statusMax="100" minTier="3" maxTier="8" /> <!-- 5.45x39mm Mag 30 HP, cool 5 -->
+			<ITEM id="101" weight="60" min="1" max="2" statusMin="100" statusMax="100" minTier="3" maxTier="8" /> <!-- 7.62x51mm Mag 20 FMJ, cool 4 -->
+			<ITEM id="127" weight="40" min="1" max="2" statusMin="100" statusMax="100" minTier="3" maxTier="8" /> <!-- 7.62x54R Mag 10 FMJ, cool 5 -->
+			<ITEM id="527" weight="50" min="1" max="2" statusMin="100" statusMax="100" minTier="2" maxTier="7" /> <!-- .44 Mag JSP, cool 3 -->
+			<ITEM id="547" weight="40" min="1" max="2" statusMin="100" statusMax="100" minTier="4" maxTier="9" /> <!-- .50 AE Mag FMJ, cool 5 -->
+			<ITEM id="555" weight="40" min="1" max="2" statusMin="100" statusMax="100" minTier="4" maxTier="9" /> <!-- .50 Beowulf Mag 7 JSP, cool 5 -->
+			<ITEM id="420" weight="30" min="1" max="1" statusMin="100" statusMax="100" minTier="5" maxTier="10" /> <!-- 12g Drum 20, cool 6 -->
+			<ITEM id="100" weight="40" min="1" max="1" statusMin="100" statusMax="100" minTier="5" maxTier="10" /> <!-- 7.62x51mm Bullets 5 FMJ, cool 6 -->
+			<ITEM id="121" weight="40" min="1" max="1" statusMin="100" statusMax="100" minTier="5" maxTier="10" /> <!-- 5.45x39mm RPK-Mag FMJ, cool 6 -->
+			<ITEM id="123" weight="30" min="1" max="1" statusMin="100" statusMax="100" minTier="6" maxTier="10" /> <!-- 5.56x45mm Belt FMJ, cool 7 -->
+			<ITEM id="456" weight="30" min="1" max="1" statusMin="100" statusMax="100" minTier="6" maxTier="10" /> <!-- 7.62x51mm Mag 10 FMJ, cool 7 -->
+			<ITEM id="105" weight="20" min="1" max="1" statusMin="100" statusMax="100" minTier="7" maxTier="10" /> <!-- 5.7mm Mag 50 AP, cool 8 -->
+			<ITEM id="485" weight="20" min="1" max="1" statusMin="100" statusMax="100" minTier="7" maxTier="10" /> <!-- 4.7mm Mag 20 AP, cool 8 -->
+			<ITEM id="116" weight="8" min="1" max="1" statusMin="100" statusMax="100" minTier="9" maxTier="10" /> <!-- .50 BMG Mag AP, cool 10 -->
+			<ITEM id="522" weight="8" min="1" max="1" statusMin="100" statusMax="100" minTier="9" maxTier="10" /> <!-- .338 Lapua Mag AP, cool 10 -->
+			<ITEM id="479" weight="8" min="1" max="1" statusMin="100" statusMax="100" minTier="9" maxTier="10" /> <!-- 12.7mm Subsonic AP, cool 10 -->
+			<ITEM id="503" weight="8" min="1" max="1" statusMin="100" statusMax="100" minTier="9" maxTier="10" /> <!-- 12.7x108mm Mag AP, cool 10 -->
+		</LOOT_TYPE>
+		<!-- travnik: Броня (корпус) -->
+		<LOOT_TYPE id="armor_body_only" minTier="0" maxTier="10">
+			<ITEM id="161" weight="140" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Flak Jacket, cool 2 -->
+			<ITEM id="162" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Flak-18 Jacket, cool 0 -->
+			<ITEM id="838" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Leg Protectors, cool 2 -->
+			<ITEM id="164" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Kevlar Vest, cool 4 -->
+			<ITEM id="165" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Kevlar-18 Vest, cool 0 -->
+			<ITEM id="170" weight="90" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Kevlar Pants, cool 4 -->
+			<ITEM id="171" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Kevlar-18 Pants, cool 0 -->
+			<ITEM id="812" weight="70" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- Tw. Vest, cool 5 -->
+			<ITEM id="811" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- Tw. Pants, cool 5 -->
+			<ITEM id="167" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Spectra Vest, cool 6 -->
+			<ITEM id="168" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Spec-18 Vest, cool 0 -->
+			<ITEM id="173" weight="45" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Spectra Pants, cool 6 -->
+			<ITEM id="183" weight="35" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- Ceramic Plates, cool 7 -->
+			<ITEM id="295" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- SWAT Vest, cool 7 -->
+			<ITEM id="294" weight="25" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- SWAT Pants, cool 7 -->
+			<ITEM id="806" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- EOD Vest, cool 7 -->
+			<ITEM id="805" weight="18" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- EOD Pants, cool 7 -->
+			<ITEM id="196" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Guardian Vest, cool 9 -->
+			<ITEM id="283" weight="8" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Zylon Combat Vest, cool 9 -->
+			<ITEM id="282" weight="8" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Zylon Combat Pants, cool 9 -->
+			<ITEM id="803" weight="6" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Dyn. Vest, cool 9 -->
+			<ITEM id="802" weight="6" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Dyn. Pants, cool 9 -->
+		</LOOT_TYPE>
+
+		<!-- travnik: Голова и навесное -->
+		<LOOT_TYPE id="headgear_only" minTier="0" maxTier="10">
+			<ITEM id="266" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Walkman, cool 1 -->
+			<ITEM id="176" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Steel Helmet, cool 1 -->
+			<ITEM id="212" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Sun Goggles, cool 2 -->
+			<ITEM id="1629" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Scuba Mask, cool 2 -->
+			<ITEM id="177" weight="90" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="8" /> <!-- Kevlar Helmet, cool 3 -->
+			<ITEM id="178" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="8" /> <!-- Kvlr-18 Helmet, cool 0 -->
+			<ITEM id="211" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="8" /> <!-- NVG I, cool 3 -->
+			<ITEM id="2306" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="8" /> <!-- Ballistic Goggles, cool 3 -->
+			<ITEM id="213" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Gas Mask, cool 4 -->
+			<ITEM id="246" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- NVG II, cool 4 -->
+			<ITEM id="810" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- Tw. Helmet, cool 5 -->
+			<ITEM id="180" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Spectra Helmet, cool 6 -->
+			<ITEM id="181" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- Spec-18 Helmet, cool 0 -->
+			<ITEM id="804" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- EOD Helmet, cool 7 -->
+			<ITEM id="293" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- SWAT Helmet, cool 7 -->
+			<ITEM id="210" weight="15" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- Extended Ear, cool 7 -->
+			<ITEM id="1024" weight="15" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- NVG III, cool 7 -->
+			<ITEM id="801" weight="8" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Dyn. Helmet, cool 9 -->
+			<ITEM id="1025" weight="5" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- NVG IV, cool 9 -->
+		</LOOT_TYPE>
+
+		<!-- travnik: Разгрузочные системы -->
+		<LOOT_TYPE id="lbe_only" minTier="0" maxTier="10">
+			<ITEM id="1176" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Hunter Vest, cool 1 -->
+			<ITEM id="1090" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- LBE Gear, cool 1 -->
+			<ITEM id="1083" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- Blackhawk, cool 2 -->
+			<ITEM id="2273" weight="90" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- "Lifchick" Chest Rig, cool 2 -->
+			<ITEM id="1079" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- TAC-1A Vest, cool 3 -->
+			<ITEM id="1087" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- Ru.107 Vest, cool 3 -->
+			<ITEM id="1088" weight="70" min="1" max="1" statusMin="50" statusMax="100" minTier="1" maxTier="5" /> <!-- RM22SF Vest, cool 3 -->
+			<ITEM id="1089" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- TAC-1B Vest, cool 4 -->
+			<ITEM id="1196" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- TAC-1F Vest, cool 4 -->
+			<ITEM id="2313" weight="60" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- SWAT Vest, cool 4 -->
+			<ITEM id="2315" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- OMON Vest, cool 4 -->
+			<ITEM id="1084" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Police Vest, cool 5 -->
+			<ITEM id="1085" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Fleckt. Vest, cool 5 -->
+			<ITEM id="1086" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Ru.106 Vest, cool 5 -->
+			<ITEM id="2270" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- Infiltration Vest, cool 5 -->
+			<ITEM id="2274" weight="30" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- SOE Patrol Vest, cool 6 -->
+			<ITEM id="2301" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- TAG Rifleman Chest Rig, cool 7 -->
+			<ITEM id="2312" weight="15" min="1" max="1" statusMin="50" statusMax="100" minTier="6" maxTier="10" /> <!-- TAC-V10-SF, cool 7 -->
+			<ITEM id="1651" weight="12" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- FLC Vest, cool 8 -->
+			<ITEM id="2271" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- CovOps Vest, cool 8 -->
+			<ITEM id="1667" weight="8" min="1" max="1" statusMin="50" statusMax="100" minTier="8" maxTier="10" /> <!-- Black Modular Vest, cool 9 -->
+		</LOOT_TYPE>
+
+		<!-- travnik: Рюкзаки -->
+		<LOOT_TYPE id="backpacks_only" minTier="0" maxTier="10">
+			<ITEM id="448" weight="150" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- NIVDBP, cool 0 -->
+			<ITEM id="442" weight="120" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- NIVDCP, cool 0 -->
+			<ITEM id="1098" weight="100" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- TT 3-Day Pack, cool 1 -->
+			<ITEM id="2305" weight="50" min="1" max="1" statusMin="50" statusMax="100" minTier="0" maxTier="4" /> <!-- RPG BP, cool 2 -->
+			<ITEM id="1099" weight="80" min="1" max="1" statusMin="50" statusMax="100" minTier="2" maxTier="7" /> <!-- Patrol Pack, cool 4 -->
+			<ITEM id="2284" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="3" maxTier="8" /> <!-- Mortar Pack, cool 6 -->
+			<ITEM id="2272" weight="40" min="1" max="1" statusMin="50" statusMax="100" minTier="4" maxTier="9" /> <!-- Tourist RS, cool 7 -->
+			<ITEM id="1094" weight="25" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- TIMS Backpack, cool 8 -->
+			<ITEM id="1097" weight="20" min="1" max="1" statusMin="50" statusMax="100" minTier="5" maxTier="10" /> <!-- TIMS Pack, cool 8 -->
+			<ITEM id="2303" weight="10" min="1" max="1" statusMin="50" statusMax="100" minTier="7" maxTier="10" /> <!-- MLBE BP, cool 9 -->
+		</LOOT_TYPE>
+		<LOOT_TYPE id="Household_crafts" minTier="0" maxTier="10">
+			<ITEM id="1022" weight="25" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="312" weight="20" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="323" weight="18" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="320" weight="10" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="304" weight="7" min="1" max="1" statusMin="70" statusMax="100" />
+			<ITEM id="309" weight="5" min="1" max="1" statusMin="80" statusMax="100" minTier="3" />
+		</LOOT_TYPE>
+		<LOOT_TYPE id="Technical_crafts" minTier="0" maxTier="10">
+			<ITEM id="322" weight="22" min="1" max="1" statusMin="70" statusMax="100" />
+			<ITEM id="316" weight="18" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="306" weight="12" min="1" max="1" statusMin="80" statusMax="100" minTier="5" />
+			<ITEM id="305" weight="10" min="1" max="1" statusMin="80" statusMax="100" minTier="5" />
+			<ITEM id="308" weight="20" min="1" max="1" statusMin="80" statusMax="100" minTier="4" />
+		</LOOT_TYPE>
+		<LOOT_TYPE id="attachment" minTier="0" maxTier="10">
+			<ITEM id="207" weight="120" min="1" max="1" statusMin="80" statusMax="100" minTier="5" />
+			<ITEM id="1004" weight="120" min="1" max="1" statusMin="80" statusMax="100" minTier="8" />
+			<ITEM id="1525" weight="200" min="1" max="1" statusMin="80" statusMax="100" minTier="3" />
+			<ITEM id="1003" weight="200" min="1" max="1" statusMin="80" statusMax="100" minTier="2" />
+			<ITEM id="2131" weight="180" min="1" max="1" statusMin="80" statusMax="100" minTier="4" />
+			<ITEM id="209" weight="160" min="1" max="1" statusMin="80" statusMax="100" minTier="4" />
+			<ITEM id="947" weight="160" min="1" max="1" statusMin="80" statusMax="100" minTier="7" />
+			<ITEM id="1006" weight="140" min="1" max="1" statusMin="80" statusMax="100" minTier="5" />
+			<ITEM id="1029" weight="150" min="1" max="1" statusMin="80" statusMax="100" minTier="3" />
+			<ITEM id="1181" weight="150" min="1" max="1" statusMin="80" statusMax="100" minTier="5" />
+			<ITEM id="2110" weight="140" min="1" max="1" statusMin="80" statusMax="100" minTier="1" />
+		</LOOT_TYPE>
+	</LOOT_TYPES>
+	<LOOT_PROFILE id="cash_register" name="Cash Register" priority="0" maxSites="0" sectorTypes="town" coolnessBonus="0">
+		<TILES>
+			<TILE image="lawless" frame="20" kind="prop" />
+			<TILE image="lawless" frame="21" kind="prop" />
+			<TILE image="lawless2" frame="18" kind="prop" />
+			<TILE image="lawless2" frame="19" kind="prop" />
+		</TILES>
+		<EMPTY_CHANCE>30</EMPTY_CHANCE>
+		<ROLLS min="1" max="1" />
+		<PLACEMENTS>
+			<PLACEMENT type="hidden" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<MONEY weight="100" min="10" max="200" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="Kitchen_table" name="Kitchen Table" priority="60" maxSites="0" sectorTypes="town,farm,wealthy,lawless,military">
+		<TILES>
+			<TILE image="furn_6" frame="6" kind="container" />
+			<TILE image="furn_6" frame="12" kind="container" />
+			<TILE image="furn_6" frame="8" kind="container" />
+			<TILE image="furn_6" frame="14" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>55</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="220" weight="40" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="214" weight="25" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="598" weight="15" min="1" max="1" statusMin="60" statusMax="100" />
+			<ITEM id="54" weight="15" min="1" max="1" statusMin="60" statusMax="100" />
+			<ITEM id="269" weight="10" min="1" max="1" statusMin="100" statusMax="100" />
+			<MONEY weight="10" min="10" max="30" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="Kitchen_shelf" name="Kitchen shelf" priority="100" maxSites="0" sectorTypes="farm,town,hospital">
+		<TILES>
+			<TILE image="furn_6" frame="2" kind="container" />
+			<TILE image="furn_6" frame="4" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>45</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="1127" weight="35" min="1" max="1" statusMin="80" statusMax="100" />
+			<TYPE id="Technical_crafts" weight="25" />
+			<ITEM id="5" weight="5" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="49" weight="5" min="1" max="1" statusMin="80" statusMax="100" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="Toilet_cabinet" name="Toilet cabinet" priority="100" maxSites="0" coolnessBonus="0">
+		<TILES>
+			<TILE image="furn_9" frame="8" kind="container" />
+			<TILE image="furn_9" frame="10" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>35</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="1127" weight="50" min="1" max="1" statusMin="100" statusMax="100" maxTier="4" />
+			<ITEM id="201" weight="25" min="1" max="1" statusMin="60" statusMax="100" />
+			<ITEM id="808" weight="40" min="1" max="1" statusMin="60" statusMax="100" maxTier="6" />
+			<ITEM id="301" weight="25" min="1" max="1" statusMin="80" statusMax="100" maxTier="4" />
+			<ITEM id="299" weight="20" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="202" weight="5" min="1" max="1" statusMin="60" statusMax="100" minTier="2" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="Buffet" name="Buffet" priority="100" maxSites="0" security="base_value" sectorTypes="airport,farm,hospital,lawless,military,prison,sam,town,wealthy">
+		<TILES>
+			<TILE image="furn_6" frame="10" kind="container" />
+			<TILE image="furn_6" frame="16" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>45</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<TYPE id="Household_crafts" weight="50" sectorTypes="hospital,farm,airport,lawless" />
+			<ITEM id="269" weight="30" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="204" weight="40" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="37" weight="30" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="264" weight="25" min="1" max="1" statusMin="100" statusMax="100" sectorTypes="airport,lawless,military,sam,town" />
+			<ITEM id="326" weight="10" min="1" max="1" statusMin="100" statusMax="100" sectorTypes="wealthy" />
+			<MONEY weight="5" min="10" max="50" />
+			<TYPE id="city_clothing_only" weight="50" sectorTypes="farm,hospital,lawless,town,wealthy" />
+			<ITEM id="205" weight="50" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="1" weight="20" min="1" max="1" statusMin="90" statusMax="100" sectorTypes="military,sam" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="barn" name="Barn" priority="30" maxSites="0" coolnessBonus="0" security="base_value">
+		<TILES>
+			<TILE image="drum_01" frame="7" />
+		</TILES>
+		<EMPTY_CHANCE>70</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="64" weight="400" min="1" max="1" statusMin="20" statusMax="30" minTier="1" />
+			<ITEM id="243" weight="250" min="1" max="1" statusMin="20" statusMax="30" minTier="2" />
+			<ITEM id="203" weight="200" min="1" max="1" statusMin="20" statusMax="30" minTier="4" />
+			<ITEM id="327" weight="150" min="1" max="1" statusMin="20" statusMax="80" />
+			<ITEM id="1019" weight="200" min="1" max="1" statusMin="80" statusMax="100" />
+			<ITEM id="1543" weight="250" min="1" max="1" statusMin="80" statusMax="100" minTier="1" />
+			<ITEM id="31" weight="150" min="1" max="1" statusMin="80" statusMax="100" minTier="2" sectorTypes="farm" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="wooden_crate_town" name="Wooden Crate" priority="30" maxSites="0" coolnessBonus="2" sectorTypes="farm,town" security="base_value">
+		<TILES>
+			<TILE image="drum_02" frame="1" />
+			<TILE image="drum_02" frame="3" />
+			<TILE image="drum_02" frame="5" />
+		</TILES>
+		<EMPTY_CHANCE>60</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="304" weight="100" min="1" max="1" statusMin="80" minTier="1" />
+			<ITEM id="309" weight="100" min="1" max="1" statusMin="80" minTier="3" />
+			<ITEM id="316" weight="100" min="1" max="1" statusMin="80" minTier="1" />
+			<ITEM id="308" weight="50" min="1" max="1" minTier="5" />
+			<ITEM id="305" weight="20" min="1" max="1" minTier="6" />
+			<ITEM id="220" weight="100" min="1" max="1" minTier="1" />
+			<ITEM id="306" weight="100" min="1" max="1" minTier="6" />
+			<ITEM id="1640" weight="80" min="1" max="1" statusMin="80" statusMax="100" minTier="3" />
+			<ITEM id="2318" weight="80" min="1" max="1" statusMin="80" statusMax="100" minTier="3" />
+			<ITEM id="1542" weight="80" min="1" max="1" statusMin="80" statusMax="100" minTier="2" />
+			<ITEM id="200" weight="50" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="214" weight="80" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="216" weight="40" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="1709" weight="40" min="1" max="1" statusMin="100" statusMax="100" minTier="3" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="wooden_crate_town_military" name="Wooden Crate military" priority="30" maxSites="0" coolnessBonus="4" sectorTypes="military,sam,lawless" security="high_value">
+		<TILES>
+			<TILE image="drum_02" frame="1" />
+			<TILE image="drum_02" frame="3" />
+			<TILE image="drum_02" frame="5" />
+		</TILES>
+		<EMPTY_CHANCE>50</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="308" weight="100" min="1" max="1" minTier="5" enabled="true" />
+			<ITEM id="305" weight="100" min="1" max="1" minTier="6" />
+			<ITEM id="306" weight="100" min="1" max="1" minTier="6" />
+			<ITEM id="1542" weight="150" min="1" max="1" statusMin="100" statusMax="100" minTier="2" />
+			<TYPE weight="50" id="attachment" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="wooden_crate_mine" name="Wooden Crate mine" priority="30" maxSites="0" coolnessBonus="0" security="base_value" sectorTypes="mine,underground">
+		<TILES>
+			<TILE image="drum_02" frame="1" />
+			<TILE image="drum_02" frame="3" />
+			<TILE image="drum_02" frame="5" />
+		</TILES>
+		<EMPTY_CHANCE>40</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="1636" weight="100" min="1" max="1" minTier="0" enabled="true" />
+			<ITEM id="137" weight="80" min="1" max="1" minTier="0" />
+			<ITEM id="223" weight="80" min="1" max="1" minTier="0" />
+			<ITEM id="203" weight="150" min="1" max="1" statusMin="80" statusMax="100" minTier="0" />
+			<ITEM id="325" weight="50" min="1" max="1" statusMin="100" statusMax="100" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="alcohol_cache" name="Alcohol Cache" priority="20" maxSites="0" sectorTypes="lawless,town,underground" coolnessBonus="0">
+		<TILES>
+			<TILE tileset="31" usIndex="1814" />
+			<TILE tileset="31" usIndex="1815" />
+			<TILE tileset="31" usIndex="2311" />
+			<TILE tileset="31" usIndex="2315" />
+			<TILE tileset="31" usIndex="2316" />
+		</TILES>
+		<EMPTY_CHANCE>90</EMPTY_CHANCE>
+		<ROLLS min="1" max="1" />
+		<PLACEMENTS>
+			<PLACEMENT type="hidden" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="245" weight="80" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="255" weight="90" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="256" weight="100" min="1" max="1" statusMin="100" statusMax="100" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+<LOOT_PROFILE id="fridge" name="Fridge" priority="40" maxSites="0" coolnessBonus="0" security="default">
+		<TILES>
+			<TILE image="furn_6" frame="18" kind="container" />
+			<TILE image="furn_6" frame="20" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>70</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="214" weight="100" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="1570" weight="350" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="1573" weight="210" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="1574" weight="210" min="1" max="1" statusMin="100" statusMax="100" />
+			<ITEM id="1575" weight="280" min="1" max="1" statusMin="100" statusMax="100" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="cabinet" name="Cabinet" priority="70" maxSites="0" sectorTypes="town,farm,hospital,military,airport,prison,palace,lawless" coolnessBonus="0" security="base_value">
+		<TILES>
+			<TILE image="furn_7" frame="15" kind="container" />
+			<TILE image="furn_7" frame="17" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>40</EMPTY_CHANCE>
+		<ROLLS min="1" max="1" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="37" weight="210" min="1" max="1" statusMin="50" statusMax="100" />
+			<TYPE id="ammo_only" weight="200" />
+			<MONEY weight="50" min="30" max="300" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="weapon_box" name="Weapon Box" priority="80" maxSites="0" sectorTypes="town,farm,hospital,military,airport,prison,palace,lawless,sam" coolnessBonus="0" security="high_value">
+		<TILES>
+			<TILE image="basefrn1" frame="15" kind="container" />
+			<TILE image="basefrn1" frame="18" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>40</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<TYPE id="assault_rifles_only" weight="140" />
+			<TYPE id="rifles_only" weight="160" />
+			<TYPE id="sniper_rifles_only" weight="120" sectorTypes="military,sam" />
+			<TYPE id="smg_only" weight="170" />
+			<TYPE id="heavy_weapons_only" weight="80" sectorTypes="military,sam" />
+			<TYPE id="ammo_only" weight="200" />
+			<TYPE id="armor_body_only" weight="200" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="weapon_locker" name="Locker" priority="60" maxSites="0" sectorTypes="town,military,prison,airport,hospital,sam,palace" coolnessBonus="1" security="high_value">
+		<TILES>
+			<TILE image="h-furn1" frame="5" kind="container" />
+			<TILE image="h-furn1" frame="6" kind="container" />
+			<TILE image="jailstf3" frame="3" kind="container" />
+			<TILE image="jailstuf" frame="0" kind="container" />
+			<TILE image="jailstuf" frame="3" kind="container" />
+			<TILE image="jailstf3" frame="0" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>40</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<TYPE id="heavy_weapons_only" weight="50" sectorTypes="military,sam" />
+			<TYPE id="sniper_rifles_only" weight="70" sectorTypes="military,sam" />
+			<TYPE id="smg_only" weight="100" />
+			<TYPE id="sidearms_only" weight="120" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="soda_can" name="Soda Can" priority="105" maxSites="0" coolnessBonus="0">
+		<TILES>
+			<TILE image="lawless" frame="0" />
+		</TILES>
+		<EMPTY_CHANCE>50</EMPTY_CHANCE>
+		<ROLLS min="1" max="1" />
+		<PLACEMENTS>
+			<PLACEMENT type="hidden" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="312" weight="100" min="1" max="1" statusMin="100" statusMax="100" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<LOOT_PROFILE id="toolbox" name="Toolbox" priority="65" maxSites="0" sectorTypes="town,mine,military,sam,airport,prison,farm" coolnessBonus="0" security="high_value" enabled="true">
+		<TILES>
+			<TILE image="wp_stuf1" frame="7" kind="container" />
+			<TILE image="wp_stuf1" frame="9" kind="container" />
+		</TILES>
+		<EMPTY_CHANCE>40</EMPTY_CHANCE>
+		<ROLLS min="1" max="2" />
+		<PLACEMENTS>
+			<PLACEMENT type="open" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<ITEM id="37" weight="270" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="54" weight="180" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="64" weight="180" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="71" weight="180" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="72" weight="150" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="80" weight="150" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="81" weight="120" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="94" weight="120" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="96" weight="120" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="100" weight="120" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="107" weight="120" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="131" weight="125" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="135" weight="100" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="137" weight="75" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="201" weight="150" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="202" weight="60" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="203" weight="135" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="213" weight="45" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="224" weight="50" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="263" weight="50" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="328" weight="90" min="1" max="1" statusMin="50" statusMax="100" />
+			<ITEM id="413" weight="90" min="1" max="1" statusMin="50" statusMax="100" />
+		</ITEM_POOL>
+	</LOOT_PROFILE>
+	<!-- travnik: профили 1-8 и ammo_crate_only добавлены отключёнными: назначь реальные TILES и включи. -->
+
+	<LOOT_PROFILE id="clothing_crate_only" name="Clothing Crate Only" priority="25" maxSites="0" sectorTypes="town,farm,lawless,hospital" coolnessBonus="0" enabled="true">
+		<EMPTY_CHANCE>70</EMPTY_CHANCE>
+		<ROLLS min="1" max="1" />
+		<PLACEMENTS>
+			<PLACEMENT type="hidden" weight="100" />
+		</PLACEMENTS>
+		<ITEM_POOL>
+			<TYPE id="clothing_only" weight="1" min="1" max="1" />
+		</ITEM_POOL>
+		<TILES>
+			<TILE image="lawless4" frame="0" kind="prop" />
+			<TILE image="lawless4" frame="1" kind="prop" />
+		</TILES>
+	</LOOT_PROFILE>
+</ENVIRONMENT_LOOT>

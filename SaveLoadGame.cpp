@@ -147,6 +147,7 @@
 #include "connect.h"
 #include "Map Screen Interface Map Inventory.h"//dnl ch51 081009
 #include "Sys Globals.h"//dnl ch74 201013
+#include "Feature/ContainerLoot/ContainerLoot.h"
 #include "Ambient Control.h"		// added by Flugente for HandleNewSectorAmbience(...)
 
 /////////////////////////////////////////////////////
@@ -4201,6 +4202,9 @@ BOOLEAN LoadSavedGame( int ubSavedGameID )
 
 	uiRelStartPerc = uiRelEndPerc =0;
 
+	// travnik: generated container locks must not leak into another saved game.
+	ContainerLoot::Reset();
+
 	TrashAllSoldiers( );
 
 	//Empty the dialogue Queue cause someone could still have a quote in waiting
@@ -7932,6 +7936,9 @@ BOOLEAN SaveGeneralInfo( HWFILE hFile )
 		sGeneralInfo.sContractRehireSoldierID = -1;
 
 	memcpy( &sGeneralInfo.GameOptions, &gGameOptions, sizeof( GAME_OPTIONS ) );
+#ifdef BMP_RANDOM
+	sGeneralInfo.uiSeedNumber = ContainerLoot::GetCampaignSeed();
+#endif
 #ifndef BMP_RANDOM//dnl ch55 111009
 	#ifdef JA2BETAVERSION
 	//Everytime we save get, and set a seed value, when reload, seed again
@@ -8461,6 +8468,12 @@ BOOLEAN LoadGeneralInfo( HWFILE hFile )
 		pContractReHireSoldier = &Menptr[ sGeneralInfo.sContractRehireSoldierID ];
 
 	memcpy( &gGameOptions, &sGeneralInfo.GameOptions, sizeof( GAME_OPTIONS ) );
+#ifdef BMP_RANDOM
+	UINT32 campaignSeed = sGeneralInfo.uiSeedNumber;
+	if (campaignSeed == 0)
+		campaignSeed = ContainerLoot::CreateCampaignSeed();
+	ContainerLoot::SetCampaignSeed(campaignSeed);
+#endif
 #ifndef BMP_RANDOM//dnl ch55 111009
 	#ifdef JA2BETAVERSION
 	//Reset the random 'seed' number

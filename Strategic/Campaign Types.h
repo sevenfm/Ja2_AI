@@ -101,6 +101,9 @@ enum //strategic values for each sector
 #define SF_ASSIGN_NOTICED_ENEMIES_KNOW_NUMBER		0x00004000		// Flugente: info from assignment: enemies were found, and we know their number
 #define SF_ASSIGN_NOTICED_ENEMIES_KNOW_DIRECTION	0x00008000		// Flugente: info from assignment: enemies were found, and we know the direction they are moving in
 
+// travnik: лут контейнеров для этого сектора уже сгенерирован
+#define SF_CONTAINER_LOOT_GENERATED					0x00010000
+
 #define SF_SMOKE_EFFECTS_TEMP_FILE_EXISTS			0x00100000		//Temp File starts with sm_
 #define SF_LIGHTING_EFFECTS_TEMP_FILE_EXISTS		0x00200000		//Temp File starts with l_
 #define SF_REVEALED_STATUS_TEMP_FILE_EXISTS			0x01000000		//Temp File starts with v_

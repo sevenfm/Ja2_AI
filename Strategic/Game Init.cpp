@@ -65,6 +65,7 @@
 #include "Vehicles.h"
 #include "text.h"
 #include "connect.h"
+#include "Feature/ContainerLoot/ContainerLoot.h"
 #include "XML.h"
 #include "mercs.h"
 #include "aim.h"
@@ -536,12 +537,18 @@ BOOLEAN InitNewGame( BOOLEAN fReset )
 {	
 	DebugMsg (TOPIC_JA2,DBG_LEVEL_3,"InitNewGame");
 
+	// travnik: generated container locks belong to the current campaign only.
+	ContainerLoot::Reset();
+
 	if( fReset )
 	{
 		gubScreenCount = 0;
 		return( TRUE );
 	}
-	
+
+	// travnik: each new campaign gets its own container-loot seed.
+	ContainerLoot::SetCampaignSeed(ContainerLoot::CreateCampaignSeed());
+
 	if( gubScreenCount == 0 )
 	{	
 		IniLuaGlobal();//Lua
