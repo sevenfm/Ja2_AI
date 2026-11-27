@@ -52,7 +52,8 @@ namespace
 		case ContainerLootData::PLACEMENT_OPEN:
 			return site.canOpen && !site.isOpen;
 		case ContainerLootData::PLACEMENT_HIDDEN:
-			return site.canHide;
+			// travnik: openable containers must never receive hidden-placement loot.
+			return site.canHide && !site.canOpen;
 		case ContainerLootData::PLACEMENT_SURFACE:
 			return site.canSurface;
 		case ContainerLootData::PLACEMENT_CORPSE:
@@ -90,42 +91,34 @@ namespace
 		INT32 itemIndex = -1;
 		AddItemToPoolAndGetIndex(site.lootGridNo, &object, visible, 0, 0, renderHeight, -1, &itemIndex);
 
-		if (itemIndex >= 0 && itemIndex < (INT32)gWorldItems.size())
+		if (itemIndex < 0)
+			return;
+
+		// travnik: closed openable containers keep the engine HIDDEN_IN_OBJECT state
+		// until the player opens them. Hidden and surface placements need a forced state.
+		if (placement != ContainerLootData::PLACEMENT_HIDDEN &&
+			placement != ContainerLootData::PLACEMENT_SURFACE)
+			return;
+
+		// travnik: AddItemToPool can split a stack into several WORLDITEM entries.
+		// Update the whole pool because all its entries belong to this generated site.
+		ITEM_POOL* pItemPool = NULL;
+		if (!GetItemPool(site.lootGridNo, &pItemPool, 0))
+			return;
+
+		for (ITEM_POOL* p = pItemPool; p; p = p->pNext)
 		{
-			WORLDITEM& worldItem = gWorldItems[itemIndex];
+			if (p->iItemIndex < 0 || p->iItemIndex >= (INT32)gWorldItems.size())
+				continue;
 
-#if CONTAINER_LOOT_DEBUG_VISIBLE_HIDDEN
-			if (placement == ContainerLootData::PLACEMENT_HIDDEN)
-			{
-				worldItem.bVisible = VISIBLE;
-				worldItem.usFlags &= ~WORLD_ITEM_DONTRENDER;
-			}
-#else
-			if (placement == ContainerLootData::PLACEMENT_HIDDEN)
-			{
-				worldItem.bVisible = HIDDEN_ITEM;
-				worldItem.usFlags &= ~WORLD_ITEM_DONTRENDER;
-			}
-#endif
-
-			// travnik: AddItemToPool мог выставить WORLD_ITEM_DONTRENDER
-			// и на самом пуле, а не только на world item.
-			ITEM_POOL* pItemPool = NULL;
-			if (GetItemPool(worldItem.sGridNo, &pItemPool, worldItem.ubLevel))
-			{
-				for (ITEM_POOL* p = pItemPool; p; p = p->pNext)
-				{
-					if (p->iItemIndex == itemIndex)
-					{
-						p->bVisible = worldItem.bVisible;
-						p->usFlags &= ~WORLD_ITEM_DONTRENDER;
-						break;
-					}
-				}
-			}
+			WORLDITEM& worldItem = gWorldItems[p->iItemIndex];
+			worldItem.bVisible = visible;
+			worldItem.usFlags &= ~WORLD_ITEM_DONTRENDER;
+			p->bVisible = visible;
+			p->usFlags &= ~WORLD_ITEM_DONTRENDER;
 
 			CHAR8 trace[192];
-			sprintf(trace, "ContainerLootSpawner: add item=%d grid=%d visible=%d flags=0x%X",
+			sprintf_s(trace, "ContainerLootSpawner: add item=%d grid=%d visible=%d flags=0x%X",
 				(INT32)worldItem.object.usItem, worldItem.sGridNo,
 				(INT32)worldItem.bVisible, (UINT32)worldItem.usFlags);
 			ContainerLoot::Trace(trace);
@@ -142,7 +135,7 @@ namespace
 			if (!ContainerLootRandomItems::Pick(planItem.randomItemClass, planItem.maxCoolness, &usItem))
 			{
 				CHAR8 message[192];
-				sprintf(message, "ContainerLootSpawner: random item class %d produced no item",
+				sprintf_s(message, "ContainerLootSpawner: random item class %d produced no item",
 					(INT32)planItem.randomItemClass);
 				ContainerLoot::Trace(message);
 				return FALSE;
@@ -152,7 +145,7 @@ namespace
 		if (!IsValidLootItem(usItem))
 		{
 			CHAR8 message[256];
-			sprintf(message, "ContainerLootSpawner: rejected item %d", usItem);
+			sprintf_s(message, "ContainerLootSpawner: rejected item %d", usItem);
 			ContainerLoot::Trace(message);
 			return FALSE;
 		}
@@ -211,7 +204,7 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 		if (entry.site < 1 || entry.site > (INT32)ctx.sites.size())
 		{
 			CHAR8 message[128];
-			sprintf(message, "ContainerLootSpawner: invalid site %d", entry.site);
+			sprintf_s(message, "ContainerLootSpawner: invalid site %d", entry.site);
 			ContainerLoot::Trace(message);
 			continue;
 		}
@@ -226,7 +219,7 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 		if (!IsPlacementAllowed(site, entry.placement))
 		{
 			CHAR8 message[128];
-			sprintf(message, "ContainerLootSpawner: placement rejected for site %d", entry.site);
+			sprintf_s(message, "ContainerLootSpawner: placement rejected for site %d", entry.site);
 			ContainerLoot::Trace(message);
 			continue;
 		}
@@ -237,7 +230,7 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 		if (profileMaxSites > 0 && profileSpawned >= profileMaxSites)
 		{
 			CHAR8 message[192];
-			sprintf(message, "ContainerLootSpawner: profile cap reached site=%d profile=%s maxSites=%d",
+			sprintf_s(message, "ContainerLootSpawner: profile cap reached site=%d profile=%s maxSites=%d",
 				entry.site, profileId.c_str(), profileMaxSites);
 			ContainerLoot::Trace(message);
 			continue;
@@ -250,28 +243,29 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 			continue;
 		}
 
-		if (entry.money > ContainerLootData::MAX_MONEY)
-			continue;
-
 		if (entry.items.size() > (size_t)ContainerLootData::MAX_ITEMS_PER_SITE)
 			continue;
 
+		// travnik: clamp oversized generated money instead of discarding the whole site.
+		const UINT32 money = (entry.money > ContainerLootData::MAX_MONEY) ?
+			ContainerLootData::MAX_MONEY : entry.money;
+
 		{
 			CHAR8 trace[256];
-			sprintf(trace, "ContainerLootSpawner: plan site=%d subtype=%s profile=%s placement=%d grid=%d lootGrid=%d money=%u items=%d",
+			sprintf_s(trace, "ContainerLootSpawner: plan site=%d subtype=%s profile=%s placement=%d grid=%d lootGrid=%d money=%u items=%d",
 				entry.site, site.subtype.c_str(), profileId.c_str(), (INT32)entry.placement,
-				site.gridNo, site.lootGridNo, entry.money, (INT32)entry.items.size());
+				site.gridNo, site.lootGridNo, money, (INT32)entry.items.size());
 			ContainerLoot::Trace(trace);
 		}
 
 		BOOLEAN spawnedAny = FALSE;
 
-		if (entry.money > 0)
+		if (money > 0)
 		{
-			OBJECTTYPE money;
-			if (CreateMoney(entry.money, &money))
+			OBJECTTYPE moneyObject;
+			if (CreateMoney(money, &moneyObject))
 			{
-				AddObjectToWorld(site, money, entry.placement);
+				AddObjectToWorld(site, moneyObject, entry.placement);
 				spawnedAny = TRUE;
 				++totalSpawns;
 			}
@@ -307,7 +301,7 @@ BOOLEAN ContainerLootSpawner::Apply(const ContainerLootData::Context& ctx,
 	SetSectorFlag(ctx.sectorX, ctx.sectorY, (UINT8)ctx.sectorZ, SF_CONTAINER_LOOT_GENERATED);
 
 	CHAR8 message[200];
-	sprintf(message, "ContainerLootSpawner: spawned=%d sites=%d maxSpawns=%d",
+	sprintf_s(message, "ContainerLootSpawner: spawned=%d sites=%d maxSpawns=%d",
 		totalSpawns, (INT32)usedSites.size(), maxSpawns);
 	ContainerLoot::Trace(message);
 	return TRUE;

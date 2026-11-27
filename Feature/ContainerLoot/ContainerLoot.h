@@ -25,6 +25,9 @@ public:
 	// openable-структуры. Принудительно показывает пул предметов, иначе лут
 	// может остаться в HIDDEN_IN_OBJECT.
 	static BOOLEAN OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, TAG_STRUCTURE* pStructure);
+
+	// travnik: сбрасывает process-wide состояние фичи при новой игре/загрузке.
+	static void Reset();
 };
 
 #endif

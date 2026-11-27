@@ -74,7 +74,7 @@ static void DumpStructureLine(
 void ContainerLootScanner::DumpSectorAudit(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 {
 	CHAR8 sectorKey[16];
-	sprintf(sectorKey, "%c%d", (CHAR8)(sSectorY + 'A' - 1), sSectorX);
+	sprintf_s(sectorKey, "%c%d", (CHAR8)(sSectorY + 'A' - 1), sSectorX);
 	(void)bSectorZ;
 
 	INT32 scanned = 0;
@@ -127,7 +127,7 @@ void ContainerLootScanner::DumpSectorAudit(INT16 sSectorX, INT16 sSectorY, INT8 
 		csv.close();
 
 	CHAR8 message[192];
-	sprintf(message, "DumpSectorAudit: %s scanned=%d openable=%d vehicles=%d trees=%d generic=%d pools=%d",
+	sprintf_s(message, "DumpSectorAudit: %s scanned=%d openable=%d vehicles=%d trees=%d generic=%d pools=%d",
 		sectorKey, scanned, openable, vehicles, trees, generic, pools);
 	ContainerLoot::Trace(message);
 }
@@ -184,6 +184,39 @@ namespace
 			gridNo == BOBBYR_SHIPPING_DEST_GRIDNO ||
 			gridNo == MEDUNA_ITEM_DROP_OFF_GRIDNO_VALUE ||
 			gridNo == gModSettings.iAirportDropOff;
+	}
+
+	// travnik: multi-tile containers may store map-authored items on any occupied tile.
+	BOOLEAN HasItemPoolForStructure(STRUCTURE* pStructure)
+	{
+		if (!pStructure)
+			return FALSE;
+
+		ITEM_POOL* pPool = NULL;
+		if (GetItemPoolFromGround(pStructure->sGridNo, &pPool))
+			return TRUE;
+
+		if (!pStructure->pDBStructureRef ||
+			!pStructure->pDBStructureRef->pDBStructure ||
+			!pStructure->pDBStructureRef->ppTile)
+			return FALSE;
+
+		const UINT16 tileCount = pStructure->pDBStructureRef->pDBStructure->ubNumberOfTiles;
+		for (UINT16 i = 0; i < tileCount; ++i)
+		{
+			if (!pStructure->pDBStructureRef->ppTile[i])
+				continue;
+
+			const INT32 gridNo = AddPosRelToBase(pStructure->sGridNo,
+				pStructure->pDBStructureRef->ppTile[i]);
+			if (gridNo == pStructure->sGridNo || gridNo < 0 || gridNo >= WORLD_MAX)
+				continue;
+
+			if (GetItemPoolFromGround(gridNo, &pPool))
+				return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	BOOLEAN IsHiddenContainerImage(const std::string& image)
@@ -252,6 +285,14 @@ namespace
 
 	void TryAddSite(ContainerLootData::Context& ctx, const ContainerLootData::Site& candidate)
 	{
+		// travnik: two structures on the same tile must not create two loot sites.
+		for (std::vector<ContainerLootData::Site>::const_iterator it = ctx.sites.begin();
+			it != ctx.sites.end(); ++it)
+		{
+			if (it->gridNo == candidate.gridNo)
+				return;
+		}
+
 		ContainerLootData::Site site = candidate;
 		site.site = (INT32)ctx.sites.size() + 1;
 		ctx.sites.push_back(site);
@@ -278,6 +319,10 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 			if (!(s->fFlags & STRUCTURE_BASE_TILE))
 				continue;
 
+			// travnik: roof structures have no ground-level item pool.
+			if (s->sCubeOffset != STRUCTURE_ON_GROUND)
+				continue;
+
 			if (s->sGridNo < 0 || s->sGridNo >= WORLD_MAX)
 				continue;
 
@@ -295,9 +340,8 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 			const BOOLEAN isHiddenContainer = IsHiddenContainerImage(image) ||
 				IsHiddenContainerTile(tileset, usIndex);
 
-			ITEM_POOL* pPool = NULL;
 			// travnik: пустые контейнеры — безусловное правило, debug-обход отключён.
-			if (GetItemPoolFromGround(s->sGridNo, &pPool))
+			if (HasItemPoolForStructure(s))
 			{
 				++nonEmptySkipped;
 				continue;
@@ -346,14 +390,15 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 				const BOOLEAN canOpen = (flags & STRUCTURE_OPENABLE) ? TRUE : FALSE;
 				site.kind = canOpen ? ContainerLootData::KIND_CONTAINER : ContainerLootData::KIND_PROP;
 				site.canOpen = canOpen;
-				site.canHide = TRUE;
+				// travnik: hidden loot is only for non-openable stashes, never for openable containers.
+				site.canHide = canOpen ? FALSE : TRUE;
 				site.canSurface = FALSE;
 				site.isOpen = FALSE;
 				++hiddenContainers;
 				if (hiddenContainers <= 20)
 				{
 					CHAR8 hiddenTrace[160];
-					sprintf(hiddenTrace, "CollectSites: hidden container tile=%d:%d subtype=%s profile=%s",
+					sprintf_s(hiddenTrace, "CollectSites: hidden container tile=%d:%d subtype=%s profile=%s",
 						(INT32)site.tileset, (INT32)usIndex, site.subtype.c_str(), site.profile.c_str());
 					ContainerLoot::Trace(hiddenTrace);
 				}
@@ -420,7 +465,7 @@ void ContainerLootScanner::CollectSites(ContainerLootData::Context& ctx)
 	}
 
 	CHAR8 message[256];
-	sprintf(message, "CollectSites: total=%d containers=%d vehicles=%d surfaces=%d nature=%d props=%d hidden=%d nonEmptySkipped=%d openSkipped=%d",
+	sprintf_s(message, "CollectSites: total=%d containers=%d vehicles=%d surfaces=%d nature=%d props=%d hidden=%d nonEmptySkipped=%d openSkipped=%d",
 		(INT32)ctx.sites.size(), containers, vehicles, surfaces, nature, props, hiddenContainers,
 		nonEmptySkipped, openContainersSkipped);
 	ContainerLoot::Trace(message);
@@ -831,7 +876,7 @@ namespace
 
 			const char* folder = IsContactSheetOpen(entry) ? "open" : "hidden";
 			CHAR8 path[256];
-			sprintf(path, "ContainerLoot_contact_sheets\\%s\\%d_%d.bmp",
+			sprintf_s(path, "ContainerLoot_contact_sheets\\%s\\%d_%d.bmp",
 				folder, (INT32)tileset, (INT32)usIndex);
 
 			WriteContactBmp(path, hVObject, subIndex);
@@ -890,7 +935,7 @@ namespace
 				const UINT16 usIndex = (UINT16)(key & 0xFFFF);
 
 				CHAR8 imagePath[256];
-				sprintf(imagePath, "%s/%d_%d.bmp", folder, (INT32)tileset, (INT32)usIndex);
+				sprintf_s(imagePath, "%s/%d_%d.bmp", folder, (INT32)tileset, (INT32)usIndex);
 
 				html << "<figure><img src=\"" << imagePath << "\">"
 					<< "<figcaption><b>" << (INT32)tileset << ":" << (INT32)usIndex << "</b><br>"
@@ -925,7 +970,7 @@ namespace
 		if (!LoadWorld((STR8)filename))
 		{
 			CHAR8 message[256];
-			sprintf(message, "ScanAllMaps: cannot load %s", filename);
+			sprintf_s(message, "ScanAllMaps: cannot load %s", filename);
 			ContainerLoot::Trace(message);
 			return;
 		}
@@ -935,6 +980,10 @@ namespace
 			for (STRUCTURE* s = gpWorldLevelData[gridNo].pStructureHead; s; s = s->pNext)
 			{
 				if (!(s->fFlags & STRUCTURE_BASE_TILE))
+					continue;
+
+				// travnik: roof structures have no ground-level item pool.
+				if (s->sCubeOffset != STRUCTURE_ON_GROUND)
 					continue;
 
 				if (s->sGridNo < 0 || s->sGridNo >= WORLD_MAX)
@@ -1153,7 +1202,7 @@ namespace
 		}
 
 		CHAR8 message[256];
-		sprintf(message, "Coverage: assigned=%d generic=%d skip=%d missing=%d",
+		sprintf_s(message, "Coverage: assigned=%d generic=%d skip=%d missing=%d",
 			assigned, generic, skipped, missing);
 		ContainerLoot::Trace(message);
 	}
@@ -1233,7 +1282,7 @@ void ContainerLootScanner::ScanAllMaps()
 #endif
 
 	CHAR8 message[256];
-	sprintf(message, "ScanAllMaps: maps=%d catalog=%d contact=%d",
+	sprintf_s(message, "ScanAllMaps: maps=%d catalog=%d contact=%d",
 		mapsScanned, (INT32)catalog.size(), (INT32)contactGenerated.size());
 	ContainerLoot::Trace(message);
 }

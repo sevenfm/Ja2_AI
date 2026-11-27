@@ -14,7 +14,8 @@ namespace ContainerLootXml
 	BOOLEAN EnsureLoaded(std::vector<ContainerLootData::LootProfile>& profiles,
 		std::vector<ContainerLootData::LootTypeDef>& lootTypes,
 		std::vector<ContainerLootData::ContainerSecurityProfile>& securityProfiles,
-		std::vector<ContainerLootData::SectorSecurityModifier>& sectorSecurity);
+		std::vector<ContainerLootData::SectorSecurityModifier>& sectorSecurity,
+		BOOLEAN forceReload = FALSE);
 
 	// travnik: принудительная перезагрузка (debug / hot reload).
 	BOOLEAN Reload(std::vector<ContainerLootData::LootProfile>& profiles,

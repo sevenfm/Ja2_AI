@@ -26,6 +26,17 @@
 #include <stdio.h>
 #include <set>
 
+namespace
+{
+#if CONTAINER_LOOT_SCAN_ALL_MAPS
+	BOOLEAN sScanAllMapsDone = FALSE;
+#endif
+
+#if CONTAINER_LOOT_FORCE_REGENERATE
+	std::set<INT32> sForcedRegeneratedSectors;
+#endif
+}
+
 // travnik: временный диагностический лог. Пишется в рабочую директорию игры
 // только в debug-сборке; в release Trace ничего не делает.
 void ContainerLoot::Trace(const char* message)
@@ -41,12 +52,23 @@ void ContainerLoot::Trace(const char* message)
 #endif
 }
 
+void ContainerLoot::Reset()
+{
+#if CONTAINER_LOOT_SCAN_ALL_MAPS
+	sScanAllMapsDone = FALSE;
+#endif
+
+#if CONTAINER_LOOT_FORCE_REGENERATE
+	sForcedRegeneratedSectors.clear();
+#endif
+
+	ContainerLootSecurity::Reset();
+}
+
 void ContainerLoot::ScanAllMapsOnce()
 {
 #if CONTAINER_LOOT_SCAN_ALL_MAPS
-	static BOOLEAN sDone = FALSE;
-
-	if (sDone)
+	if (sScanAllMapsDone)
 		return;
 
 	if (gTacticalStatus.uiFlags & LOADING_SAVED_GAME)
@@ -55,7 +77,7 @@ void ContainerLoot::ScanAllMapsOnce()
 	if (gfWorldLoaded)
 		return;
 
-	sDone = TRUE;
+	sScanAllMapsDone = TRUE;
 	Trace("ScanAllMapsOnce: begin");
 	ContainerLootScanner::ScanAllMaps();
 	Trace("ScanAllMapsOnce: end");
@@ -65,7 +87,7 @@ void ContainerLoot::ScanAllMapsOnce()
 void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 {
 	CHAR8 trace[256];
-	sprintf(trace, "ProcessSector: enter %c%d z=%d enabled=%d audit=%d allowVisited=%d forceRegen=%d",
+	sprintf_s(trace, "ProcessSector: enter %c%d z=%d enabled=%d audit=%d allowVisited=%d forceRegen=%d",
 		(CHAR8)(sSectorY + 'A' - 1), sSectorX, bSectorZ,
 		(int)CONTAINER_LOOT_ENABLED, (int)CONTAINER_LOOT_AUDIT_ENABLED,
 		(int)CONTAINER_LOOT_ALLOW_VISITED_SECTORS, (int)CONTAINER_LOOT_FORCE_REGENERATE);
@@ -133,7 +155,6 @@ void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 #if CONTAINER_LOOT_FORCE_REGENERATE
 	// travnik: один раз за запуск игры сбрасываем флаг для каждого сектора,
 	// чтобы можно было проверить лут в уже сгенерированном секторе.
-	static std::set<INT32> sForcedRegeneratedSectors;
 	const INT32 sectorId = (INT32)SECTOR(sSectorX, sSectorY) + ((INT32)bSectorZ * 256);
 	if (sForcedRegeneratedSectors.find(sectorId) == sForcedRegeneratedSectors.end())
 	{
@@ -153,7 +174,7 @@ void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 	ContainerLootData::Context ctx;
 	ContainerLootSectorContext::Resolve(sSectorX, sSectorY, bSectorZ, ctx);
 
-	sprintf(trace, "ProcessSector: context type=%s tags=%d progress=%d/%d coolness=%d difficulty=%d threat=%d wealth=%d traffic=%d enemy=%d day=%d",
+	sprintf_s(trace, "ProcessSector: context type=%s tags=%d progress=%d/%d coolness=%d difficulty=%d threat=%d wealth=%d traffic=%d enemy=%d day=%d",
 		ctx.sectorType.c_str(), (INT32)ctx.sectorTags.size(), (INT32)ctx.progress, (INT32)ctx.currentProgress,
 		(INT32)ctx.sectorCoolness, (INT32)ctx.difficulty, (INT32)ctx.threat, (INT32)ctx.wealth,
 		(INT32)ctx.traffic, ctx.enemyControlled ? 1 : 0, (INT32)ctx.worldDay);
@@ -183,7 +204,7 @@ void ContainerLoot::ProcessSector(INT16 sSectorX, INT16 sSectorY, INT8 bSectorZ)
 		spawnOk = ContainerLootSpawner::Apply(ctx, plan);
 	}
 
-	sprintf(trace, "ProcessSector: sites=%d open=%d hidden=%d plan=%d lua=%d spawn=%d",
+	sprintf_s(trace, "ProcessSector: sites=%d open=%d hidden=%d plan=%d lua=%d spawn=%d",
 		(INT32)ctx.sites.size(), openSites, hiddenSites,
 		(INT32)plan.size(), luaOk ? 1 : 0, spawnOk ? 1 : 0);
 	Trace(trace);
@@ -208,6 +229,13 @@ BOOLEAN ContainerLoot::OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, 
 	if (!(pStructure->fFlags & STRUCTURE_OPENABLE))
 		return TRUE;
 
+	// travnik: only the player opens loot containers; switches are not loot sites.
+	if (pSoldier == NULL || pSoldier->bTeam != gbPlayerNum)
+		return TRUE;
+
+	if (pStructure->fFlags & STRUCTURE_SWITCH)
+		return TRUE;
+
 	// travnik: структура уже открыта — это закрытие, видимость не трогаем.
 	if (pStructure->fFlags & STRUCTURE_OPEN)
 		return TRUE;
@@ -217,10 +245,9 @@ BOOLEAN ContainerLoot::OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, 
 	if (pBase != NULL)
 		grids[2] = pBase->sGridNo;
 
-	UINT8 levels[2] = { 0, 0 };
-	if (pSoldier != NULL)
-		levels[0] = pSoldier->pathing.bLevel;
-	levels[1] = 0;
+	// travnik: the structure's cube offset is authoritative for its item pool level.
+	const UINT8 ubLevel = (pStructure->sCubeOffset == STRUCTURE_ON_ROOF) ? 1 : 0;
+	UINT8 levels[1] = { ubLevel };
 
 	std::set<INT32> visited;
 	for (int gridIndex = 0; gridIndex < 3; ++gridIndex)
@@ -228,7 +255,8 @@ BOOLEAN ContainerLoot::OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, 
 		if (grids[gridIndex] < 0 || grids[gridIndex] >= WORLD_MAX)
 			continue;
 
-		for (int levelIndex = 0; levelIndex < 2; ++levelIndex)
+		// travnik: only the structure's own level is valid; levels has exactly one entry.
+		for (int levelIndex = 0; levelIndex < 1; ++levelIndex)
 		{
 			const INT32 key = grids[gridIndex] * 4 + levels[levelIndex];
 			if (!visited.insert(key).second)
@@ -238,7 +266,7 @@ BOOLEAN ContainerLoot::OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, 
 			if (!GetItemPool(grids[gridIndex], &pItemPool, levels[levelIndex]) || pItemPool == NULL)
 				continue;
 
-			const BOOLEAN changed = SetItemPoolVisibilityOn(pItemPool, ANY_VISIBILITY_VALUE, FALSE);
+			const BOOLEAN changed = SetItemPoolVisibilityOn(pItemPool, ANY_VISIBILITY_VALUE, TRUE);
 
 			INT32 revealed = 0;
 			for (ITEM_POOL* p = pItemPool; p != NULL; p = p->pNext)
@@ -257,7 +285,7 @@ BOOLEAN ContainerLoot::OnContainerOpening(SOLDIERTYPE* pSoldier, INT32 sGridNo, 
 			}
 
 			CHAR8 trace[192];
-			sprintf(trace, "OnContainerOpening: grid=%d level=%d changed=%d revealed=%d",
+			sprintf_s(trace, "OnContainerOpening: grid=%d level=%d changed=%d revealed=%d",
 				grids[gridIndex], (INT32)levels[levelIndex], changed ? 1 : 0, revealed);
 			Trace(trace);
 		}

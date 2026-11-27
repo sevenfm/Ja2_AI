@@ -147,6 +147,7 @@
 #include "connect.h"
 #include "Map Screen Interface Map Inventory.h"//dnl ch51 081009
 #include "Sys Globals.h"//dnl ch74 201013
+#include "Feature/ContainerLoot/ContainerLoot.h"
 #include "Ambient Control.h"		// added by Flugente for HandleNewSectorAmbience(...)
 
 /////////////////////////////////////////////////////
@@ -4200,6 +4201,9 @@ BOOLEAN LoadSavedGame( int ubSavedGameID )
 #endif
 
 	uiRelStartPerc = uiRelEndPerc =0;
+
+	// travnik: generated container locks must not leak into another saved game.
+	ContainerLoot::Reset();
 
 	TrashAllSoldiers( );
 

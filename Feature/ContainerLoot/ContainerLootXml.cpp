@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 #include <string>
 #include <vector>
 
@@ -49,7 +50,8 @@ namespace
 		ParseData()
 			: state(XML_STATE_ROOT), profiles(NULL), lootTypes(NULL),
 			  securityProfiles(NULL), sectorSecurity(NULL),
-			  profileIndex(-1), lootTypeIndex(-1), securityProfileIndex(-1), sawRoot(FALSE)
+			  profileIndex(-1), lootTypeIndex(-1), securityProfileIndex(-1), sawRoot(FALSE),
+			  inLootType(FALSE)
 		{
 		}
 
@@ -62,6 +64,7 @@ namespace
 		INT32		lootTypeIndex;
 		INT32		securityProfileIndex;
 		BOOLEAN		sawRoot;
+		BOOLEAN		inLootType;
 		std::string	charData;
 	};
 
@@ -84,7 +87,41 @@ namespace
 		if (!value || !*value)
 			return defaultValue;
 
-		return (INT32)strtol(value, NULL, 10);
+		char* end = NULL;
+		const long parsed = strtol(value, &end, 10);
+		if (end == value)
+			return defaultValue;
+		if (parsed > INT_MAX)
+			return INT_MAX;
+		if (parsed < INT_MIN)
+			return INT_MIN;
+
+		return (INT32)parsed;
+	}
+
+	INT32 ToClampedInt(const char* value, INT32 defaultValue, INT32 minValue, INT32 maxValue)
+	{
+		INT32 parsed = ToInt(value, defaultValue);
+		if (parsed < minValue)
+			parsed = minValue;
+		if (parsed > maxValue)
+			parsed = maxValue;
+		return parsed;
+	}
+
+	UINT8 ToUInt8(const char* value, UINT8 defaultValue)
+	{
+		return (UINT8)ToClampedInt(value, (INT32)defaultValue, 0, 255);
+	}
+
+	UINT16 ToUInt16(const char* value, UINT16 defaultValue)
+	{
+		return (UINT16)ToClampedInt(value, (INT32)defaultValue, 0, 65535);
+	}
+
+	UINT32 ToUInt32(const char* value, UINT32 defaultValue)
+	{
+		return (UINT32)ToClampedInt(value, (INT32)defaultValue, 0, INT_MAX);
 	}
 
 	BOOLEAN ToBool(const char* value, BOOLEAN defaultValue)
@@ -294,8 +331,8 @@ namespace
 
 		if (tilesetValue && usIndexValue)
 		{
-			const UINT8 tileset = (UINT8)ToInt(tilesetValue, 0);
-			const UINT16 usIndex = (UINT16)ToInt(usIndexValue, 0);
+			const UINT8 tileset = ToUInt8(tilesetValue, 0);
+			const UINT16 usIndex = ToUInt16(usIndexValue, 0);
 			profile->tileKeys.push_back(((UINT32)tileset << 16) | usIndex);
 			return;
 		}
@@ -306,7 +343,7 @@ namespace
 			selector.image = NormalizeImageName(imageValue);
 			if (frameValue && *frameValue)
 			{
-				selector.frame = (UINT16)ToInt(frameValue, 0);
+				selector.frame = ToUInt16(frameValue, 0);
 				selector.useFrame = TRUE;
 			}
 			if (kindValue && *kindValue)
@@ -341,7 +378,7 @@ namespace
 
 		ContainerLootData::LootPlacementDef placement;
 		placement.type = PlacementFromXml(GetAttr(atts, "type"));
-		placement.weight = (UINT32)ToInt(GetAttr(atts, "weight"), 1);
+		placement.weight = ToUInt32(GetAttr(atts, "weight"), 1);
 
 		if (placement.type != ContainerLootData::PLACEMENT_NONE && placement.weight > 0)
 			profile->placements.push_back(placement);
@@ -354,21 +391,21 @@ namespace
 
 		ContainerLootData::ContainerSecurityProfile profile;
 		profile.id = NormalizeToken(GetAttr(atts, "id") ? GetAttr(atts, "id") : "");
-		profile.lockChanceMin = (UINT8)ToInt(GetAttr(atts, "lockChanceMin"), 20);
-		profile.lockChanceMax = (UINT8)ToInt(GetAttr(atts, "lockChanceMax"), 30);
-		profile.trapChanceMin = (UINT8)ToInt(GetAttr(atts, "trapChanceMin"), 30);
-		profile.trapChanceMax = (UINT8)ToInt(GetAttr(atts, "trapChanceMax"), 40);
-		profile.lockChanceCap = (UINT8)ToInt(GetAttr(atts, "lockChanceCap"), 60);
-		profile.trapChanceCap = (UINT8)ToInt(GetAttr(atts, "trapChanceCap"), 80);
+		profile.lockChanceMin = ToUInt8(GetAttr(atts, "lockChanceMin"), 20);
+		profile.lockChanceMax = ToUInt8(GetAttr(atts, "lockChanceMax"), 30);
+		profile.trapChanceMin = ToUInt8(GetAttr(atts, "trapChanceMin"), 30);
+		profile.trapChanceMax = ToUInt8(GetAttr(atts, "trapChanceMax"), 40);
+		profile.lockChanceCap = ToUInt8(GetAttr(atts, "lockChanceCap"), 60);
+		profile.trapChanceCap = ToUInt8(GetAttr(atts, "trapChanceCap"), 80);
 		profile.lockProgressWeight = (FLOAT)atof(GetAttr(atts, "lockProgressWeight") ? GetAttr(atts, "lockProgressWeight") : "0.1");
 		profile.lockCoolnessWeight = (FLOAT)atof(GetAttr(atts, "lockCoolnessWeight") ? GetAttr(atts, "lockCoolnessWeight") : "0.1");
 		profile.trapProgressWeight = (FLOAT)atof(GetAttr(atts, "trapProgressWeight") ? GetAttr(atts, "trapProgressWeight") : "0.1");
 		profile.trapCoolnessWeight = (FLOAT)atof(GetAttr(atts, "trapCoolnessWeight") ? GetAttr(atts, "trapCoolnessWeight") : "0.1");
-		profile.trapLevelMin = (UINT8)ToInt(GetAttr(atts, "trapLevelMin"), 1);
-		profile.trapLevelMax = (UINT8)ToInt(GetAttr(atts, "trapLevelMax"), 4);
+		profile.trapLevelMin = ToUInt8(GetAttr(atts, "trapLevelMin"), 1);
+		profile.trapLevelMax = ToUInt8(GetAttr(atts, "trapLevelMax"), 4);
 		profile.trapLevelProgressWeight = (FLOAT)atof(GetAttr(atts, "trapLevelProgressWeight") ? GetAttr(atts, "trapLevelProgressWeight") : "0.02");
 		profile.trapLevelCoolnessWeight = (FLOAT)atof(GetAttr(atts, "trapLevelCoolnessWeight") ? GetAttr(atts, "trapLevelCoolnessWeight") : "1.0");
-		profile.lockId = (UINT8)ToInt(GetAttr(atts, "lockId"), 0);
+		profile.lockId = ToUInt8(GetAttr(atts, "lockId"), 0);
 
 		if (profile.id.empty())
 			return;
@@ -385,7 +422,7 @@ namespace
 
 		ContainerLootData::TrapTypeDef trap;
 		trap.id = TrapTypeFromXml(GetAttr(atts, "id"));
-		trap.weight = (UINT32)ToInt(GetAttr(atts, "weight"), 1);
+		trap.weight = ToUInt32(GetAttr(atts, "weight"), 1);
 
 		if (trap.id != NO_TRAP && trap.id < NUM_DOOR_TRAPS && trap.weight > 0)
 			profile->trapTypes.push_back(trap);
@@ -408,7 +445,8 @@ namespace
 
 	void PushLootItem(ParseData* data, const ContainerLootData::LootItemDef& item)
 	{
-		if (item.weight == 0)
+		// travnik: disabled XML entries must not reach the Lua pool.
+		if (!item.enabled || item.weight == 0)
 			return;
 
 		ContainerLootData::LootTypeDef* type = CurrentLootType(data);
@@ -423,21 +461,49 @@ namespace
 			profile->items.push_back(item);
 	}
 
+	void NormalizeLootItem(ContainerLootData::LootItemDef& item)
+	{
+		if (item.minAmount < 1)
+			item.minAmount = 1;
+		if (item.maxAmount < item.minAmount)
+			item.maxAmount = item.minAmount;
+
+		if (item.minStatus < 1)
+			item.minStatus = 1;
+		if (item.minStatus > 100)
+			item.minStatus = 100;
+		if (item.maxStatus < item.minStatus)
+			item.maxStatus = item.minStatus;
+		if (item.maxStatus > 100)
+			item.maxStatus = 100;
+
+		if (item.minTier < 0)
+			item.minTier = 0;
+		if (item.minTier > ContainerLootData::MAX_LOOT_TIER)
+			item.minTier = ContainerLootData::MAX_LOOT_TIER;
+		if (item.maxTier < item.minTier)
+			item.maxTier = item.minTier;
+		if (item.maxTier > ContainerLootData::MAX_LOOT_TIER)
+			item.maxTier = ContainerLootData::MAX_LOOT_TIER;
+	}
+
 	void ParseItem(ParseData* data, const XML_Char** atts)
 	{
 		ContainerLootData::LootItemDef item;
 		item.enabled = ToBool(GetAttr(atts, "enabled"), TRUE);
-		item.item = (UINT16)ToInt(GetAttr(atts, "id"), 0);
+		item.item = ToUInt16(GetAttr(atts, "id"), 0);
 		item.lootTypeId = NormalizeToken(GetAttr(atts, "type") ? GetAttr(atts, "type") : "");
-		item.weight = (UINT32)ToInt(GetAttr(atts, "weight"), 1);
-		item.minAmount = (UINT32)ToInt(GetAttr(atts, "min"), 1);
-		item.maxAmount = (UINT32)ToInt(GetAttr(atts, "max"), 1);
-		item.minStatus = (UINT8)ToInt(GetAttr(atts, "statusMin"), 100);
-		item.maxStatus = (UINT8)ToInt(GetAttr(atts, "statusMax"), 100);
+		item.weight = ToUInt32(GetAttr(atts, "weight"), 1);
+		item.minAmount = ToUInt32(GetAttr(atts, "min"), 1);
+		item.maxAmount = ToUInt32(GetAttr(atts, "max"), 1);
+		item.minStatus = ToUInt8(GetAttr(atts, "statusMin"), 100);
+		item.maxStatus = ToUInt8(GetAttr(atts, "statusMax"), 100);
 		item.isMoney = ToBool(GetAttr(atts, "money"), FALSE);
 		item.sectorTypes = SplitList(GetAttr(atts, "sectorTypes"));
-		item.minTier = ToInt(GetAttr(atts, "minTier"), 0);
-		item.maxTier = ToInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER);
+		item.minTier = ToClampedInt(GetAttr(atts, "minTier"), 0, 0, ContainerLootData::MAX_LOOT_TIER);
+		item.maxTier = ToClampedInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER,
+			0, ContainerLootData::MAX_LOOT_TIER);
+		NormalizeLootItem(item);
 
 		PushLootItem(data, item);
 	}
@@ -447,14 +513,16 @@ namespace
 		ContainerLootData::LootItemDef item;
 		item.enabled = ToBool(GetAttr(atts, "enabled"), TRUE);
 		item.isMoney = TRUE;
-		item.weight = (UINT32)ToInt(GetAttr(atts, "weight"), 1);
-		item.minAmount = (UINT32)ToInt(GetAttr(atts, "min"), 1);
-		item.maxAmount = (UINT32)ToInt(GetAttr(atts, "max"), 1);
+		item.weight = ToUInt32(GetAttr(atts, "weight"), 1);
+		item.minAmount = ToUInt32(GetAttr(atts, "min"), 1);
+		item.maxAmount = ToUInt32(GetAttr(atts, "max"), 1);
 		item.minStatus = 100;
 		item.maxStatus = 100;
 		item.sectorTypes = SplitList(GetAttr(atts, "sectorTypes"));
-		item.minTier = ToInt(GetAttr(atts, "minTier"), 0);
-		item.maxTier = ToInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER);
+		item.minTier = ToClampedInt(GetAttr(atts, "minTier"), 0, 0, ContainerLootData::MAX_LOOT_TIER);
+		item.maxTier = ToClampedInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER,
+			0, ContainerLootData::MAX_LOOT_TIER);
+		NormalizeLootItem(item);
 
 		PushLootItem(data, item);
 	}
@@ -464,15 +532,17 @@ namespace
 		ContainerLootData::LootItemDef item;
 		item.enabled = ToBool(GetAttr(atts, "enabled"), TRUE);
 		item.isRandomItem = TRUE;
-		item.randomItemClass = (UINT16)ToInt(GetAttr(atts, "class"), 0);
-		item.weight = (UINT32)ToInt(GetAttr(atts, "weight"), 1);
-		item.minAmount = (UINT32)ToInt(GetAttr(atts, "min"), 1);
-		item.maxAmount = (UINT32)ToInt(GetAttr(atts, "max"), 1);
-		item.minStatus = (UINT8)ToInt(GetAttr(atts, "statusMin"), 100);
-		item.maxStatus = (UINT8)ToInt(GetAttr(atts, "statusMax"), 100);
+		item.randomItemClass = ToUInt16(GetAttr(atts, "class"), 0);
+		item.weight = ToUInt32(GetAttr(atts, "weight"), 1);
+		item.minAmount = ToUInt32(GetAttr(atts, "min"), 1);
+		item.maxAmount = ToUInt32(GetAttr(atts, "max"), 1);
+		item.minStatus = ToUInt8(GetAttr(atts, "statusMin"), 100);
+		item.maxStatus = ToUInt8(GetAttr(atts, "statusMax"), 100);
 		item.sectorTypes = SplitList(GetAttr(atts, "sectorTypes"));
-		item.minTier = ToInt(GetAttr(atts, "minTier"), 0);
-		item.maxTier = ToInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER);
+		item.minTier = ToClampedInt(GetAttr(atts, "minTier"), 0, 0, ContainerLootData::MAX_LOOT_TIER);
+		item.maxTier = ToClampedInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER,
+			0, ContainerLootData::MAX_LOOT_TIER);
+		NormalizeLootItem(item);
 
 		PushLootItem(data, item);
 	}
@@ -505,12 +575,14 @@ namespace
 			type.minTier = ToInt(GetAttr(atts, "minTier"), 0);
 			type.maxTier = ToInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER);
 
+			data->lootTypeIndex = -1;
 			if (!type.id.empty())
 			{
 				data->lootTypes->push_back(type);
 				data->lootTypeIndex = (INT32)data->lootTypes->size() - 1;
 			}
 
+			data->inLootType = TRUE;
 			data->state = XML_STATE_LOOT_TYPE;
 			return;
 		}
@@ -558,7 +630,8 @@ namespace
 		{
 			ContainerLootData::LootProfile profile;
 			profile.enabled = ToBool(GetAttr(atts, "enabled"), TRUE);
-			profile.id = GetAttr(atts, "id") ? GetAttr(atts, "id") : "";
+			// travnik: profile ids and fallbackProfile share the same normalized key.
+			profile.id = NormalizeToken(GetAttr(atts, "id") ? GetAttr(atts, "id") : "");
 			profile.name = GetAttr(atts, "name") ? GetAttr(atts, "name") : profile.id;
 			profile.priority = ToInt(GetAttr(atts, "priority"), ContainerLootData::DEFAULT_PROFILE_PRIORITY);
 			profile.maxSites = ToInt(GetAttr(atts, "maxSites"), ContainerLootData::DEFAULT_PROFILE_MAX_SITES);
@@ -630,7 +703,8 @@ namespace
 			return;
 		}
 
-		if (strcmp(name, "MONEY") == 0 && data->state == XML_STATE_ITEM_POOL)
+		if (strcmp(name, "MONEY") == 0 &&
+			(data->state == XML_STATE_ITEM_POOL || data->state == XML_STATE_LOOT_TYPE))
 		{
 			ParseMoney(data, atts);
 			data->state = XML_STATE_MONEY;
@@ -643,14 +717,16 @@ namespace
 			ContainerLootData::LootItemDef item;
 			item.enabled = ToBool(GetAttr(atts, "enabled"), TRUE);
 			item.lootTypeId = NormalizeToken(GetAttr(atts, "id") ? GetAttr(atts, "id") : "");
-			item.weight = (UINT32)ToInt(GetAttr(atts, "weight"), 1);
-			item.minAmount = (UINT32)ToInt(GetAttr(atts, "min"), 1);
-			item.maxAmount = (UINT32)ToInt(GetAttr(atts, "max"), 1);
-			item.minStatus = (UINT8)ToInt(GetAttr(atts, "statusMin"), 100);
-			item.maxStatus = (UINT8)ToInt(GetAttr(atts, "statusMax"), 100);
+			item.weight = ToUInt32(GetAttr(atts, "weight"), 1);
+			item.minAmount = ToUInt32(GetAttr(atts, "min"), 1);
+			item.maxAmount = ToUInt32(GetAttr(atts, "max"), 1);
+			item.minStatus = ToUInt8(GetAttr(atts, "statusMin"), 100);
+			item.maxStatus = ToUInt8(GetAttr(atts, "statusMax"), 100);
 			item.sectorTypes = SplitList(GetAttr(atts, "sectorTypes"));
-			item.minTier = ToInt(GetAttr(atts, "minTier"), 0);
-			item.maxTier = ToInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER);
+			item.minTier = ToClampedInt(GetAttr(atts, "minTier"), 0, 0, ContainerLootData::MAX_LOOT_TIER);
+			item.maxTier = ToClampedInt(GetAttr(atts, "maxTier"), ContainerLootData::MAX_LOOT_TIER,
+				0, ContainerLootData::MAX_LOOT_TIER);
+			NormalizeLootItem(item);
 			PushLootItem(data, item);
 			data->state = XML_STATE_ITEM;
 			return;
@@ -676,8 +752,8 @@ namespace
 			ContainerLootData::LootProfile* profile = CurrentProfile(data);
 			if (profile)
 			{
-				profile->minRolls = (UINT8)ToInt(GetAttr(atts, "min"), 1);
-				profile->maxRolls = (UINT8)ToInt(GetAttr(atts, "max"), 1);
+				profile->minRolls = ToUInt8(GetAttr(atts, "min"), 1);
+				profile->maxRolls = ToUInt8(GetAttr(atts, "max"), 1);
 			}
 			return;
 		}
@@ -788,7 +864,7 @@ namespace
 		if (strcmp(name, "ITEM") == 0 || strcmp(name, "MONEY") == 0 ||
 			strcmp(name, "TYPE") == 0 || strcmp(name, "RANDOM_ITEM") == 0)
 		{
-			data->state = (data->lootTypeIndex >= 0) ? XML_STATE_LOOT_TYPE : XML_STATE_ITEM_POOL;
+			data->state = data->inLootType ? XML_STATE_LOOT_TYPE : XML_STATE_ITEM_POOL;
 			return;
 		}
 
@@ -815,6 +891,7 @@ namespace
 				data->lootTypes->pop_back();
 
 			data->lootTypeIndex = -1;
+			data->inLootType = FALSE;
 			data->state = XML_STATE_LOOT_TYPES;
 			return;
 		}
@@ -829,7 +906,7 @@ namespace
 		{
 			ContainerLootData::LootProfile* profile = CurrentProfile(data);
 			if (profile)
-				profile->emptyChance = (UINT8)ToInt(data->charData.c_str(), 0);
+				profile->emptyChance = ToUInt8(data->charData.c_str(), 0);
 
 			data->state = XML_STATE_PROFILE;
 			return;
@@ -938,7 +1015,7 @@ namespace
 		if (!XML_Parse(parser, buffer, size, TRUE))
 		{
 			CHAR8 message[512];
-			sprintf(message, "ContainerLootXml: parse error in EnvironmentLoot.xml: %s at line %d",
+			sprintf_s(message, "ContainerLootXml: parse error in EnvironmentLoot.xml: %s at line %d",
 				XML_ErrorString(XML_GetErrorCode(parser)),
 				XML_GetCurrentLineNumber(parser));
 			ContainerLoot::Trace(message);
@@ -989,6 +1066,60 @@ namespace
 		return NULL;
 	}
 
+	INT32 SectorTokenSpecificity(const std::string& token)
+	{
+		if (token == "military" || token == "sam" || token == "prison")
+			return 5;
+
+		if (token == "palace" || token == "airport" || token == "hospital" ||
+			token == "industrial" || token == "mine" || token == "underground" ||
+			token == "lawless")
+			return 3;
+
+		if (token == "wealthy" || token == "traffic" || token == "farm" ||
+			token == "agricultural" || token == "rural")
+			return 1;
+
+		return 0;
+	}
+
+	INT32 ProfileSectorSpecificity(const ContainerLootData::LootProfile& profile,
+		const std::string* sectorType,
+		const std::vector<std::string>* sectorTags)
+	{
+		if (!sectorType || !sectorTags)
+			return 0;
+
+		INT32 score = 0;
+		if (ContainsToken(profile.sectorTypes, *sectorType))
+			score += 100;
+
+		for (size_t i = 0; i < sectorTags->size(); ++i)
+		{
+			if (ContainsToken(profile.sectorTypes, (*sectorTags)[i]))
+				score += SectorTokenSpecificity((*sectorTags)[i]);
+		}
+
+		return score;
+	}
+
+	void ConsiderProfile(const ContainerLootData::LootProfile* allowed,
+		const std::string* sectorType,
+		const std::vector<std::string>* sectorTags,
+		const ContainerLootData::LootProfile** best,
+		INT32* bestScore)
+	{
+		if (!allowed)
+			return;
+
+		const INT32 score = ProfileSectorSpecificity(*allowed, sectorType, sectorTags);
+		if (score > *bestScore)
+		{
+			*best = allowed;
+			*bestScore = score;
+		}
+	}
+
 	const ContainerLootData::LootProfile* FindAllowedProfile(
 		const std::vector<ContainerLootData::LootProfile>& profiles,
 		const ContainerLootData::LootProfile* profile,
@@ -1030,6 +1161,9 @@ namespace
 	{
 		const UINT32 key = ((UINT32)tileset << 16) | usIndex;
 
+		const ContainerLootData::LootProfile* best = NULL;
+		INT32 bestScore = -1;
+
 		for (size_t i = 0; i < profiles.size(); ++i)
 		{
 			if (!HasTileKey(profiles[i], key))
@@ -1037,9 +1171,14 @@ namespace
 
 			const ContainerLootData::LootProfile* allowed =
 				FindAllowedProfile(profiles, &profiles[i], sectorType, sectorTags, 0);
-			if (allowed)
-				return allowed;
+			ConsiderProfile(allowed, sectorType, sectorTags, &best, &bestScore);
 		}
+
+		if (best)
+			return best;
+
+		best = NULL;
+		bestScore = -1;
 
 		for (size_t i = 0; i < profiles.size(); ++i)
 		{
@@ -1060,10 +1199,15 @@ namespace
 
 				const ContainerLootData::LootProfile* allowed =
 					FindAllowedProfile(profiles, &profile, sectorType, sectorTags, 0);
-				if (allowed)
-					return allowed;
+				ConsiderProfile(allowed, sectorType, sectorTags, &best, &bestScore);
 			}
 		}
+
+		if (best)
+			return best;
+
+		best = NULL;
+		bestScore = -1;
 
 		for (size_t i = 0; i < profiles.size(); ++i)
 		{
@@ -1076,12 +1220,11 @@ namespace
 
 				const ContainerLootData::LootProfile* allowed =
 					FindAllowedProfile(profiles, &profile, sectorType, sectorTags, 0);
-				if (allowed)
-					return allowed;
+				ConsiderProfile(allowed, sectorType, sectorTags, &best, &bestScore);
 			}
 		}
 
-		return NULL;
+		return best;
 	}
 }
 
@@ -1092,13 +1235,14 @@ namespace ContainerLootXml
 		std::vector<ContainerLootData::ContainerSecurityProfile>& securityProfiles,
 		std::vector<ContainerLootData::SectorSecurityModifier>& sectorSecurity)
 	{
-		return LoadFile(profiles, lootTypes, securityProfiles, sectorSecurity);
+		return EnsureLoaded(profiles, lootTypes, securityProfiles, sectorSecurity, TRUE);
 	}
 
 	BOOLEAN EnsureLoaded(std::vector<ContainerLootData::LootProfile>& profiles,
 		std::vector<ContainerLootData::LootTypeDef>& lootTypes,
 		std::vector<ContainerLootData::ContainerSecurityProfile>& securityProfiles,
-		std::vector<ContainerLootData::SectorSecurityModifier>& sectorSecurity)
+		std::vector<ContainerLootData::SectorSecurityModifier>& sectorSecurity,
+		BOOLEAN forceReload)
 	{
 		static BOOLEAN loaded = FALSE;
 		static std::vector<ContainerLootData::LootProfile> cachedProfiles;
@@ -1106,19 +1250,21 @@ namespace ContainerLootXml
 		static std::vector<ContainerLootData::ContainerSecurityProfile> cachedSecurity;
 		static std::vector<ContainerLootData::SectorSecurityModifier> cachedSectorSecurity;
 
-		if (!loaded)
+		if (!loaded || forceReload)
 		{
-			loaded = TRUE;
 			if (!LoadFile(cachedProfiles, cachedTypes, cachedSecurity, cachedSectorSecurity))
 			{
 				cachedProfiles.clear();
 				cachedTypes.clear();
 				cachedSecurity.clear();
 				cachedSectorSecurity.clear();
+				loaded = FALSE;
+				// travnik: keep the cache retryable if the file was temporarily unavailable.
 				ContainerLoot::Trace("ContainerLootXml: EnvironmentLoot.xml is not loaded");
 			}
 			else
 			{
+				loaded = TRUE;
 				INT32 disabledProfiles = 0;
 				for (std::vector<ContainerLootData::LootProfile>::const_iterator it = cachedProfiles.begin();
 					it != cachedProfiles.end(); ++it)
@@ -1128,7 +1274,7 @@ namespace ContainerLootXml
 				}
 
 				CHAR8 message[192];
-				sprintf(message, "ContainerLootXml: loaded profiles=%d disabled=%d lootTypes=%d security=%d sectorTags=%d",
+				sprintf_s(message, "ContainerLootXml: loaded profiles=%d disabled=%d lootTypes=%d security=%d sectorTags=%d",
 					(INT32)cachedProfiles.size(), disabledProfiles, (INT32)cachedTypes.size(),
 					(INT32)cachedSecurity.size(), (INT32)cachedSectorSecurity.size());
 				ContainerLoot::Trace(message);

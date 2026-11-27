@@ -83,9 +83,24 @@ namespace
 		lua_setfield(L, -2, key);
 	}
 
-	int GetIntField(lua_State* L, int tableIndex, const char* key)
+	int ClampInt(int value, int minimum, int maximum)
+	{
+		if (value < minimum)
+			return minimum;
+		if (value > maximum)
+			return maximum;
+		return value;
+	}
+
+	int GetIntField(lua_State* L, int tableIndex, const char* key, int defaultValue = 0)
 	{
 		lua_getfield(L, tableIndex, key);
+		if (!lua_isnumber(L, -1))
+		{
+			lua_pop(L, 1);
+			return defaultValue;
+		}
+
 		const int value = (int)lua_tointeger(L, -1);
 		lua_pop(L, 1);
 		return value;
@@ -129,7 +144,7 @@ namespace
 		}
 	}
 
-	void PushLootItem(lua_State* L, const ContainerLootData::LootItemDef& item)
+	BOOLEAN PushLootItem(lua_State* L, const ContainerLootData::LootItemDef& item)
 	{
 		INT32 coolness = 0;
 		INT32 itemClass = 0;
@@ -139,7 +154,19 @@ namespace
 			itemClass = (INT32)Item[item.item].usItemClass;
 		}
 
+		// travnik: filter items before Lua rolls so game-option rules do not
+		// consume rolls and leave a container empty after C++ validation.
+		if (item.lootTypeId.empty() && !item.isMoney && !item.isRandomItem)
+		{
+			if (item.item == 0 || item.item >= gMAXITEMS_READ)
+				return FALSE;
+
+			if (!ItemIsLegal(item.item, TRUE))
+				return FALSE;
+		}
+
 		lua_newtable(L);
+		SetBool(L, "enabled", item.enabled ? true : false);
 		SetInt(L, "item", item.item);
 		SetInt(L, "weight", (int)item.weight);
 		SetInt(L, "min", (int)item.minAmount);
@@ -155,6 +182,7 @@ namespace
 		SetInt(L, "minTier", item.minTier);
 		SetInt(L, "maxTier", item.maxTier);
 		PushStringList(L, "sectorTypes", item.sectorTypes);
+		return TRUE;
 	}
 
 	void PushProfiles(lua_State* L, const std::vector<ContainerLootData::LootProfile>& profiles)
@@ -196,10 +224,11 @@ namespace
 			lua_setfield(L, -2, "placements");
 
 			lua_newtable(L);
+			INT32 profileItemIndex = 0;
 			for (size_t i = 0; i < profile.items.size(); ++i)
 			{
-				PushLootItem(L, profile.items[i]);
-				lua_rawseti(L, -2, (int)i + 1);
+				if (PushLootItem(L, profile.items[i]))
+					lua_rawseti(L, -2, ++profileItemIndex);
 			}
 			lua_setfield(L, -2, "items");
 
@@ -225,10 +254,11 @@ namespace
 			PushStringList(L, "sectorTypes", type.sectorTypes);
 
 			lua_newtable(L);
+			INT32 typeItemIndex = 0;
 			for (size_t i = 0; i < type.items.size(); ++i)
 			{
-				PushLootItem(L, type.items[i]);
-				lua_rawseti(L, -2, (int)i + 1);
+				if (PushLootItem(L, type.items[i]))
+					lua_rawseti(L, -2, ++typeItemIndex);
 			}
 			lua_setfield(L, -2, "items");
 
@@ -403,16 +433,17 @@ namespace
 			ContainerLootData::PlanEntry entry;
 			entry.site = GetIntField(L, -1, "site");
 			entry.placement = PlacementFromString(GetStringField(L, -1, "placement"));
-			entry.money = (UINT32)GetIntField(L, -1, "money");
-			entry.corpseItem = (UINT16)GetIntField(L, -1, "corpseItem");
+			entry.money = (UINT32)ClampInt(GetIntField(L, -1, "money"), 0,
+				(INT32)ContainerLootData::MAX_MONEY);
+			entry.corpseItem = (UINT16)ClampInt(GetIntField(L, -1, "corpseItem"), 0, 65535);
 			entry.profile = GetStringField(L, -1, "profile");
 			if (!entry.profile.empty())
-				entry.maxSites = GetIntField(L, -1, "maxSites");
+				entry.maxSites = GetIntField(L, -1, "maxSites", -1);
 			entry.hasLock = GetBoolField(L, -1, "hasLock");
-			entry.lockId = (UINT8)GetIntField(L, -1, "lockId");
+			entry.lockId = (UINT8)ClampInt(GetIntField(L, -1, "lockId"), 0, 255);
 			entry.hasTrap = GetBoolField(L, -1, "hasTrap");
-			entry.trapId = (UINT8)GetIntField(L, -1, "trapId");
-			entry.trapLevel = (UINT8)GetIntField(L, -1, "trapLevel");
+			entry.trapId = (UINT8)ClampInt(GetIntField(L, -1, "trapId"), 0, 255);
+			entry.trapLevel = (UINT8)ClampInt(GetIntField(L, -1, "trapLevel"), 0, 255);
 
 			lua_getfield(L, -1, "items");
 			if (lua_istable(L, -1))
@@ -424,13 +455,12 @@ namespace
 					if (lua_istable(L, -1))
 					{
 						ContainerLootData::PlanItem item;
-						item.item = (UINT16)GetIntField(L, -1, "item");
-						item.count = (UINT8)GetIntField(L, -1, "count");
-						item.condition = (UINT8)GetIntField(L, -1, "condition");
-						item.randomItemClass = (UINT16)GetIntField(L, -1, "randomItemClass");
-						item.maxCoolness = (UINT8)GetIntField(L, -1, "maxCoolness");
-						if (item.maxCoolness > ContainerLootData::MAX_ITEM_COOLNESS)
-							item.maxCoolness = ContainerLootData::MAX_ITEM_COOLNESS;
+						item.item = (UINT16)ClampInt(GetIntField(L, -1, "item"), 0, 65535);
+						item.count = (UINT8)ClampInt(GetIntField(L, -1, "count"), 0, 255);
+						item.condition = (UINT8)ClampInt(GetIntField(L, -1, "condition"), 0, 255);
+						item.randomItemClass = (UINT16)ClampInt(GetIntField(L, -1, "randomItemClass"), 0, 65535);
+						item.maxCoolness = (UINT8)ClampInt(GetIntField(L, -1, "maxCoolness"),
+							0, ContainerLootData::MAX_ITEM_COOLNESS);
 						entry.items.push_back(item);
 					}
 					lua_pop(L, 1);
@@ -484,7 +514,7 @@ BOOLEAN ContainerLootLua::Generate(const ContainerLootData::Context& ctx,
 	{
 		const char* error = lua_tostring(L, -1);
 		CHAR8 message[512];
-		sprintf(message, "ContainerLootLua: Lua error: %s", error ? error : "unknown");
+		sprintf_s(message, "ContainerLootLua: Lua error: %s", error ? error : "unknown");
 		ContainerLoot::Trace(message);
 		lua_pop(L, 2);
 		return FALSE;
@@ -506,7 +536,7 @@ BOOLEAN ContainerLootLua::Generate(const ContainerLootData::Context& ctx,
 		}
 
 		CHAR8 message[192];
-		sprintf(message, "ContainerLootLua: plan=%d securityProfiles=%d locked=%d trapped=%d",
+		sprintf_s(message, "ContainerLootLua: plan=%d securityProfiles=%d locked=%d trapped=%d",
 			(INT32)plan.size(), (INT32)ctx.securityProfiles.size(), locked, trapped);
 		ContainerLoot::Trace(message);
 	}

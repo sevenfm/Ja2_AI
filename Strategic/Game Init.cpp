@@ -65,6 +65,7 @@
 #include "Vehicles.h"
 #include "text.h"
 #include "connect.h"
+#include "Feature/ContainerLoot/ContainerLoot.h"
 #include "XML.h"
 #include "mercs.h"
 #include "aim.h"
@@ -535,6 +536,9 @@ extern void ClearPanelLogData(void);
 BOOLEAN InitNewGame( BOOLEAN fReset )
 {	
 	DebugMsg (TOPIC_JA2,DBG_LEVEL_3,"InitNewGame");
+
+	// travnik: generated container locks belong to the current campaign only.
+	ContainerLoot::Reset();
 
 	if( fReset )
 	{

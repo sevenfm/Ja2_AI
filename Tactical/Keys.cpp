@@ -958,18 +958,17 @@ void AddDoorInfoToTable( DOOR *pDoor )
 	if( !DoorTable )
 	{
 		gubNumDoors = 0;
-		gubMaxDoors = DOOR_TABLE_GROWTH;
-		DoorTable = (DOOR*)MemAlloc( sizeof( DOOR ) * gubMaxDoors );
+		DoorTable = (DOOR*)MemAlloc( sizeof( DOOR ) * DOOR_TABLE_GROWTH );
 		if( !DoorTable )
+		{
+			gubMaxDoors = 0;
 			return;
+		}
+		gubMaxDoors = DOOR_TABLE_GROWTH;
 	}
 
-	if( gubNumDoors >= DOOR_TABLE_MAX )
-	{
-		DebugMsg( TOPIC_JA2, DBG_LEVEL_3, String("AddDoorInfoToTable: door table is full") );
-		return;
-	}
-
+	// travnik: Update an existing entry before checking the capacity. Doors and locks
+	// must remain refreshable even when the table is already full.
 	INT32 i;
 	for( i = 0; i < gubNumDoors; i++ )
 	{
@@ -979,33 +978,44 @@ void AddDoorInfoToTable( DOOR *pDoor )
 			return;
 		}
 	}
+
+	if( gubNumDoors >= DOOR_TABLE_MAX )
+	{
+		DebugMsg( TOPIC_JA2, DBG_LEVEL_3, String("AddDoorInfoToTable: door table is full") );
+		return;
+	}
+
 	//no existing door found, so add a new one.
 	if( gubNumDoors < gubMaxDoors )
 	{
 		memcpy( &DoorTable[ gubNumDoors ], pDoor, sizeof( DOOR ) );
 		gubNumDoors++;
+		return;
 	}
-	else
-	{ //we need to allocate more memory, so add ten more slots.
-		DOOR *NewDoorTable;
-		if( gubMaxDoors > DOOR_TABLE_MAX - DOOR_TABLE_GROWTH )
+
+	{ //we need to allocate more memory, so add ten more slots (clamped to the hard limit).
+		UINT8 newMaxDoors = gubMaxDoors;
+		if( newMaxDoors > DOOR_TABLE_MAX - DOOR_TABLE_GROWTH )
+			newMaxDoors = DOOR_TABLE_MAX;
+		else
+			newMaxDoors += DOOR_TABLE_GROWTH;
+
+		if( newMaxDoors <= gubMaxDoors )
 		{
 			DebugMsg( TOPIC_JA2, DBG_LEVEL_3, String("AddDoorInfoToTable: cannot grow door table") );
 			return;
 		}
-		gubMaxDoors += DOOR_TABLE_GROWTH;
-		//Allocate new table with max+10 doors.
-		NewDoorTable = (DOOR*)MemAlloc( sizeof( DOOR ) * gubMaxDoors );
+
+		DOOR *NewDoorTable = (DOOR*)MemAlloc( sizeof( DOOR ) * newMaxDoors );
 		if( !NewDoorTable )
 			return;
-		//Copy contents of existing door table to new door table.
+
+		// travnik: Only publish the larger capacity after a successful allocation.
 		memcpy( NewDoorTable, DoorTable, sizeof( DOOR ) * gubNumDoors );
-		//Deallocate the existing door table (possible to not have one).
-		if( DoorTable )
-			MemFree( DoorTable );
-		//Assign the new door table as the existing door table
+		MemFree( DoorTable );
 		DoorTable = NewDoorTable;
-		//Add the new door info to the table.
+		gubMaxDoors = newMaxDoors;
+
 		memcpy( &DoorTable[ gubNumDoors ], pDoor, sizeof( DOOR ) );
 		gubNumDoors++;
 	}

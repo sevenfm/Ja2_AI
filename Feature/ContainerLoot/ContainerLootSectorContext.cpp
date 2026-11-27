@@ -21,6 +21,9 @@ extern UINT32 gCoolnessBySector[256];
 
 namespace
 {
+	// travnik: CoolnessBySector.xml uses a 0..20 scale in r7609; clamp modded values.
+	const FLOAT MAX_SECTOR_COOLNESS = 20.0f;
+
 	void AddTag(std::vector<std::string>& tags, const char* tag)
 	{
 		if (!tag || !*tag)
@@ -229,7 +232,7 @@ void ContainerLootSectorContext::Resolve(INT16 sSectorX, INT16 sSectorY, INT8 bS
 	ctx.weather = guiEnvWeather;
 
 	CHAR8 sectorKey[16];
-	sprintf(sectorKey, "%c%d", (CHAR8)(sSectorY + 'A' - 1), sSectorX);
+	sprintf_s(sectorKey, "%c%d", (CHAR8)(sSectorY + 'A' - 1), sSectorX);
 	ctx.sectorKey = sectorKey;
 
 	const INT32 sectorIndex = SECTOR(sSectorX, sSectorY);
@@ -330,5 +333,5 @@ void ContainerLootSectorContext::Resolve(INT16 sSectorX, INT16 sSectorY, INT8 bS
 	ctx.maxItemCoolnessBonus = gGameExternalOptions.fContainerLootMaxItemCoolnessBonus;
 	ctx.moneyProgressScale = gGameExternalOptions.fContainerLootMoneyProgressScale;
 	ctx.emptyChanceScale = gGameExternalOptions.fContainerLootEmptyChanceScale;
-	ctx.coolnessNorm = std::min<FLOAT>(100.0f, (FLOAT)ctx.sectorCoolness) / 100.0f;
+	ctx.coolnessNorm = std::min<FLOAT>(1.0f, (FLOAT)ctx.sectorCoolness / MAX_SECTOR_COOLNESS);
 }

@@ -289,7 +289,7 @@ namespace ContainerLootData
 		Context()
 			: sectorX(0), sectorY(0), sectorZ(0), difficulty(0), progress(0),
 			  currentProgress(0), sectorCoolness(0), weather(0), isUnderground(FALSE),
-			  townId(0), threat(0), wealth(0), traffic(0), enemyControlled(FALSE), worldDay(0),
+			  foodSystem(FALSE), townId(0), threat(0), wealth(0), traffic(0), enemyControlled(FALSE), worldDay(0),
 			  progressWeight(1.0f), sectorCoolnessWeight(1.0f),
 			  militaryTypeBonus(1.0f), difficultyBonus(0.5f),
 			  progressTierCapBonus(3.0f), maxItemCoolnessBonus(2.0f),
